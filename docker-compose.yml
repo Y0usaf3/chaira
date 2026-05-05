@@ -1,10 +1,10 @@
 services:
   chara:
-    image: ghcr.io/yousafe/chaira:latest
+    image: ghcr.io/y0usaf3/chaira:latest
     ports:
       - "3000:3000"
     environment:
-      - DB_URL=ws://surrealdb:8000
+      - DB_URL=surrealdb:8000
       - DB_USERNAME=yousafe
       - DB_PASSWORD=MRAOWR
       - BIT_PATH=/bit

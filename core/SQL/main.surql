@@ -1,4 +1,4 @@
-DEFINE BUCKET OVERWRITE bucki BACKEND 'file:/home/yousafe/'; 
+DEFINE BUCKET OVERWRITE bucki BACKEND $bit_bucket_path; 
 DEFINE MODULE OVERWRITE mod::bit AS f'bucki:/chaira-bitwise_ops-0.0.1.surli';
 
 -- USER 

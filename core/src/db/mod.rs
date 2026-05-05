@@ -40,8 +40,12 @@ pub async fn init() {
     .await
     .unwrap();
 
+    let bit_path = env_required!("BIT_PATH");
+    let bit_bucket_path = format!("file:{}", bit_path);
+
     DB.use_ns("main").use_db("main").await.unwrap();
     DB.query(include_str!("../../SQL/main.surql"))
+        .bind(("bit_bucket_path", bit_bucket_path))
         .await
         .unwrap();
 }

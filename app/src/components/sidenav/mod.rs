@@ -1,7 +1,7 @@
 use super::ui::dropdown_menu::*;
 use crate::components::ui::separator::*;
 use icons::{Annoyed, Calendar, Clock, Hash, Mail, Shield, User as UserIcon};
-use leptos::prelude::*;
+use leptos::{prelude::*, tachys::view::keyed::SerializableKey};
 
 #[server]
 pub async fn get_user() -> Result<charac::models::User, ServerFnError> {
@@ -57,7 +57,7 @@ pub fn SideNav() -> impl IntoView {
                                        <DropdownMenuItem class="flex gap-2">
                                            <Hash class="size-4 opacity-70" />
                                            <span class="text-xs font-mono">
-                                               {user.id.map(|id| format!("{:?}", id)).unwrap_or_else(|| "No ID".into())}
+                                               {format!("{:?}",user.id.unwrap().0.key)}
                                            </span>
                                        </DropdownMenuItem>
 

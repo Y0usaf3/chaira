@@ -1,6 +1,6 @@
 services:
   chara:
-    image: ghcr.io/yousafe/chara:latest
+    image: ghcr.io/yousafe/chaira:latest
     ports:
       - "3000:3000"
     environment:

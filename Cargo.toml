@@ -1,6 +1,9 @@
-[package]
-name = "chaira"
-version = "0.1.0"
-edition = "2024"
+[workspace]
+resolver = "3"
+members = ["charli", "models", "service"]
 
-[dependencies]
+[workspace.dependencies]
+surrealdb = "3.0.5"
+thiserror = "2.0.18"
+tokio = "1.52.2"
+surrealdb-types = "3.0.5"

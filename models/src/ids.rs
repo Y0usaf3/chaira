@@ -1,5 +1,4 @@
-use ::serde::{Deserialize, Serialize};
-use surrealdb_types::SurrealValue;
+use crate::prelude::*;
 use surrealdb_types::record_id::RecordId as Thing;
 
 macro_rules! define_ids {

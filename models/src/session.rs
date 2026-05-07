@@ -14,10 +14,10 @@ pub struct Session {
 
 #[derive(SurrealValue)]
 pub struct InsertSession {
-    pub(crate) user: UserId,
-    pub(crate) token: String,
-    pub(crate) ip: String,
-    pub(crate) user_agent: String,
+    pub user: UserId,
+    pub token: String,
+    pub ip: String,
+    pub user_agent: String,
 }
 
 // no session patch bc we're not supposed to change this at all

@@ -4,3 +4,17 @@ version = "0.0.1"
 edition = "2024"
 
 [dependencies]
+surrealdb.workspace = true
+thiserror.workspace = true
+axum.workspace = true 
+hackclub_auth_api = "0.1.5"
+models = { path="../models/" }
+base64 = "0.22.1"
+dotenvy = "0.15.7"
+chacha20poly1305 = "0.10.1"
+hex = "0.4.3"
+serde_json.workspace = true
+validator.workspace = true
+serde.workspace = true
+rand = "0.10.1"
+chrono = "0.4.44"

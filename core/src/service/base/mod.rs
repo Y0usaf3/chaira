@@ -179,6 +179,26 @@ COMMIT TRANSACTION;
         Ok(())
     }
 
+    pub async fn list_tables(&self) -> Result<Vec<Table>, Irror> {
+        let mut res = DB.query("
+            LET $is_owner = (SELECT VALUE owner FROM $base)[0] == $user;
+            
+            SELECT * FROM table WHERE base = $base AND is_deleted = false AND (
+                $is_owner OR 
+                mod::bit::can(
+                    (SELECT VALUE perms FROM can_access_table WHERE in = $user AND out = $this.id)[0], 
+                    2
+                )
+            ) ORDER BY created_at ASC;
+        ")
+        .bind(("user", self.user.clone()))
+        .bind(("base", self.base_record_id.clone()))
+        .await?;
+
+        let tables: Vec<Table> = res.take(1)?;
+        Ok(tables)
+    }
+
     pub async fn open_table(&self, table_id: TableId) -> Result<TableService, Irror> {
         let service =
             TableService::new(table_id, self.base_record_id.clone(), self.user.clone()).await?;

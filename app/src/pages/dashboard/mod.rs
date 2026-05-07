@@ -13,10 +13,10 @@ use crate::components::{
 use components::{BaseBox, CreateBaseDialog};
 use icons::{ArrowUpRight, FolderCode, Lock, Plus};
 use leptos::prelude::*;
-use server::{create_base, get_user_bases};
+use server::{create_base, create_token, get_user_bases};
 
 mod components;
-mod server;
+pub mod server;
 
 #[component]
 pub fn DashboardPage() -> impl IntoView {
@@ -56,6 +56,7 @@ pub fn DashboardPage() -> impl IntoView {
             }
         })
     };
+    let create_token_action = Action::new(|_: &()| async move { create_token().await });
 
     view! {
         <div
@@ -65,6 +66,22 @@ pub fn DashboardPage() -> impl IntoView {
             <SideNav />
             <div class="flex-1 relative p-8">
                 <div class="absolute top-4 right-4 p-2">
+                    <Button
+                        variant=ButtonVariant::Outline
+                        size=ButtonSize::Sm
+                        on:click=move |_| {
+                            create_token_action.dispatch(());
+                        }
+                        attr:disabled=move || create_token_action.pending().get()
+                    >
+                        {move || {
+                            if create_token_action.pending().get() {
+                                "Creating..."
+                            } else {
+                                "Generate API Token"
+                            }
+                        }}
+                    </Button>
                     <ThemeToggle />
                 </div>
 
@@ -78,6 +95,38 @@ pub fn DashboardPage() -> impl IntoView {
                             <BreadcrumbSeparator />
                         </BreadcrumbList>
                     </Breadcrumb>
+
+                    {move || {
+                        create_token_action
+                            .value()
+                            .get()
+                            .map(|res| {
+                                match res {
+                                    Ok(token) => {
+                                        view! {
+                                            <div class="p-4 border border-primary/20 bg-primary/5 rounded-lg flex flex-col gap-2">
+                                                <span class="text-xs font-bold uppercase tracking-wider opacity-60">
+                                                    "Your New API Token"
+                                                </span>
+                                                <div class="flex gap-2 items-center">
+                                                    <code class="bg-background p-2 rounded border flex-1 font-mono text-sm">
+                                                        {token}
+                                                    </code>
+                                                    <p class="text-xs text-muted-foreground italic">
+                                                        "Make sure to copy this now. You won't see it again!"
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        }
+                                            .into_any()
+                                    }
+                                    Err(e) => {
+                                        view! { <p class="text-destructive">{e.to_string()}</p> }
+                                            .into_any()
+                                    }
+                                }
+                            })
+                    }}
 
                     <div class="flex gap-4 justify-end">
                         <CreateBaseDialog

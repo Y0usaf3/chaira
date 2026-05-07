@@ -61,13 +61,14 @@ pub fn App() -> impl IntoView {
     view! {
         <Stylesheet id="leptos" href="/pkg/chara.css" />
 
-        <Title text="ChairaTastic!" />
+        <Title text="Chaira" />
 
         <Router>
             <main>
                 <Routes fallback=|| "Page not found.".into_view()>
                     <Route path=StaticSegment("") view=HomePage />
                     <Route path=path!("/dashboard") view=DashboardPage />
+                    <Route path=path!("/base/:id") view=BasePage />
                 </Routes>
             </main>
         </Router>

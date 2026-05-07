@@ -55,8 +55,32 @@ pub enum AuthMethod {
 #[derive(Debug)]
 pub struct UserService {
     pub user: User,
-    user_record_id: UserId,
+    pub user_record_id: UserId,
     pub current_base: Option<BaseService>,
+}
+
+#[cfg(feature = "ssr")]
+impl<S> axum::extract::FromRequestParts<S> for UserService
+where
+    S: Send + Sync,
+{
+    type Rejection = Irror;
+
+    async fn from_request_parts(
+        parts: &mut axum::http::request::Parts,
+        _state: &S,
+    ) -> Result<Self, Self::Rejection> {
+        if let Some(auth_header) = parts.headers.get("Authorization")
+        {
+            if let Ok(auth_str) = auth_header.to_str() {
+                if let Some(token) = auth_str.strip_prefix("Bearer ") {
+                    return crate::service::api::ApiService::get_user(token.to_string()).await;
+                }
+            }
+        }
+
+        Err(Irror::Auth(AuthError::InvalidToken))
+    }
 }
 
 impl UserService {
@@ -341,16 +365,28 @@ impl UserService {
                 OR (SELECT VALUE role FROM $user)[0] == 'admin'
                 OR id IN (
                     SELECT VALUE out FROM can_access_base 
-                    WHERE in = $user 
+                    WHERE in = $user
                     AND mod::bit::can(perms, 2)
                 )
-            );
+            ) ORDER BY created_at ASC;
             ",
             )
             .bind(("user", self.user_record_id.clone()))
             .await?;
         let bases: Vec<Base> = res.take(0)?;
         Ok(bases)
+    }
+
+    pub async fn create_api_token(&self) -> Result<String, Irror> {
+        let bytes: Vec<u8> = (0..32).map(|_| rand::rng().random()).collect();
+        let raw_token = general_purpose::STANDARD.encode(bytes).to_string();
+        let res = DB
+            .query("CREATE api_token SET user = $user, `token` = $tokenn")
+            .bind(("user", self.user_record_id.clone())) //
+            .bind(("tokenn", raw_token.clone()))
+            .await?;
+        res.check().map_err(|e| Irror::Db(e.to_string()))?;
+        Ok(raw_token)
     }
 }
 

@@ -8,6 +8,8 @@ use surrealdb::types::SurrealValue;
 
 // TODO: gotta work here :sob:
 // fr :noooooovanish:
+//
+// TODO: make functions to get the list of fields and another to get the entire table data
 
 #[derive(Debug, Clone)]
 pub struct TableService {
@@ -206,26 +208,22 @@ impl TableService {
             4
         );
 
-        IF $is_owner OR $has_table_edit THEN
-            (
-                
-                UPDATE record SET cells = object::remove(cells, $field)
-                WHERE table = $table_id AND is_deleted = false;
-                
-                UPDATE $field SET 
-                    is_deleted = true,
-                    updated_at = time::now()
-            )
-        END;
-    ",
+        IF $is_owner OR $has_table_edit THEN {
+            UPDATE record SET cells = object::remove(cells, <string>$field)
+            WHERE table = $table_id AND is_deleted = false;
+            
+            UPDATE $field SET 
+                is_deleted = true,
+                updated_at = time::now();
+        } END;
+        ",
             )
             .bind(("user", self.user.clone()))
             .bind(("base_id", self.base.clone()))
             .bind(("table_id", self.table_record_id.clone()))
             .bind(("field", field))
             .await?;
-
-        let deleted_field: Option<Field> = res.take(4)?;
+        let deleted_field: Option<Field> = res.take(2)?;
 
         match deleted_field {
             Some(f) => Ok(f),
@@ -286,6 +284,7 @@ impl TableService {
             table = $table_id AND 
             is_deleted = false AND
             ($is_owner OR mod::bit::can($perms, 2))
+        ORDER BY created_at ASC
         LIMIT $limit
         START $skip;",
             )
@@ -298,6 +297,40 @@ impl TableService {
         let records: Vec<Record> = res.take(2)?;
 
         Ok(records)
+    }
+
+    pub async fn get_full_data(
+        &self,
+        limit: Option<u32>,
+    ) -> Result<(Vec<Field>, Vec<Record>), Irror> {
+        let limit = limit.unwrap_or(100);
+        let mut res = DB
+            .query(
+                "
+                LET $is_owner = (SELECT VALUE owner FROM $table_id.base)[0] == $user;
+                LET $perms = (
+                    SELECT VALUE perms 
+                    FROM can_access_table 
+                    WHERE in = $user AND out = $table_id
+                )[0] ?? 0;
+
+                IF !$is_owner AND !mod::bit::can($perms, 2) {
+                    THROW 'Permission Denied';
+                };
+
+                SELECT * FROM field WHERE table = $table_id AND is_deleted = false ORDER BY created_at ASC;
+                SELECT * FROM record WHERE table = $table_id AND is_deleted = false ORDER BY created_at ASC LIMIT $limit;
+            ",
+            )
+            .bind(("table_id", self.table_record_id.clone()))
+            .bind(("user", self.user.clone()))
+            .bind(("limit", limit))
+            .await?;
+
+        let fields: Vec<Field> = res.take(3)?;
+        let records: Vec<Record> = res.take(4)?;
+
+        Ok((fields, records))
     }
 
     pub async fn create_record(&self, record: InsertRecord) -> Result<Record, Irror> {

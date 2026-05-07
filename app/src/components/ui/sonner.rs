@@ -156,3 +156,48 @@ pub fn SonnerToaster(
     }
 }
 
+#[derive(Clone, Copy)]
+pub struct ToastContext {
+    pub toasts: RwSignal<Vec<Toast>>,
+}
+
+#[derive(Clone, PartialEq)]
+pub struct Toast {
+    pub id: u64,
+    pub title: String,
+    pub description: String,
+    pub variant: ToastType,
+}
+
+impl ToastContext {
+    pub fn push(&self, title: &str, description: &str, variant: ToastType) {
+        let id = js_sys::Math::random() as u64; // Simple ID generation
+        self.toasts.update(|t| {
+            t.push(Toast {
+                id,
+                title: title.to_string(),
+                description: description.to_string(),
+                variant,
+            })
+        });
+
+        // Optional: Auto-remove after 4 seconds
+        let toasts = self.toasts;
+        set_timeout(
+            move || {
+                toasts.update(|t| t.retain(|toast| toast.id != id));
+            },
+            std::time::Duration::from_secs(4),
+        );
+    }
+}
+
+pub fn provide_toast_context() {
+    provide_context(ToastContext {
+        toasts: RwSignal::new(Vec::new()),
+    });
+}
+
+pub fn use_toast() -> ToastContext {
+    use_context::<ToastContext>().expect("ToastContext not provided")
+}

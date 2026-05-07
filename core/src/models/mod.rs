@@ -1,3 +1,4 @@
+pub mod api_token;
 pub mod base;
 pub mod field;
 pub mod identity;
@@ -8,6 +9,7 @@ pub mod session;
 pub mod table;
 pub mod user;
 
+pub use api_token::*;
 pub use base::*;
 pub use field::*;
 pub use identity::*;

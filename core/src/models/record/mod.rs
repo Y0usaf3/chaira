@@ -6,7 +6,7 @@ use surrealdb::types::{Datetime, SurrealValue};
 pub mod cell;
 use crate::models::record::cell::*;
 
-#[derive(Debug, Clone, PartialEq, Eq, SurrealValue)]
+#[derive(Debug, Clone, PartialEq, Eq, SurrealValue, serde::Serialize, serde::Deserialize)]
 pub struct Record {
     pub id: Option<RecordId>,
     pub created_at: Option<Datetime>,
@@ -16,11 +16,13 @@ pub struct Record {
     pub table: TableId,
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct InsertRecord {
     pub table: TableId,
     pub cells: HashMap<String, CellValue>,
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct RecordPatch {
     pub changed_cells: Option<Vec<(String, CellValue)>>,
 }

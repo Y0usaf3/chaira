@@ -13,15 +13,15 @@ macro_rules! env_required {
 
 use std::sync::LazyLock;
 use surrealdb::Surreal;
-use surrealdb::engine::local::{Db, Mem};
-use surrealdb::opt::Config;
+//use surrealdb::engine::local::{Db, Mem};
+//use surrealdb::opt::Config;
 
 pub mod error;
 pub use error::Irror;
 
 use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::opt::auth::Root;
-use surrealdb::opt::capabilities::{Capabilities, ExperimentalFeature};
+//use surrealdb::opt::capabilities::{Capabilities, ExperimentalFeature};
 
 pub static DB: LazyLock<Surreal<Client>> = LazyLock::new(Surreal::init);
 //pub static DB: LazyLock<Surreal<Db>> = LazyLock::new(Surreal::init);
@@ -40,10 +40,12 @@ pub async fn init() {
     .await
     .unwrap();
 
+    let bit_path = env_required!("BIT_PATH");
+    let bit_bucket_path = format!("file:{}", bit_path);
+
     DB.use_ns("main").use_db("main").await.unwrap();
-    let res = DB
-        .query(include_str!("../../SQL/main.surql"))
+    DB.query(include_str!("../../SQL/main.surql"))
+        .bind(("bit_bucket_path", bit_bucket_path))
         .await
         .unwrap();
-    dbg!(res);
 }

@@ -86,3 +86,18 @@ pub enum DatabaseError {
     #[error("Transaction failed to commit: {0}")]
     TransactionFailed(String),
 }
+
+#[derive(Error, Debug)]
+pub enum ApiError {
+    #[error("Token not found or access denied")]
+    NotFound,
+
+    #[error("Failed to create table")]
+    CreateFailed,
+
+    #[error("Failed to delete table")]
+    DeleteFailed,
+
+    #[error("This action is unauthorized")]
+    Unauthorized,
+}

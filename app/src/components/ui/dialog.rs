@@ -69,6 +69,23 @@ pub fn DialogTrigger(
 }
 
 #[component]
+pub fn DialogCustomTrigger(
+    children: Children,
+    #[prop(optional, into)] class: String,
+) -> impl IntoView {
+    let ctx = expect_context::<DialogContext>();
+    view! {
+        <div
+            class=tw_merge!("contents cursor-pointer", class)
+            data-dialog-trigger=ctx.target_id
+            tabindex="0"
+        >
+            {children()}
+        </div>
+    }
+}
+
+#[component]
 pub fn DialogContent(
     children: Children,
     #[prop(optional, into)] class: String,

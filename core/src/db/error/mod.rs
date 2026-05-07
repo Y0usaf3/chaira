@@ -1,14 +1,15 @@
 use axum::{
+    Json,
     http::StatusCode,
     response::{IntoResponse, Response},
-    Json,
 };
 use chacha20poly1305::Error as EncryptionErr;
 use serde_json::json;
 use thiserror::Error;
 
 use crate::service::errors::{
-    AuthError, BaseError, DatabaseError, EncryptionError, PermissionError, TableError, UserError,
+    ApiError, AuthError, BaseError, DatabaseError, EncryptionError, PermissionError, TableError,
+    UserError,
 };
 
 #[derive(Error, Debug)]
@@ -36,6 +37,9 @@ pub enum Irror {
 
     #[error("table error: {0}")]
     Table(#[from] TableError),
+
+    #[error("api error: {0}")]
+    Api(#[from] ApiError),
 }
 
 impl IntoResponse for Irror {

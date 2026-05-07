@@ -6,13 +6,13 @@ use surrealdb::types::*;
 // Administrative privileges are granted explicitly by the system. (soon™)
 // Only Administators can apply patches to Users.
 
-#[derive(Debug, Clone, PartialEq, SurrealValue)]
+#[derive(Debug, Clone, PartialEq, SurrealValue, serde::Serialize, serde::Deserialize)]
 pub enum UserRole {
     User,
     Admin,
 }
 
-#[derive(Debug, Clone, PartialEq, SurrealValue)]
+#[derive(Debug, Clone, PartialEq, SurrealValue, serde::Serialize, serde::Deserialize)]
 pub struct User {
     pub id: Option<UserId>,
     pub created_at: Option<Datetime>,
@@ -21,20 +21,21 @@ pub struct User {
     pub first_name: String,
     pub last_name: String,
     pub email: String,
-    role: String,
+    pub role: String,
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct InsertUser {
-    pub(crate) first_name: String,
-    pub(crate) last_name: String,
-    pub(crate) email: String,
+    pub first_name: String,
+    pub last_name: String,
+    pub email: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct UserPatch {
-    pub(crate) is_deleted: Option<bool>,
-    pub(crate) first_name: Option<String>,
-    pub(crate) last_name: Option<String>,
+    pub is_deleted: Option<bool>,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
 }
 
 impl User {

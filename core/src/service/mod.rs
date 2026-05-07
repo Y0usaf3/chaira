@@ -1,5 +1,6 @@
 use crate::db::Irror;
 
+pub mod api;
 pub mod base;
 pub mod crypter;
 pub mod errors;

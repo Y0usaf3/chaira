@@ -1,13 +1,23 @@
-pub mod db;
 pub mod models;
+
+#[cfg(feature = "ssr")]
+pub mod db;
+#[cfg(feature = "ssr")]
 pub mod service;
+
+#[cfg(feature = "ssr")]
 pub use db::init;
+#[cfg(feature = "ssr")]
 pub use dotenvy;
 
+#[cfg(feature = "ssr")]
 use chacha20poly1305::Key;
+#[cfg(feature = "ssr")]
 use hackclub_auth_api::HCAuth;
+#[cfg(feature = "ssr")]
 use std::sync::LazyLock;
 
+#[cfg(feature = "ssr")]
 pub static HCAUTH: LazyLock<HCAuth> = LazyLock::new(|| {
     HCAuth::new(
         env_required!("CLIENT_ID").as_str(),
@@ -16,6 +26,7 @@ pub static HCAUTH: LazyLock<HCAuth> = LazyLock::new(|| {
     )
 });
 
+#[cfg(feature = "ssr")]
 pub static MASTER_KEY: LazyLock<Key> = LazyLock::new(|| {
     let key_hex = env_required!("MASTER_KEY");
     let key_bytes = hex::decode(&key_hex).expect("MASTER_KEY must be valid hex string");

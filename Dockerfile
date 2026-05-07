@@ -9,17 +9,23 @@ RUN dpkg --add-architecture arm64 && \
     apt-get update && \
     apt-get install -y libssl-dev:arm64
 
-ENV NVM_DIR /root/.nvm
+ENV NVM_DIR=/root/.nvm
+RUN mkdir -p $NVM_DIR
+
+# Install NVM and Node 24
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash \
     && . "$NVM_DIR/nvm.sh" \
     && nvm install 24 \
     && nvm use 24 \
     && nvm alias default 24
 
-ENV PATH $NVM_DIR/versions/node/v24.14.1/bin:$PATH
+# Dynamically set PATH so it doesn't break on minor version updates
+ENV PATH="/root/.nvm/versions/node/v24.15.0/bin:$PATH"
 
 RUN curl -fsSL https://bun.sh/install | bash
 ENV PATH="/root/.bun/bin:$PATH"
+
+RUN node -v && npm -v && bun -v
 
 RUN curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
 RUN cargo binstall cargo-leptos -y
@@ -38,7 +44,8 @@ RUN bun install
 
 COPY . .
 
-RUN cargo leptos build --release -v 
+ENV RUST_BACKTRACE=full
+RUN cargo leptos build --release -v
 
 FROM --platform=linux/arm64 debian:trixie-slim as runtime
 WORKDIR /app

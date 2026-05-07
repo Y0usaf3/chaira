@@ -11,7 +11,7 @@ use validator::ValidateLength;
 
 pub const MAX_TEXT_LENGHT: u32 = 999_999; // ~1MB single byte chars
 
-#[derive(Error, Debug, Clone, PartialEq, Eq, SurrealValue)]
+#[derive(Error, Debug, Clone, PartialEq, Eq, SurrealValue, serde::Serialize, serde::Deserialize)]
 pub enum CellError {
     #[error("Invalid email format: {0}")]
     InvalidEmail(String),
@@ -50,7 +50,7 @@ pub enum CellError {
     TextTooBig(u64),
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct CellValue {
     pub id: CellId,
     pub created_at: Datetime,
@@ -149,7 +149,7 @@ impl Value {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum Value {
     SingleLine(SingleLineValue),
     LongText(Box<LongTextValue>),
@@ -174,17 +174,17 @@ pub enum Value {
     JSON(Box<JsonValue>),
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct AttachmentItem {
-    file_id: Uuid,   // UUID
-    name: String,    // the original name of the file
-    mime_type: Meme, // e.g., "image/jpeg"
-    size: usize,     // size in bytes
-    uploaded_at: Datetime,
+    pub(crate) file_id: Uuid,   // UUID
+    pub(crate) name: String,    // the original name of the file
+    pub(crate) mime_type: Meme, // e.g., "image/jpeg"
+    pub(crate) size: usize,     // size in bytes
+    pub(crate) uploaded_at: Datetime,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Meme(pub mime::Mime);
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+pub struct Meme(pub String); // Store as string for simplicity in Serde
 
 impl surrealdb::types::SurrealValue for Meme {
     fn kind_of() -> Kind {
@@ -192,14 +192,12 @@ impl surrealdb::types::SurrealValue for Meme {
     }
 
     fn into_value(self) -> XValue {
-        XValue::String(String::from(self.0.to_string()))
+        XValue::String(self.0)
     }
 
     fn from_value(value: XValue) -> Result<Self, surrealdb::Error> {
         match value {
-            XValue::String(s) => mime::Mime::from_str(&s)
-                .map(Meme)
-                .map_err(|e| surrealdb::Error::thrown(format!("Invalid MIME type: {}", e))),
+            XValue::String(s) => Ok(Meme(s)),
             _ => Err(surrealdb::Error::thrown(
                 "Expected a string (Strand) for MimeWrapper".to_string(),
             )),
@@ -212,38 +210,22 @@ impl surrealdb::types::SurrealValue for Meme {
 }
 
 impl AttachmentItem {
-    // function for only new attachement, if we already have one then serde should do the job
     pub fn new(file_id: Uuid, name: String, mime_type: mime::Mime, size: usize) -> Self {
         Self {
             file_id,
             name,
-            mime_type: Meme(mime_type),
+            mime_type: Meme(mime_type.to_string()),
             size,
             uploaded_at: Datetime::from(chrono::Utc::now()),
         }
     }
 
-    // functions placeholder so we can add S3 after
-    //pub fn s3_key(&self) -> String {
-    //    self.file_id.to_string()
-    //}
-    //
-    //pub fn content_disposition(&self) -> String {
-    //    format!("attachment; filename=\"{}\"", self.name)
-    //}
-
     pub fn mime_str(&self) -> String {
-        self.mime_type.0.to_string()
+        self.mime_type.0.clone()
     }
 
-    pub fn is_displayable_image(&self) -> bool {
-        matches!(
-            (self.mime_type.0.type_(), self.mime_type.0.subtype()),
-            (mime::IMAGE, mime::JPEG)
-                | (mime::IMAGE, mime::PNG)
-                | (mime::IMAGE, mime::GIF)
-                | (mime::IMAGE, mime::SVG)
-        )
+    pub fn readability_mime(&self) -> String {
+        self.mime_type.0.clone()
     }
 
     pub fn readable_size(&self) -> String {
@@ -251,7 +233,7 @@ impl AttachmentItem {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct AttachmentValue {
     files: Vec<AttachmentItem>,
 }
@@ -265,7 +247,7 @@ impl AttachmentValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct JsonValue {
     pub value: String, // use a strong type for json so we make sure its parseable
 }
@@ -282,7 +264,7 @@ impl JsonValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct ModifiedTimeValue {
     pub value: Datetime,
 }
@@ -296,7 +278,7 @@ impl ModifiedTimeValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct CreatedAtValue {
     pub value: Datetime,
 }
@@ -310,7 +292,7 @@ impl CreatedAtValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct AutoNumberValue {
     value: usize,
     prefix: Prefix,
@@ -345,7 +327,7 @@ impl AutoNumberValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct FormulaValue {
     expression: String, // change it by an Expression type to make sure abt safty
     result: Box<Value>,
@@ -353,7 +335,6 @@ pub struct FormulaValue {
 
 impl FormulaValue {
     pub fn new(expression: String, value: Value) -> Self {
-        // TODO: make sure expression is correct, and should return a Box<Value>
         FormulaValue {
             expression,
             result: Box::new(value),
@@ -369,12 +350,7 @@ impl FormulaValue {
     }
 }
 
-// so for rollups and lookups, its a bit tricky, we have the field id, but we also have to update
-// it, so the solution is that we use surrealdbs event/trigger stuff to automaticly update the data
-// to the tables
-// work on code type safety to make this as ez as cake :p
-
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct RollUpValue {
     link_field_id: FieldId,
     target_field_id: FieldId,
@@ -412,7 +388,7 @@ impl RollUpValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct LookUpValue {
     link_field_id: FieldId,
     target_field_id: FieldId,
@@ -439,7 +415,7 @@ impl LookUpValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct LinkValue {
     pub target_table_id: TableId,
     pub record_ids: Vec<RecordId>,
@@ -466,7 +442,7 @@ impl LinkValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct DurationValue {
     value: Duration,
 }
@@ -481,7 +457,7 @@ impl DurationValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct DateValue {
     value: Datetime,
 }
@@ -496,7 +472,7 @@ impl DateValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct RatingValue {
     value: u8,
 }
@@ -517,7 +493,7 @@ impl RatingValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct PercentValue {
     value: i32,
 }
@@ -531,7 +507,7 @@ impl PercentValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct CurrencyValue {
     value: i64,
     currency_symbole: String,
@@ -557,17 +533,16 @@ impl CurrencyValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct DecimalValue {
     value: OrderedFloatIThink,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct OrderedFloatIThink(pub OrderedFloat<f64>);
 
 impl surrealdb::types::SurrealValue for OrderedFloatIThink {
     fn kind_of() -> Kind {
-        // In the database, this is essentially a decimal/number
         Kind::Float
     }
 
@@ -610,7 +585,7 @@ impl DecimalValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct NumberValue {
     value: usize,
 }
@@ -633,7 +608,7 @@ impl NumberValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct PhoneValue {
     value: String,
 }
@@ -660,7 +635,7 @@ impl PhoneValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct UrlValue {
     value: String,
 }
@@ -681,7 +656,7 @@ impl UrlValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct Email {
     value: String,
 }
@@ -702,7 +677,7 @@ impl Email {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct LongTextValue {
     value: String,
 }
@@ -729,7 +704,7 @@ impl LongTextValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct SingleLineValue {
     value: String,
 }

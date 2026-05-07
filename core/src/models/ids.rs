@@ -14,5 +14,5 @@ macro_rules! define_ids {
 // Now you can define all of them at once :3
 define_ids!(
     BaseId, TableId, UserId, CellId, RowId, RecordId, FieldId, RelationId, IdentityId, SessionId,
-    ViewId
+    ViewId, ApiTokenId
 );

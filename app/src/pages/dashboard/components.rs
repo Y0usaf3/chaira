@@ -16,7 +16,7 @@ pub fn CreateBaseDialog(
     title: impl IntoView + 'static,
     create_action: Action<String, Result<UserBase, ServerFnError>>,
 ) -> impl IntoView {
-    let (name, set_name) = signal("".to_string());
+    let name = RwSignal::new("".to_string());
     let (create_message, set_create_message) = signal::<Option<Result<(), String>>>(None);
 
     Effect::new(move |_| {
@@ -52,12 +52,7 @@ pub fn CreateBaseDialog(
                     <div class="flex flex-col gap-4 justify-center">
                         <div class="flex flex-col gap-2">
                             <Label html_for="name-1">Name</Label>
-                            <Input
-                                on:input=move |ev| {
-                                    set_name.set(event_target_value(&ev));
-                                }
-                                prop:value=move || name.get()
-                            />
+                            <Input bind_value=name />
                         </div>
                     </div>
 
@@ -68,7 +63,7 @@ pub fn CreateBaseDialog(
                             attr:disabled=move || create_action.pending().get()
                             on:click=move |_| {
                                 create_action.dispatch(name.get());
-                                set_name.set("".to_string());
+                                name.set("".to_string());
                             }
                         >
                             "Create"
@@ -107,7 +102,9 @@ pub fn BaseBox(base: UserBase) -> impl IntoView {
     view! {
         <div
             class="p-2 border rounded-lg bg-card"
-            on:click=move |_| { window().location().assign(format!("/base/{}", base.id).as_str()).unwrap() }
+            on:click=move |_| {
+                window().location().assign(format!("/base/{}", base.id).as_str()).unwrap()
+            }
         >
             <span class="font-bold">{base.name}</span>
             <p class="text-xs text-muted-foreground">"Owner: " {base.owner_name}</p>

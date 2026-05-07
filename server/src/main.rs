@@ -1,6 +1,5 @@
 use app::*;
 use axum::Router;
-use axum::extract::FromRef;
 use axum::routing::get;
 use axum_extra::extract::cookie::Key;
 use leptos::prelude::*;
@@ -8,6 +7,7 @@ use leptos_axum::{LeptosRoutes, generate_route_list};
 use std::net::SocketAddr;
 
 mod oauth;
+mod api;
 
 #[tokio::main]
 async fn main() {
@@ -29,6 +29,7 @@ async fn main() {
     let routes = generate_route_list(App);
 
     let app = Router::new()
+        .nest("/api", api::router())
         .route("/callback", get(oauth::oauth))
         .route("/auth", get(oauth::redirect_to_oauth))
         .leptos_routes_with_context(

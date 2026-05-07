@@ -8,6 +8,16 @@ pub struct UserBase {
 }
 
 #[server]
+pub async fn create_token() -> Result<String, ServerFnError> {
+    let start = std::time::Instant::now();
+    let service = crate::get_authenticated_service().await?;
+    let raw_token = service.create_api_token().await?;
+    let duration = start.elapsed().as_millis();
+    println!("created api token in {}ms", duration);
+    Ok(raw_token)
+}
+
+#[server]
 pub async fn get_user_bases() -> Result<Vec<UserBase>, ServerFnError> {
     use std::time::Instant;
     use surrealdb::types::ToSql;

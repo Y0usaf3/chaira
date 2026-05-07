@@ -7,7 +7,7 @@ use surrealdb::types::{Datetime, SurrealValue};
 // Only authorized users of the parent Workspace (typically the owner or admins)
 // are allowed to modify or soft-delete a Base.
 
-#[derive(SurrealValue, Debug, Clone, PartialEq)]
+#[derive(SurrealValue, Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Base {
     pub id: Option<BaseId>,
     pub created_at: Option<Datetime>,
@@ -17,14 +17,16 @@ pub struct Base {
     pub name: String,
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct InsertBase {
-    pub(crate) name: String,
-    pub(crate) owner: UserId,
+    pub name: String,
+    pub owner: UserId,
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct BasePatch {
-    pub(crate) is_deleted: Option<bool>,
-    pub(crate) name: Option<String>,
+    pub is_deleted: Option<bool>,
+    pub name: Option<String>,
 }
 
 impl Base {

@@ -3,4 +3,10 @@ name = "charli"
 version = "0.0.1"
 edition = "2024"
 
+[lib]
+crate-type = [ "cdylib" ]
+
 [dependencies]
+models = { path="../models/" }
+surrealism = "0.3.0"
+surrealdb-types.workspace = true

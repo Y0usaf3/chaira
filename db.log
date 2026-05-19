@@ -9,21 +9,20 @@ Y88b  d88P Y88b 888 888     888     Y8b.     888  888 888 888  .d88P 888   d88P
  'Y8888P'   'Y88888 888     888      'Y8888  'Y888888 888 8888888P'  8888888P'
 
 
-[2m2026-05-19T14:40:45.054487Z[0m [32m INFO[0m [2msurrealdb_server::env[0m[2m:[0m Running 3.0.5 for linux on x86_64
-[2m2026-05-19T14:40:45.054574Z[0m [32m INFO[0m [2msurrealdb::core::kvs::ds[0m[2m:[0m Starting kvs store in memory
-[2m2026-05-19T14:40:45.057137Z[0m [32m INFO[0m [2msurrealdb::core::kvs::ds[0m[2m:[0m Started kvs store in memory
-[2m2026-05-19T14:40:45.066351Z[0m [32m INFO[0m [2msurreal::dbs[0m[2m:[0m Operation succeeded [3moperation[0m[2m=[0m"check_version" [3mattempts[0m[2m=[0m1
-[2m2026-05-19T14:40:45.066373Z[0m [32m INFO[0m [2msurrealdb::core::kvs::ds[0m[2m:[0m This is a new SurrealDB instance. Initialising default namespace 'main' and database 'main'
-[2m2026-05-19T14:40:45.067032Z[0m [32m INFO[0m [2msurreal::dbs[0m[2m:[0m Operation succeeded [3moperation[0m[2m=[0m"initialise_defaults" [3mattempts[0m[2m=[0m1
-[2m2026-05-19T14:40:45.067039Z[0m [32m INFO[0m [2msurreal::dbs[0m[2m:[0m Initialising credentials [3muser[0m[2m=[0mroot
-[2m2026-05-19T14:40:45.067057Z[0m [32m INFO[0m [2msurrealdb::core::kvs::ds[0m[2m:[0m Credentials were provided, and no root users were found. The root user 'root' will be created
-[2m2026-05-19T14:40:45.098586Z[0m [32m INFO[0m [2msurreal::dbs[0m[2m:[0m Operation succeeded [3moperation[0m[2m=[0m"initialise_credentials" [3mattempts[0m[2m=[0m1
-[2m2026-05-19T14:40:45.223257Z[0m [32m INFO[0m [2msurreal::dbs[0m[2m:[0m Operation succeeded [3moperation[0m[2m=[0m"Insert node" [3mattempts[0m[2m=[0m1
-[2m2026-05-19T14:40:45.223304Z[0m [32m INFO[0m [2msurreal::dbs[0m[2m:[0m Operation succeeded [3moperation[0m[2m=[0m"Expire nodes" [3mattempts[0m[2m=[0m1
-[2m2026-05-19T14:40:45.223324Z[0m [32m INFO[0m [2msurreal::dbs[0m[2m:[0m Operation succeeded [3moperation[0m[2m=[0m"Remove nodes" [3mattempts[0m[2m=[0m1
-[2m2026-05-19T14:40:45.223906Z[0m [32m INFO[0m [2msurrealdb::net[0m[2m:[0m Started web server on 127.0.0.1:8000
-[2m2026-05-19T14:40:45.226133Z[0m [32m INFO[0m [2msurrealdb::net[0m[2m:[0m Listening for a system shutdown signal.
-[2m2026-05-19T17:17:42.400099Z[0m [32m INFO[0m [2msurrealdb::net[0m[2m:[0m Listening for a system shutdown signal.
-[2m2026-05-19T17:17:42.400247Z[0m [32m INFO[0m [2msurrealdb::net[0m[2m:[0m Web server stopped. Bye!
-[2m2026-05-19T17:17:42.400079Z[0m [33m WARN[0m [2msurrealdb::net[0m[2m:[0m SIGTERM received. Waiting for a graceful shutdown. A second signal will force an immediate shutdown.
+[2m2026-05-19T20:24:30.839792Z[0m [32m INFO[0m [2msurrealdb_server::env[0m[2m:[0m Running 3.0.5 for linux on x86_64
+[2m2026-05-19T20:24:30.839860Z[0m [32m INFO[0m [2msurrealdb::core::kvs::ds[0m[2m:[0m Starting kvs store in memory
+[2m2026-05-19T20:24:30.842949Z[0m [32m INFO[0m [2msurrealdb::core::kvs::ds[0m[2m:[0m Started kvs store in memory
+[2m2026-05-19T20:24:30.854231Z[0m [32m INFO[0m [2msurreal::dbs[0m[2m:[0m Operation succeeded [3moperation[0m[2m=[0m"check_version" [3mattempts[0m[2m=[0m1
+[2m2026-05-19T20:24:30.854261Z[0m [32m INFO[0m [2msurrealdb::core::kvs::ds[0m[2m:[0m This is a new SurrealDB instance. Initialising default namespace 'main' and database 'main'
+[2m2026-05-19T20:24:30.855225Z[0m [32m INFO[0m [2msurreal::dbs[0m[2m:[0m Operation succeeded [3moperation[0m[2m=[0m"initialise_defaults" [3mattempts[0m[2m=[0m1
+[2m2026-05-19T20:24:30.855238Z[0m [32m INFO[0m [2msurreal::dbs[0m[2m:[0m Initialising credentials [3muser[0m[2m=[0mroot
+[2m2026-05-19T20:24:30.855263Z[0m [32m INFO[0m [2msurrealdb::core::kvs::ds[0m[2m:[0m Credentials were provided, and no root users were found. The root user 'root' will be created
+[2m2026-05-19T20:24:30.900962Z[0m [32m INFO[0m [2msurreal::dbs[0m[2m:[0m Operation succeeded [3moperation[0m[2m=[0m"initialise_credentials" [3mattempts[0m[2m=[0m1
+[2m2026-05-19T20:24:31.019865Z[0m [32m INFO[0m [2msurreal::dbs[0m[2m:[0m Operation succeeded [3moperation[0m[2m=[0m"Insert node" [3mattempts[0m[2m=[0m1
+[2m2026-05-19T20:24:31.019903Z[0m [32m INFO[0m [2msurreal::dbs[0m[2m:[0m Operation succeeded [3moperation[0m[2m=[0m"Expire nodes" [3mattempts[0m[2m=[0m1
+[2m2026-05-19T20:24:31.019919Z[0m [32m INFO[0m [2msurreal::dbs[0m[2m:[0m Operation succeeded [3moperation[0m[2m=[0m"Remove nodes" [3mattempts[0m[2m=[0m1
+[2m2026-05-19T20:24:31.020155Z[0m [32m INFO[0m [2msurrealdb::net[0m[2m:[0m Started web server on 127.0.0.1:8000
+[2m2026-05-19T20:24:31.020227Z[0m [31mERROR[0m [2msurrealdb_server::cli[0m[2m:[0m Address already in use (os error [2m2026-05-19T20:26:18.946475Z[0m [33m WARN[0m [2msurrealdb::net[0m[2m:[0m SIGTERM received. Waiting for a graceful shutdown. A second signal will force an immediate shutdown.
+[2m2026-05-19T20:26:18.946494Z[0m [32m INFO[0m [2msurrealdb::net[0m[2m:[0m Listening for a system shutdown signal.
+[2m2026-05-19T20:26:18.946629Z[0m [32m INFO[0m [2msurrealdb::net[0m[2m:[0m Web server stopped. Bye!
 Goodbye!

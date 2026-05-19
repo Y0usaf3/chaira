@@ -3,12 +3,17 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+    naersk = {
+      url = "github:nix-community/naersk";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     surrealdb-bin.url = "github:dmitriiStepanidenko/surrealdb-nixos";
   };
 
   outputs = {
     self,
     nixpkgs,
+    naersk,
     surrealdb-bin,
   }: let
     system = "x86_64-linux";
@@ -16,12 +21,13 @@
       system = "x86_64-linux";
       config.allowUnfree = true;
     };
-    # a way to write custom scripts, pretty useful
-    # my-custom-script = pkgs.writeShellScriptBin "start-app" ''
-    #   echo "Starting backend and frontend..."
-    #   cargo run
-    # '';
+    naerskLib = pkgs.callPackage naersk {};
   in {
+    packages.${system}.default = naerskLib.buildPackage {
+      src = ./.;
+      buildInputs = [pkgs.glib];
+      nativeBuildInputs = [pkgs.pkg-config];
+    };
     devShells.${system}.default = pkgs.mkShell {
       buildInputs = with pkgs; [
         cargo

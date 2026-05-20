@@ -8,6 +8,7 @@ surrealdb.workspace = true
 thiserror.workspace = true
 axum.workspace = true 
 hackclub_auth_api = "0.1.5"
+iso_currency = { version = "0.5.3", features = ["with-serde"] }
 models = { path="../models/" }
 base64 = "0.22.1"
 dotenvy = "0.15.7"
@@ -18,3 +19,4 @@ validator.workspace = true
 serde.workspace = true
 rand = "0.10.1"
 chrono = "0.4.44"
+tokio.workspace = true

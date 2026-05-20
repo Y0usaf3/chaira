@@ -4092,12 +4092,14 @@ dependencies = [
  "dotenvy",
  "hackclub_auth_api",
  "hex",
+ "iso_currency",
  "models",
  "rand 0.10.1",
  "serde",
  "serde_json",
  "surrealdb",
  "thiserror",
+ "tokio",
  "validator",
 ]
 

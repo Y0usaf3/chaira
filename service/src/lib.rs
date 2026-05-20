@@ -1,9 +1,9 @@
-mod base;
+pub mod base;
 pub mod db;
 mod encrypter;
-mod prelude;
-mod table;
-mod user;
+pub mod prelude;
+pub mod table;
+pub mod user;
 
 use crate::prelude::*;
 
@@ -26,6 +26,8 @@ pub static MASTER_KEY: LazyLock<Key> = LazyLock::new(|| {
     Key::from(key_array)
 });
 
+// TODO: all the type checking part should be done in the models side rather than the service side
+//
 // simple thing to make sure the text is approved
 pub fn approved(s: &str) -> Result<(), Irror> {
     if s.is_empty() || s.len() >= 30 {

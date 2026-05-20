@@ -6,6 +6,11 @@ use crate::prelude::*;
 // fr :noooooovanish:
 //
 // TODO: make functions to get the list of fields and another to get the entire table data
+//
+// fuck it fuck it we're REWRITING the damn table service, and the tables too, BECAUSE i suck at
+// making it fast
+// first of all im going to research how airtable stores their data
+// https://databasesample.com/blog/airtable-sql
 
 #[derive(Debug, Clone)]
 pub struct TableService {

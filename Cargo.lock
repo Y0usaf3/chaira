@@ -440,6 +440,20 @@ name = "bytemuck"
 version = "1.25.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c8efb64bd706a16a1bdde310ae86b351e4d21550d98d056f22f8a7f7a2183fec"
+dependencies = [
+ "bytemuck_derive",
+]
+
+[[package]]
+name = "bytemuck_derive"
+version = "1.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f9abbd1bc6865053c427f7198e6af43bfdedc55ab791faed4fbd361d789575ff"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
+]
 
 [[package]]
 name = "byteorder"
@@ -844,6 +858,64 @@ dependencies = [
  "const-oid",
  "crypto-common",
  "subtle",
+]
+
+[[package]]
+name = "diskann"
+version = "0.51.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fcf3192951e5f655f920eb4f12630484c5ea82b7a5ba48ce520ffeb9dfd09fdf"
+dependencies = [
+ "anyhow",
+ "bytemuck",
+ "diskann-utils",
+ "diskann-vector",
+ "diskann-wide",
+ "futures-util",
+ "half",
+ "hashbrown 0.16.1",
+ "num-traits",
+ "rand 0.9.4",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
+name = "diskann-utils"
+version = "0.51.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "438e13c0a900b79103d51ceda2ac6479ed873e206712dbbbdd31853505a64cc1"
+dependencies = [
+ "bytemuck",
+ "cfg-if",
+ "diskann-vector",
+ "diskann-wide",
+ "half",
+ "rand 0.9.4",
+ "rand_distr",
+ "rayon",
+ "thiserror",
+]
+
+[[package]]
+name = "diskann-vector"
+version = "0.51.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "54325a752b6d0f2ff3da446883edda3dd181938938d7c7767a6344985fbeb935"
+dependencies = [
+ "cfg-if",
+ "diskann-wide",
+ "half",
+]
+
+[[package]]
+name = "diskann-wide"
+version = "0.51.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "80a5f129f93b168829fe15ac766f1190369265d12cf0338ea3bfa8387c50e661"
+dependencies = [
+ "cfg-if",
+ "half",
 ]
 
 [[package]]
@@ -1455,8 +1527,12 @@ version = "2.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ea2d84b969582b4b1864a92dc5d27cd2b77b622a8d79306834f1be5ba20d84b"
 dependencies = [
+ "bytemuck",
  "cfg-if",
  "crunchy",
+ "num-traits",
+ "rand 0.9.4",
+ "rand_distr",
  "zerocopy",
 ]
 
@@ -3287,6 +3363,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "63b8176103e19a2643978565ca18b50549f6101881c443590420e4dc998a3c69"
 
 [[package]]
+name = "rand_distr"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6a8615d50dcf34fa31f7ab52692afec947c4dd0ab803cc87cb3b0b4570ff7463"
+dependencies = [
+ "num-traits",
+ "rand 0.9.4",
+]
+
+[[package]]
 name = "rawpointer"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3472,9 +3558,9 @@ dependencies = [
 
 [[package]]
 name = "revision"
-version = "0.17.1"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3b66f44139d1fe8e1b6c21bf1a855f12df38517aab94e21cea2a077e9753f216"
+checksum = "2554a8f54f00623ca0008916733357488569874b84bad55d5a15768d4dddf918"
 dependencies = [
  "bytes",
  "chrono",
@@ -3488,9 +3574,9 @@ dependencies = [
 
 [[package]]
 name = "revision-derive"
-version = "0.17.1"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "696cbf6f9d0bdeb7d75ef3a037c8295ea9fb665c89c6b70c23022f5918713353"
+checksum = "424de6e69cad1f9f0d7d26aeff49471164ec5f73d159b6df9047167a87398d32"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4244,9 +4330,9 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
 name = "surrealdb"
-version = "3.1.0-beta.1"
+version = "3.1.0-beta.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cbe046580c20924493147a3021a4b5f738f407a21773ff5daa539c9297151c53"
+checksum = "0dbe550c4394377b6b264cafbac1c3779d06dfdd582db5a1a289c2d34ad94629"
 dependencies = [
  "anyhow",
  "async-channel",
@@ -4282,9 +4368,9 @@ dependencies = [
 
 [[package]]
 name = "surrealdb-collections"
-version = "3.1.0-beta.1"
+version = "3.1.0-beta.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "367a30cbac366d3eee23f400764adabbc1e6a8e26a46d563f9f65aaac86d3d4d"
+checksum = "546b72f47bec7dd7aef828dcc6ab1dd832810e4d7cbb9853544a631aa76f7b12"
 dependencies = [
  "revision",
  "storekey",
@@ -4292,9 +4378,9 @@ dependencies = [
 
 [[package]]
 name = "surrealdb-core"
-version = "3.1.0-beta.1"
+version = "3.1.0-beta.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9fe0cf63a197ea857a59a71320c2709d88cb5e9ccb6afeb8e9435c73cbe6e100"
+checksum = "8f9b8e034d2865bdc4d6faaa2434884db2a5aba744a69d2611900561f79df7b8"
 dependencies = [
  "addr",
  "ahash 0.8.12",
@@ -4312,6 +4398,9 @@ dependencies = [
  "ciborium",
  "dashmap",
  "deunicode",
+ "diskann",
+ "diskann-utils",
+ "diskann-vector",
  "dmp",
  "fastnum",
  "fst",
@@ -4320,6 +4409,7 @@ dependencies = [
  "geo 0.32.0",
  "geo-types",
  "getrandom 0.3.4",
+ "half",
  "headers",
  "hex",
  "http",
@@ -4328,6 +4418,7 @@ dependencies = [
  "jsonwebtoken",
  "lexicmp",
  "md-5",
+ "memchr",
  "mime",
  "ndarray",
  "ndarray-stats",
@@ -4405,9 +4496,9 @@ dependencies = [
 
 [[package]]
 name = "surrealdb-strand"
-version = "3.1.0-beta.1"
+version = "3.1.0-beta.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2119522fe363163f748e978235d296de8a8ee3b37a0146e8a5041ac9a190370"
+checksum = "56b1da34a899d966283374d7b71194190e0afe04e1e34b4f106cfb81a6150a15"
 dependencies = [
  "revision",
  "serde",
@@ -4416,9 +4507,9 @@ dependencies = [
 
 [[package]]
 name = "surrealdb-types"
-version = "3.1.0-beta.1"
+version = "3.1.0-beta.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "245c7e2a77fa42d68110e69b4f9b00470a5cdc07c07f45989804e637aa3d334b"
+checksum = "246533fa242d806a81e8fcf1e9831a47fcbc43eb7b69c2ca64da7371845d5e9a"
 dependencies = [
  "anyhow",
  "async-channel",
@@ -4447,9 +4538,9 @@ dependencies = [
 
 [[package]]
 name = "surrealdb-types-derive"
-version = "3.1.0-beta.1"
+version = "3.1.0-beta.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf52ba89db8657f7a62d951dedb9768bca1cb3db0a0aec51c2c170c9b7dd238a"
+checksum = "15391981e3c73d08661bf77c99932238a709d9245a9fd002a0ec57f13bee170e"
 dependencies = [
  "heck 0.4.1",
  "proc-macro2",

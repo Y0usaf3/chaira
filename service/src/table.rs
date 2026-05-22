@@ -210,9 +210,6 @@ impl TableService {
         );
 
         IF $is_owner OR $has_table_edit THEN {
-            UPDATE record SET cells = object::remove(cells, <string>$field)
-            WHERE table = $table_id AND is_deleted = false;
-            
             UPDATE $field SET 
                 is_deleted = true,
                 updated_at = time::now();
@@ -284,7 +281,7 @@ impl TableService {
         WHERE 
             table = $table_id AND 
             is_deleted = false AND
-            ($is_owner OR mod::bit::can($perms, 2))
+            mod::bit::can(($user->can_access_table[WHERE out = $table_id].perms)[0], 2)
         ORDER BY created_at ASC
         LIMIT $limit
         START $skip;",

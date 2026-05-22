@@ -7,6 +7,10 @@
       url = "github:nix-community/naersk";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     surrealdb-bin.url = "github:dmitriiStepanidenko/surrealdb-nixos";
   };
 
@@ -14,12 +18,15 @@
     self,
     nixpkgs,
     naersk,
+    rust-overlay,
     surrealdb-bin,
   }: let
+    overlays = [(import rust-overlay)];
     system = "x86_64-linux";
     pkgs = import nixpkgs {
       system = "x86_64-linux";
       config.allowUnfree = true;
+      inherit overlays;
     };
     naerskLib = pkgs.callPackage naersk {};
   in {
@@ -30,8 +37,14 @@
     };
     devShells.${system}.default = pkgs.mkShell {
       buildInputs = with pkgs; [
-        cargo
-        rustc
+        rust-bin.stable.latest.default.override
+        {
+          extensions = ["rust-src" "rust-analyzer"];
+          targets = [
+            "wasm32-unknown-unknown"
+            "x86_64-unknown-linux-musl"
+          ];
+        }
         ngrok
         openssl
         glib
@@ -40,7 +53,7 @@
       ];
 
       RUST_LOG = "info";
-      SURREAL_BUCKET_FOLDER_ALLOWLIST = "./charli/";
+      SURREAL_BUCKET_FOLDER_ALLOWLIST = "/purrjects/chara/charli/";
 
       nativeBuildInputs = [pkgs.pkg-config];
 

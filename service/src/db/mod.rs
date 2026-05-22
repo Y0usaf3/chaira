@@ -41,11 +41,20 @@ pub async fn init() {
     .unwrap();
 
     let bit_path = env_required!("BIT_PATH");
-    let bit_bucket_path = format!("file:{}", bit_path);
+    let bit_bucket_path = format!("file:/{}", bit_path);
+    dbg!(&bit_bucket_path);
 
     DB.use_ns("main").use_db("main").await.unwrap();
-    DB.query(include_str!("../../../surql/main.surql"))
+    dbg!(
+        DB.query(
+            r#"DEFINE BUCKET OVERWRITE bucki BACKEND $bit_bucket_path; 
+               DEFINE MODULE OVERWRITE mod::bit AS f'bucki:/chaira-charli-0.0.1.surli';"#
+        )
         .bind(("bit_bucket_path", bit_bucket_path))
+        .await
+        .unwrap()
+    );
+    DB.query(include_str!("../../../surql/main.surql"))
         .await
         .unwrap();
 }

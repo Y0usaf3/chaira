@@ -1,6 +1,3 @@
-DEFINE BUCKET OVERWRITE bucki BACKEND $bit_bucket_path; 
-DEFINE MODULE OVERWRITE mod::bit AS f'bucki:/chaira-bitwise_ops-0.0.1.surli';
-
 -- USER 
 DEFINE TABLE OVERWRITE user SCHEMAFULL;
 DEFINE FIELD OVERWRITE created_at ON TABLE user TYPE datetime 

@@ -539,15 +539,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "charli"
-version = "0.0.1"
-dependencies = [
- "models",
- "surrealdb-types",
- "surrealism",
-]
-
-[[package]]
 name = "chrono"
 version = "0.4.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2054,15 +2045,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "879f10e63c20629ecabbb64a8010319738c66a5cd0c29b02d63d272b03751d01"
 dependencies = [
  "generic-array 0.14.7",
-]
-
-[[package]]
-name = "inventory"
-version = "0.3.24"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a4f0c30c76f2f4ccee3fe55a2435f691ca00c0e4bd87abe4f4a851b1d4dac39b"
-dependencies = [
- "rustversion",
 ]
 
 [[package]]
@@ -4548,42 +4530,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.117",
-]
-
-[[package]]
-name = "surrealism"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dda48d907971c6255c8fa8e53d4c6c9ad205f9ebac53a8d5f616c81fd83a93ba"
-dependencies = [
- "anyhow",
- "inventory",
- "surrealdb-types",
- "surrealism-macros",
- "surrealism-types",
- "wit-bindgen 0.51.0",
-]
-
-[[package]]
-name = "surrealism-macros"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4748f5145a450d76e1f14d1af27b86cca30d4c9208ebf51691d205f305462995"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.117",
-]
-
-[[package]]
-name = "surrealism-types"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a5abad6f1845b802f4d2c10abeb7e57ea18aaf33e80ee21c26f378e3ec5f43db"
-dependencies = [
- "anyhow",
- "surrealdb-types",
- "thiserror",
 ]
 
 [[package]]

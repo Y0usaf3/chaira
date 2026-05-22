@@ -1,6 +1,7 @@
 [workspace]
 resolver = "3"
-members = ["charli", "models", "service"]
+exclude = ["charli"]
+members = ["models", "service"]
 
 [workspace.dependencies]
 surrealdb = "3.1.0-beta.3"

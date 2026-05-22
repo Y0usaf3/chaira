@@ -24,9 +24,8 @@
     overlays = [(import rust-overlay)];
     system = "x86_64-linux";
     pkgs = import nixpkgs {
-      system = "x86_64-linux";
       config.allowUnfree = true;
-      inherit overlays;
+      inherit overlays system;
     };
     naerskLib = pkgs.callPackage naersk {};
   in {
@@ -37,18 +36,22 @@
     };
     devShells.${system}.default = pkgs.mkShell {
       buildInputs = with pkgs; [
-        rust-bin.stable.latest.default.override
-        {
-          extensions = ["rust-src" "rust-analyzer"];
-          targets = [
-            "wasm32-unknown-unknown"
-            "x86_64-unknown-linux-musl"
-          ];
-        }
+        (rust-bin.stable.latest.default.override
+          {
+            extensions = ["rust-src" "rust-analyzer"];
+            targets = [
+              "wasm32-wasip1"
+              "wasm32-unknown-unknown"
+              "x86_64-unknown-linux-musl"
+            ];
+          })
         ngrok
         openssl
         glib
         rust-analyzer
+        wasm-tools
+        wasm-pack
+        binaryen
         surrealdb-bin.packages.${system}.latest
       ];
 

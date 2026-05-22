@@ -7,6 +7,5 @@ edition = "2024"
 crate-type = [ "cdylib" ]
 
 [dependencies]
-models = { path="../models/" }
 surrealism = "0.3.0"
-surrealdb-types.workspace = true
+surrealdb-types = "3.1.0-beta.3"

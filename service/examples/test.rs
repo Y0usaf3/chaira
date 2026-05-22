@@ -563,12 +563,15 @@ async fn test_table_service(
 
     // Test list_records with Benchmarking
     let start = Instant::now();
-    let records = table_service
-        .list_records(PaginationParams {
-            offset: Some(0),
-            limit: Some(10),
-        })
-        .await?;
+    let records = dbg!(
+        table_service
+            .list_records(PaginationParams {
+                offset: Some(0),
+                limit: Some(10),
+            })
+            .await
+    )?;
+
     let duration = start.elapsed();
 
     print_records_table(&records);

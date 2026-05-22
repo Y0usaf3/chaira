@@ -28,7 +28,7 @@ LET $accessible_base = (
     SELECT * FROM $base WHERE 
         is_deleted = false AND (
             owner = $user OR 
-            mod::bit::can(
+            fn::bit(
                 (SELECT VALUE perms FROM can_access_base WHERE in = $user AND out = $this.id)[0], 
                 2
             )
@@ -65,7 +65,7 @@ COMMIT TRANSACTION;
 LET $is_owner = (SELECT VALUE owner FROM $target_base)[0] == $inviter_id;
 LET $inviter_perms = (SELECT VALUE perms FROM can_access_base WHERE in = $inviter_id AND out = $target_base)[0] OR 0;
 
-IF !$is_owner AND !mod::bit::can($inviter_perms, 258) {
+IF !$is_owner AND !fn::bit($inviter_perms, 258) {
     THROW 'Unauthorized: You need [View] and [ManageInvitations] to invite others.';
 };
 
@@ -92,7 +92,7 @@ COMMIT TRANSACTION;
         LET $is_admin = (SELECT VALUE role FROM $user WHERE id = $user)[0] == 'admin';
         LET $user_perms = (SELECT VALUE perms FROM can_access_base WHERE in = $user AND out = $base)[0] OR 0;
         
-        IF !$is_owner AND !$is_admin AND !mod::bit::can($user_perms, 8) {
+        IF !$is_owner AND !$is_admin AND !fn::bit($user_perms, 8) {
             THROW 'Unauthorized: You do not have permission to delete this base.';
         };
 
@@ -120,7 +120,7 @@ COMMIT TRANSACTION;
             LET $is_owner = (SELECT VALUE owner FROM $base)[0] == $user;
             LET $user_perms = (SELECT VALUE perms FROM can_access_base WHERE in = $user AND out = $base)[0] OR 0;
 
-            IF !$is_owner AND !mod::bit::can($user_perms, 16) {
+            IF !$is_owner AND !fn::bit($user_perms, 16) {
                 THROW 'Unauthorized: You do not have ManageTables permission.';
             };
 
@@ -158,7 +158,7 @@ COMMIT TRANSACTION;
             
             LET $table_perms = (SELECT VALUE perms FROM can_access_table WHERE in = $user AND out = $table_id)[0] OR 0;
 
-            IF !$is_owner AND !mod::bit::can($base_perms, 16) AND !mod::bit::can($table_perms, 4) {
+            IF !$is_owner AND !fn::bit($base_perms, 16) AND !mod::bit::can($table_perms, 4) {
                 THROW 'Unauthorized: Cannot delete this table.';
             };
 
@@ -183,7 +183,7 @@ COMMIT TRANSACTION;
             
             SELECT * FROM table WHERE base = $base AND is_deleted = false AND (
                 $is_owner OR 
-                mod::bit::can(
+                fn::bit(
                     (SELECT VALUE perms FROM can_access_table WHERE in = $user AND out = $this.id)[0], 
                     2
                 )

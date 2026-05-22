@@ -45,15 +45,17 @@ pub async fn init() {
     dbg!(&bit_bucket_path);
 
     DB.use_ns("main").use_db("main").await.unwrap();
-    dbg!(
-        DB.query(
-            r#"DEFINE BUCKET OVERWRITE bucki BACKEND $bit_bucket_path; 
-               DEFINE MODULE OVERWRITE mod::bit AS f'bucki:/chaira-charli-0.0.1.surli';"#
-        )
-        .bind(("bit_bucket_path", bit_bucket_path))
-        .await
-        .unwrap()
-    );
+    // dbg!(
+    //     DB.query(
+    //         r#"DEFINE BUCKET OVERWRITE bucki BACKEND $bit_bucket_path;
+    //            DEFINE MODULE OVERWRITE mod::bit AS f'bucki:/chaira-charli-0.0.1.surli';"#
+    //     )
+    //     .bind(("bit_bucket_path", bit_bucket_path))
+    //     .await
+    //     .unwrap()
+    // );
+    // its a pain to make one search for answers, only to realise the problem was not from it, but
+    // from them
     DB.query(include_str!("../../../surql/main.surql"))
         .await
         .unwrap();

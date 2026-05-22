@@ -66,7 +66,7 @@
         echo "hai in chaira's DEV SHELL UwU"
 
         start_db() {
-          surreal start --allow-experimental files,surrealism --user test --pass test memory > db.log 2>&1 &
+          surreal start --allow-scripting --allow-experimental files,surrealism --user test --pass test memory > db.log 2>&1 &
           SURREAL_PID=$!
           echo "the database is running ! (PID: $SURREAL_PID)!"
         }

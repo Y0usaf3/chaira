@@ -329,7 +329,7 @@ impl UserService {
                 OR id IN (
                     SELECT VALUE out FROM can_access_base 
                     WHERE in = $user
-                    AND mod::bit::can(perms, 2)
+                    AND fn::can(perms, 2)
                 )
             ) ORDER BY created_at ASC;
             ",

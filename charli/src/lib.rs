@@ -6,4 +6,3 @@ use surrealism::surrealism;
 pub fn can(mask: u32, flag: u32) -> bool {
     (mask & 1) == 1 || (mask & flag) == flag
 }
-

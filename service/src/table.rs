@@ -53,7 +53,7 @@ impl TableService {
             
             SELECT * FROM $table_id WHERE is_deleted = false AND (
                 $is_owner OR 
-                mod::bit::can(
+                fn::can(
                     (SELECT VALUE perms FROM can_access_table WHERE in = $user AND out = $this.id)[0], 
                     2
                 )
@@ -84,7 +84,7 @@ impl TableService {
                 is_deleted = false AND
                 (
                     (SELECT VALUE owner FROM $base_id)[0] == $user OR
-                    mod::bit::can(
+                    fn::can(
                         (SELECT VALUE perms FROM can_access_field WHERE in = $user AND out = $this.id)[0], 
                         2
                     )
@@ -109,7 +109,7 @@ impl TableService {
             .query(
                 "
             LET $is_owner = (SELECT VALUE owner FROM $base_id)[0] == $user;
-            LET $has_table_edit = mod::bit::can(
+            LET $has_table_edit = fn::can(
                 (SELECT VALUE perms FROM can_access_table WHERE in = $user AND out = $table_id)[0], 
                 4
             );
@@ -164,7 +164,7 @@ impl TableService {
                 "
         SELECT VALUE 
             (SELECT VALUE owner FROM $base_id)[0] == $user OR
-            mod::bit::can(
+            fn::can(
                 (SELECT VALUE perms FROM can_access_table WHERE in = $user AND out = $table_id)[0], 
                 4
             )
@@ -204,7 +204,7 @@ impl TableService {
             .query(
                 "
         LET $is_owner = (SELECT VALUE owner FROM $base_id)[0] == $user;
-        LET $has_table_edit = mod::bit::can(
+        LET $has_table_edit = fn::can(
             (SELECT VALUE perms FROM can_access_table WHERE in = $user AND out = $table_id)[0], 
             4
         );
@@ -240,7 +240,7 @@ impl TableService {
             is_deleted = false AND
             (
                 $is_owner OR
-                mod::bit::can(
+                fn::can(
                     (SELECT VALUE perms FROM can_access_table WHERE in = $user AND out = $table_id)[0],
                     2
                 )
@@ -267,8 +267,8 @@ impl TableService {
         let limit = pagination_params.limit.unwrap_or(50);
         let skip = pagination_params.offset.unwrap_or(0);
 
-        let mut res = DB
-            .query(
+        let mut res = dbg!(
+            DB.query(
                 "
         LET $is_owner = (SELECT VALUE owner FROM $table_id.base)[0] == $user;
         LET $perms = (
@@ -281,7 +281,7 @@ impl TableService {
         WHERE 
             table = $table_id AND 
             is_deleted = false AND
-            mod::bit::can(($user->can_access_table[WHERE out = $table_id].perms)[0], 2)
+            fn::can(($user->can_access_table[WHERE out = $table_id].perms)[0], 2)
         ORDER BY created_at ASC
         LIMIT $limit
         START $skip;",
@@ -290,8 +290,8 @@ impl TableService {
             .bind(("user", self.user.clone()))
             .bind(("limit", limit))
             .bind(("skip", skip))
-            .await?;
-
+            .await
+        )?;
         let records: Vec<Record> = res.take(2)?;
 
         Ok(records)
@@ -312,7 +312,7 @@ impl TableService {
                     WHERE in = $user AND out = $table_id
                 )[0] ?? 0;
 
-                IF !$is_owner AND !mod::bit::can($perms, 2) {
+                IF !$is_owner AND !fn::can($perms, 2) {
                     THROW 'Permission Denied';
                 };
 
@@ -338,7 +338,7 @@ impl TableService {
             .query(
                 "
         LET $is_owner = (SELECT VALUE owner FROM $table_id.base)[0] == $user;
-        LET $has_table_edit = mod::bit::can(
+        LET $has_table_edit = fn::can(
             (SELECT VALUE perms FROM can_access_table WHERE in = $user AND out = $table_id)[0], 
             4
         );
@@ -387,7 +387,7 @@ impl TableService {
             BEGIN TRANSACTION;
             LET $is_owner = (SELECT VALUE owner FROM $table_id.base)[0] == $user;
             LET $perms = (SELECT VALUE perms FROM can_access_table WHERE in = $user AND out = $table_id)[0] ?? 0;
-            IF $is_owner OR mod::bit::can($perms, 1) OR mod::bit::can($perms, 4) {
+            IF $is_owner OR fn::can($perms, 1) OR mod::bit::can($perms, 4) {
                 UPDATE $record_id SET cells = object::extend(cells, $cells), updated_at = time::now();
             } ELSE {
                 THROW 'Unauthorized';
@@ -399,7 +399,7 @@ impl TableService {
             BEGIN TRANSACTION;
             LET $is_owner = (SELECT VALUE owner FROM $table_id.base)[0] == $user;
             LET $perms = (SELECT VALUE perms FROM can_access_table WHERE in = $user AND out = $table_id)[0] ?? 0;
-            IF $is_owner OR mod::bit::can($perms, 1) OR mod::bit::can($perms, 4) {
+            IF $is_owner OR fn::can($perms, 1) OR mod::bit::can($perms, 4) {
                 UPDATE $record_id SET updated_at = time::now();
             } ELSE {
                 THROW 'Unauthorized';
@@ -433,7 +433,7 @@ impl TableService {
                 "
             BEGIN TRANSACTION;
             LET $is_owner = (SELECT VALUE owner FROM $table_id.base)[0] == $user;
-            LET $has_table_edit = mod::bit::can(
+            LET $has_table_edit = fn::can(
                 (SELECT VALUE perms FROM can_access_table WHERE in = $user AND out = $table_id)[0], 
                 4
             );
@@ -520,7 +520,7 @@ impl TableService {
         new_config: FieldConfig,
     ) -> Result<Result<Field, String>, Irror> {
         let mut perm_res = DB
-            .query("SELECT VALUE (SELECT VALUE owner FROM $base_id)[0] == $user OR mod::bit::can((SELECT VALUE perms FROM can_access_table WHERE in = $user AND out = $table_id)[0], 4)")
+            .query("SELECT VALUE (SELECT VALUE owner FROM $base_id)[0] == $user OR fn::can((SELECT VALUE perms FROM can_access_table WHERE in = $user AND out = $table_id)[0], 4)")
             .bind(("base_id", self.base.clone()))
             .bind(("table_id", self.table_record_id.clone()))
             .bind(("user", self.user.clone()))

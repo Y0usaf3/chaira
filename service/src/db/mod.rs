@@ -40,9 +40,8 @@ pub async fn init() {
     .await
     .unwrap();
 
-    let bit_path = env_required!("BIT_PATH");
-    let bit_bucket_path = format!("file:/{}", bit_path);
-    dbg!(&bit_bucket_path);
+    // let bit_path = env_required!("BIT_PATH");
+    // let bit_bucket_path = format!("file:/{}", bit_path);
 
     DB.use_ns("main").use_db("main").await.unwrap();
     // dbg!(

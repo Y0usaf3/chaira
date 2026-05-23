@@ -113,24 +113,19 @@ async fn run_stress_test(
         ),
     ];
 
-    let mut field_names = Vec::new();
+    let inserts: Vec<InsertField> = field_definitions
+        .iter()
+        .map(|a| InsertField::new(a.0.to_string(), a.1.clone(), false, true, false))
+        .collect();
     let start_fields = Instant::now();
-    for (name, config) in field_definitions {
-        let insert = InsertField::new(name.to_string(), config, false, true, false);
-        table_service.create_field(insert).await?;
-        field_names.push(name.to_string());
-    }
-    let duration_fields = start_fields.elapsed();
-    println!(
-        "Added {} fields in {:?}",
-        field_names.len(),
-        duration_fields
-    );
+    let fields = table_service.create_a_lot_of_fields(inserts).await?;
 
-    // 2. Insert records (100 records)
-    let num_records = 100000;
-    let mut record_ids = Vec::new();
-    let start_inserts = Instant::now();
+    let duration_fields = start_fields.elapsed();
+    println!("Added {} fields in {:?}", fields.len(), duration_fields);
+
+    let num_records = 1000;
+    let mut insert_records = Vec::with_capacity(num_records);
+
     for i in 0..num_records {
         let mut cells = HashMap::new();
         cells.insert(
@@ -140,7 +135,13 @@ async fn run_stress_test(
                 Some(format!("User {}", i)),
             )?)),
         );
-        cells.insert("Bio".to_string(), CellValue::new(Value::LongText(Box::new(LongTextValue::new(format!("User {} bio is quite long and contains interesting facts about this stress test user.", i), false)?))));
+        cells.insert(
+            "Bio".to_string(),
+            CellValue::new(Value::LongText(Box::new(LongTextValue::new(
+                format!("User {} bio is quite long and contains interesting facts about this stress test user.", i), 
+                false
+            )?))),
+        );
         cells.insert(
             "Email".to_string(),
             CellValue::new(Value::Email(Email::new(format!("user{}@example.com", i))?)),
@@ -173,10 +174,22 @@ async fn run_stress_test(
         );
 
         let insert = InsertRecord::new(table_id.clone(), cells);
-        let record = table_service.create_record(insert).await?;
-        record_ids.push(RecordId(record.id.unwrap().0));
+        insert_records.push(insert);
     }
+
+    let start_inserts = Instant::now();
+
+    let created_records = table_service
+        .create_a_lot_of_records(insert_records)
+        .await?;
+
     let duration_inserts = start_inserts.elapsed();
+
+    let record_ids: Vec<RecordId> = created_records
+        .into_iter()
+        .map(|record| RecordId(record.id.unwrap().0))
+        .collect();
+
     println!("Inserted {} records in {:?}", num_records, duration_inserts);
 
     // 3. Update records (Update ALL of them)
@@ -219,7 +232,7 @@ async fn run_stress_test(
     print_bench_table(
         "Mega Stress Test Summary",
         vec![
-            ("Fields Added".to_string(), field_names.len().to_string()),
+            ("Fields Added".to_string(), fields.len().to_string()),
             ("Records Inserted".to_string(), num_records.to_string()),
             ("Records Updated".to_string(), num_records.to_string()),
             (
@@ -563,14 +576,12 @@ async fn test_table_service(
 
     // Test list_records with Benchmarking
     let start = Instant::now();
-    let records = dbg!(
-        table_service
-            .list_records(PaginationParams {
-                offset: Some(0),
-                limit: Some(10),
-            })
-            .await
-    )?;
+    let records = table_service
+        .list_records(PaginationParams {
+            offset: Some(0),
+            limit: Some(10),
+        })
+        .await?;
 
     let duration = start.elapsed();
 

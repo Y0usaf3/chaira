@@ -143,6 +143,54 @@ impl TableService {
             None => Err(Irror::Table(TableError::CreateFailed)),
         }
     }
+    pub async fn create_a_lot_of_fields(
+        &self,
+        fields: Vec<InsertField>,
+    ) -> Result<Vec<Field>, Irror> {
+        let fields_data: Vec<Field> = fields.into_iter().map(Field::from_insert).collect();
+
+        let mut res = DB
+            .query(
+                "
+        LET $is_owner = (SELECT VALUE owner FROM $base_id)[0] == $user;
+        LET $has_table_edit = fn::can(
+            (SELECT VALUE perms FROM can_access_table WHERE in = $user AND out = $table_id)[0], 
+            4
+        );
+
+        IF $is_owner OR $has_table_edit THEN
+            (INSERT INTO field (
+                SELECT 
+                    name,
+                    $table_id AS table,
+                    is_primary,
+                    is_nullable,
+                    is_unique,
+                    order,
+                    description,
+                    config,
+                    time::now() AS created_at,
+                    time::now() AS updated_at
+                FROM $data
+            ))
+        END;
+    ",
+            )
+            .bind(("user", self.user.clone()))
+            .bind(("base_id", self.base.clone()))
+            .bind(("table_id", self.table_record_id.clone()))
+            .bind(("data", fields_data))
+            .await?;
+
+        let created_fields: Vec<Field> = res.take(2)?;
+
+        if created_fields.is_empty() {
+            Err(Irror::Table(TableError::NotFound))
+        } else {
+            Ok(created_fields)
+        }
+    }
+
     pub async fn update_field(
         &self,
         field_id: FieldId,
@@ -225,7 +273,33 @@ impl TableService {
 
         match deleted_field {
             Some(f) => Ok(f),
-            None => Err(Irror::Table(TableError::DeleteFailed)),
+            _ => Err(Irror::Table(TableError::DeleteFailed)),
+        }
+    }
+
+    pub async fn delete_a_lot_of_fields(&self, fields: Vec<FieldId>) -> Result<Vec<Field>, Irror> {
+        let mut res = DB
+            .query(
+                "
+       LET $is_owner = (SELECT VALUE owner FROM $base_id)[0] == $user;
+        LET $has_table_edit = fn::can(
+            (SELECT VALUE perms FROM can_access_table WHERE in = $user AND out = $table_id)[0], 
+            4
+        );
+IF $is_owner OR $has_table_edit {
+(UPDATE field SET 
+                is_deleted = true,
+                updated_at = time::now()
+            WHERE id IN $fields)
+}
+",
+            )
+            .bind(("fields", fields))
+            .await?;
+        let delected_fields: Option<Vec<Field>> = res.take(2)?;
+        match delected_fields {
+            Some(f) => Ok(f),
+            _ => Err(Irror::Table(TableError::DeleteFailed)),
         }
     }
 
@@ -264,11 +338,11 @@ impl TableService {
         &self,
         pagination_params: PaginationParams,
     ) -> Result<Vec<Record>, Irror> {
-        let limit = pagination_params.limit.unwrap_or(50);
+        let limit = pagination_params.limit.unwrap_or(10);
         let skip = pagination_params.offset.unwrap_or(0);
 
-        let mut res = dbg!(
-            DB.query(
+        let mut res = DB
+            .query(
                 "
         LET $is_owner = (SELECT VALUE owner FROM $table_id.base)[0] == $user;
         LET $perms = (
@@ -290,8 +364,7 @@ impl TableService {
             .bind(("user", self.user.clone()))
             .bind(("limit", limit))
             .bind(("skip", skip))
-            .await
-        )?;
+            .await?;
         let records: Vec<Record> = res.take(2)?;
 
         Ok(records)
@@ -359,12 +432,54 @@ impl TableService {
             .bind(("data", record))
             .await?;
 
-        let created_record: Option<Record> = res.take(2)?;
+        let created_records: Option<Record> = res.take(2)?;
 
-        match created_record {
+        match created_records {
             Some(r) => Ok(r),
             None => Err(Irror::Table(TableError::CreateFailed)),
         }
+    }
+
+    pub async fn create_a_lot_of_records(&self, records: Vec<InsertRecord>) -> Result<(), Irror> {
+        // so we use a for loop and bc im lazy i didnt made it return the list of the records :p
+        let records: Vec<Record> = records
+            .iter()
+            .map(|a| Record::from_insert(a.clone()))
+            .collect();
+
+        let res = DB
+            .query(
+                "
+        LET $is_owner = (SELECT VALUE owner FROM $table_id.base)[0] == $user;
+        LET $has_table_edit = fn::can(
+            (SELECT VALUE perms FROM can_access_table WHERE in = $user AND out = $table_id)[0], 
+            4
+        );
+
+IF $is_owner OR $has_table_edit THEN
+    FOR $row IN $data {
+        LET $created = (
+            INSERT INTO record {
+                table: $table_id,
+                cells: $row.cells,
+                is_deleted: false,
+                created_at: time::now(),
+                updated_at: time::now()
+            }
+            RETURN AFTER
+        );
+
+    };
+END;
+        ",
+            )
+            .bind(("user", self.user.clone()))
+            .bind(("table_id", self.table_record_id.clone()))
+            .bind(("data", records))
+            .await?;
+
+        res.check()?;
+        Ok(())
     }
 
     pub async fn update_record(

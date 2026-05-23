@@ -1,5 +1,5 @@
 DEFINE FUNCTION OVERWRITE fn::can($mask: number, $flag: number) {
-        RETURN function($a, $b){return ((arguments[0] & 1) == 1) || ((arguments[0] & arguments[1]) == arguments[1]) }
+        RETURN function($mask, $flag){return ((arguments[0] & 1) == 1) || ((arguments[0] & arguments[1]) == arguments[1]) }
         };
 
 -- USER 
@@ -217,7 +217,6 @@ DEFINE FIELD OVERWRITE expires_at ON TABLE api_token VALUE time::now() + 7d;
 DEFINE FIELD OVERWRITE is_deleted ON TABLE api_token DEFAULT false;
 
 -- for user -> user, we will base on the role, only an admin can do certain actions like deleting, updating, etc
-
 
 -- Performance Indexes
 DEFINE INDEX idx_field_table_created ON TABLE field FIELDS table, is_deleted, created_at;

@@ -52,6 +52,7 @@
         wasm-tools
         wasm-pack
         binaryen
+        surrealist # used for debugging ig
         surrealdb-bin.packages.${system}.latest
       ];
 

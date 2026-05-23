@@ -179,11 +179,19 @@ async fn run_stress_test(
 
     let start_inserts = Instant::now();
 
-    let created_records = table_service
+    table_service
         .create_a_lot_of_records(insert_records)
         .await?;
 
     let duration_inserts = start_inserts.elapsed();
+    println!("Inserted {} records in {:?}", num_records, duration_inserts);
+
+    let created_records = table_service
+        .list_records(PaginationParams {
+            offset: Some(0),
+            limit: Some(num_records as u32),
+        })
+        .await?;
 
     let record_ids: Vec<RecordId> = created_records
         .into_iter()

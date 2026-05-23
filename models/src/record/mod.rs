@@ -12,7 +12,7 @@ pub struct Record {
     pub table: TableId,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, SurrealValue)]
 pub struct InsertRecord {
     pub table: TableId,
     pub cells: HashMap<String, CellValue>,

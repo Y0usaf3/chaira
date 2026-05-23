@@ -64,7 +64,6 @@ async fn run_stress_test(
     let table_service =
         TableService::new(table_id.clone(), base_id.clone(), user_id.clone()).await?;
 
-    // 1. Add fields (shitton of fields)
     let field_definitions = vec![
         (
             "Name",
@@ -123,7 +122,7 @@ async fn run_stress_test(
     let duration_fields = start_fields.elapsed();
     println!("Added {} fields in {:?}", fields.len(), duration_fields);
 
-    let num_records = 1000;
+    let num_records = 10000;
     let mut insert_records = Vec::with_capacity(num_records);
 
     for i in 0..num_records {
@@ -138,7 +137,7 @@ async fn run_stress_test(
         cells.insert(
             "Bio".to_string(),
             CellValue::new(Value::LongText(Box::new(LongTextValue::new(
-                format!("User {} bio is quite long and contains interesting facts about this stress test user.", i), 
+                format!("User {} bio is quite long and contains interesting facts about this stress test user fr.", i), 
                 false
             )?))),
         );
@@ -177,6 +176,7 @@ async fn run_stress_test(
         insert_records.push(insert);
     }
 
+    println!("sending da shitton amount of records");
     let start_inserts = Instant::now();
 
     table_service
@@ -184,12 +184,11 @@ async fn run_stress_test(
         .await?;
 
     let duration_inserts = start_inserts.elapsed();
-    println!("Inserted {} records in {:?}", num_records, duration_inserts);
 
     let created_records = table_service
         .list_records(PaginationParams {
             offset: Some(0),
-            limit: Some(num_records as u32),
+            limit: Some(num_records as u32 / 4),
         })
         .await?;
 

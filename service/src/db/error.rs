@@ -137,6 +137,9 @@ pub enum Irror {
 
     #[error("api error: {0}")]
     Api(#[from] ApiError),
+
+    #[error("couldnt serialize")]
+    Serialization,
 }
 
 impl IntoResponse for Irror {

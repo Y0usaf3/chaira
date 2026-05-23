@@ -147,6 +147,9 @@ impl TableService {
         &self,
         fields: Vec<InsertField>,
     ) -> Result<Vec<Field>, Irror> {
+        if fields.len() >= 100 {
+            return Err(Irror::Table(TableError::Unauthorized));
+        };
         let fields_data: Vec<Field> = fields.into_iter().map(Field::from_insert).collect();
 
         let mut res = DB
@@ -441,44 +444,32 @@ IF $is_owner OR $has_table_edit {
     }
 
     pub async fn create_a_lot_of_records(&self, records: Vec<InsertRecord>) -> Result<(), Irror> {
-        // so we use a for loop and bc im lazy i didnt made it return the list of the records :p
-        let records: Vec<Record> = records
-            .iter()
-            .map(|a| Record::from_insert(a.clone()))
-            .collect();
-
-        let res = DB
+        let mut auth_res = DB
             .query(
                 "
-        LET $is_owner = (SELECT VALUE owner FROM $table_id.base)[0] == $user;
-        LET $has_table_edit = fn::can(
-            (SELECT VALUE perms FROM can_access_table WHERE in = $user AND out = $table_id)[0], 
-            4
-        );
-
-IF $is_owner OR $has_table_edit THEN
-    FOR $row IN $data {
-        LET $created = (
-            INSERT INTO record {
-                table: $table_id,
-                cells: $row.cells,
-                is_deleted: false,
-                created_at: time::now(),
-                updated_at: time::now()
-            }
-            RETURN AFTER
-        );
-
-    };
-END;
+            RETURN (SELECT VALUE owner FROM $table_id.base)[0] == $user OR fn::can(
+                (SELECT VALUE perms FROM can_access_table WHERE in = $user AND out = $table_id)[0], 
+                4
+            );
         ",
             )
             .bind(("user", self.user.clone()))
             .bind(("table_id", self.table_record_id.clone()))
-            .bind(("data", records))
             .await?;
 
-        res.check()?;
+        let is_authorized: Option<bool> = auth_res.take(0)?;
+        if !is_authorized.unwrap_or(false) {
+            return Err(Irror::Table(TableError::Unauthorized));
+        }
+
+        for chunk in records.chunks(1000) {
+            let res = DB
+                .query("INSERT INTO record $data;")
+                .bind(("data", chunk.to_vec()))
+                .await?;
+
+            res.check()?;
+        }
         Ok(())
     }
 

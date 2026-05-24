@@ -45,13 +45,8 @@
               "x86_64-unknown-linux-musl"
             ];
           })
-        ngrok
         openssl
         glib
-        rust-analyzer
-        wasm-tools
-        wasm-pack
-        binaryen
         surrealist # used for debugging ig
         surrealdb-bin.packages.${system}.latest
       ];

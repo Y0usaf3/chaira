@@ -161,13 +161,17 @@ impl TableService {
     pub async fn create_field(&mut self, field: InsertField) -> Result<Field, Irror> {
         let field = Field::from_insert(field);
         let state = self.load_state().await?;
+        let is_authorized = state.is_owner
+            || state.permissions.contains(TablePermission::Edit)
+            || state.permissions.contains(TablePermission::Admin);
+
+        if !is_authorized {
+            return Err(Irror::Table(TableError::Unauthorized));
+        }
+
         let mut res = DB
             .query(
-                "
-            LET $is_authorized = $is_owner OR fn::can($perms, 4);
-
-            IF $is_authorized THEN
-                (CREATE field SET 
+                "CREATE field SET 
                     name = $data.name,
                     table = $table_id,
                     is_primary = $data.is_primary,
@@ -177,18 +181,13 @@ impl TableService {
                     description = $data.description,
                     config = $data.config,
                     created_at = time::now(),
-                    updated_at = time::now()
-                )
-            END;
-        ",
+                    updated_at = time::now();",
             )
             .bind(("table_id", self.table_record_id.clone()))
             .bind(("data", field))
-            .bind(("is_owner", state.is_owner))
-            .bind(("permissions", state.permissions))
             .await?;
 
-        let created_field: Option<Field> = res.take(1)?;
+        let created_field: Option<Field> = res.take(0)?;
 
         match created_field {
             Some(f) => Ok(f),
@@ -391,18 +390,16 @@ impl TableService {
 
         let mut res = DB
             .query(
-                "
-        SELECT * FROM record 
-        WHERE 
-            table = $table_id AND 
-            is_deleted = false AND
-            (fn::can($perms, 2) OR $is_owner)
-        ORDER BY created_at ASC
-        LIMIT $limit
-        START $skip;",
+                "SELECT * FROM record 
+         WHERE 
+             table = $table_id AND 
+             is_deleted = false AND
+             ($is_owner OR fn::can($perms, 2))
+         ORDER BY created_at ASC
+         LIMIT $limit
+         START $skip;",
             )
             .bind(("table_id", self.table_record_id.clone()))
-            .bind(("user", self.user.clone()))
             .bind(("limit", limit))
             .bind(("skip", skip))
             .bind(("is_owner", state.is_owner))
@@ -446,31 +443,28 @@ impl TableService {
     pub async fn create_record(&mut self, record: InsertRecord) -> Result<Record, Irror> {
         let record = Record::from_insert(record);
         let state = self.load_state().await?;
+        let is_authorized = state.is_owner
+            || state.permissions.contains(TablePermission::Edit)
+            || state.permissions.contains(TablePermission::Admin);
+
+        if !is_authorized {
+            return Err(Irror::Table(TableError::Unauthorized));
+        }
 
         let mut res = DB
             .query(
-                "
-        LET $is_authorized = $is_owner OR fn::can($perms, 4);
-
-        IF $is_authorized THEN
-            (CREATE record SET 
-                table = $table_id,
-                cells = $data.cells,
-                is_deleted = false,
-                created_at = time::now(),
-                updated_at = time::now()
+                "CREATE record SET 
+                    table = $table_id,
+                    cells = $data.cells,
+                    is_deleted = false,
+                    created_at = time::now(),
+                    updated_at = time::now();",
             )
-        END;
-    ",
-            )
-            .bind(("user", self.user.clone()))
             .bind(("table_id", self.table_record_id.clone()))
             .bind(("data", record))
-            .bind(("is_owner", state.is_owner))
-            .bind(("perms", state.permissions))
             .await?;
 
-        let created_records: Option<Record> = res.take(1)?;
+        let created_records: Option<Record> = res.take(0)?;
 
         match created_records {
             Some(r) => Ok(r),
@@ -491,10 +485,20 @@ impl TableService {
             return Err(Irror::Table(TableError::Unauthorized));
         }
 
-        for chunk in records.chunks(5000) {
+        // Convert all records once, then batch insert
+        let records_data: Vec<Record> = records.into_iter().map(Record::from_insert).collect();
+
+        for chunk in records_data.chunks(5000) {
+            let mut batch_records = Vec::new();
+            for record in chunk {
+                let mut new_record = record.clone();
+                new_record.table = self.table_record_id.clone();
+                batch_records.push(new_record);
+            }
+            
             let res = DB
-                .query("INSERT INTO record $data;")
-                .bind(("data", chunk.to_vec()))
+                .query("INSERT INTO record (SELECT * FROM $data);")
+                .bind(("data", batch_records))
                 .await?;
 
             res.check()?;
@@ -518,43 +522,28 @@ impl TableService {
         };
 
         let state = self.load_state().await?;
+        let is_authorized = state.is_owner
+            || state.permissions.contains(TablePermission::Edit)
+            || state.permissions.contains(TablePermission::Admin);
+
+        if !is_authorized {
+            return Err(Irror::Table(TableError::Unauthorized));
+        }
 
         let query_str = if has_cells {
-            "
-            BEGIN TRANSACTION;
-            IF $is_owner OR mod::bit::can($perms, 4) {
-                UPDATE $record_id SET cells = object::extend(cells, $cells), updated_at = time::now();
-            } ELSE {
-                THROW 'Unauthorized';
-            };
-            COMMIT TRANSACTION;
-            "
+            "UPDATE $record_id SET cells = object::extend(cells, $cells), updated_at = time::now();"
         } else {
-            "
-            BEGIN TRANSACTION;
-            IF $is_owner OR mod::bit::can($perms, 4) {
-                UPDATE $record_id SET updated_at = time::now();
-            } ELSE {
-                THROW 'Unauthorized';
-            };
-            COMMIT TRANSACTION;
-            "
+            "UPDATE $record_id SET updated_at = time::now();"
         };
 
-        let mut query = DB
-            .query(query_str)
-            .bind(("table_id", self.table_record_id.clone()))
-            .bind(("user", self.user.clone()))
-            .bind(("record_id", record_id))
-            .bind(("perms", state.permissions))
-            .bind(("is_owner", state.permissions));
+        let mut query = DB.query(query_str).bind(("record_id", record_id));
 
         if let Some(cells) = cells_map {
             query = query.bind(("cells", cells));
         }
 
         let mut res = query.await?;
-        let updated: Option<Record> = res.take(1)?;
+        let updated: Option<Record> = res.take(0)?;
 
         match updated {
             Some(r) => Ok(r),
@@ -564,30 +553,22 @@ impl TableService {
 
     pub async fn delete_record(&mut self, record_id: RecordId) -> Result<Record, Irror> {
         let state = self.load_state().await?;
+        let is_authorized = state.is_owner
+            || state.permissions.contains(TablePermission::Edit)
+            || state.permissions.contains(TablePermission::Admin);
+
+        if !is_authorized {
+            return Err(Irror::Table(TableError::Unauthorized));
+        }
+
         let mut res = DB
             .query(
-                "
-            BEGIN TRANSACTION;
-            LET $has_table_edit = fn::can(
-                $perms, 
-                4
-            );
-            IF $is_owner OR $has_table_edit {
-                UPDATE $record_id SET is_deleted = true, updated_at = time::now();
-            } ELSE {
-                THROW 'Unauthorized';
-            };
-            COMMIT TRANSACTION;
-        ",
+                "UPDATE $record_id SET is_deleted = true, updated_at = time::now();",
             )
-            .bind(("table_id", self.table_record_id.clone()))
-            .bind(("user", self.user.clone()))
             .bind(("record_id", record_id))
-            .bind(("is_owner", state.is_owner))
-            .bind(("perms", state.permissions))
             .await?;
 
-        let deleted_record: Option<Record> = res.take(2)?;
+        let deleted_record: Option<Record> = res.take(0)?;
 
         match deleted_record {
             Some(r) => Ok(r),

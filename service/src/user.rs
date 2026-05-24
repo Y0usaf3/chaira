@@ -13,6 +13,8 @@
 
 // make a function to get record id insteado f having to rerun this shit a million time
 
+use std::time::Instant;
+
 // TODO: add functions to fetch data from HC auth
 use crate::base::BaseService;
 use crate::prelude::*;
@@ -44,6 +46,8 @@ pub struct UserService {
     pub user: User,
     pub user_record_id: UserId,
     pub current_base: Option<BaseService>,
+    is_admin_cache: Option<bool>,
+    cache_instant: Option<Instant>,
 }
 
 impl UserService {
@@ -107,6 +111,8 @@ impl UserService {
             user,
             user_record_id: UserId(record_id),
             current_base: None,
+            is_admin_cache: None,
+            cache_instant: None,
         })
     }
 
@@ -119,6 +125,8 @@ impl UserService {
         // another user
         //
         // ima ask gemini duh
+        //
+        // wait did i end up asking gemini ?? its been like 3 weeks
 
         let token = tmp.ok().ok_or(AuthError::VerificationFailed)?;
         let access_token = token
@@ -187,6 +195,8 @@ impl UserService {
             user,
             user_record_id: record_id,
             current_base: None,
+            is_admin_cache: None,
+            cache_instant: None,
         })
     }
 
@@ -244,13 +254,21 @@ impl UserService {
         Ok(user)
     }
 
-    pub async fn is_admin(&self) -> Result<bool, Irror> {
+    pub async fn is_admin(&mut self) -> Result<bool, Irror> {
+        if let Some((value, ts)) = self.is_admin_cache.zip(self.cache_instant)
+            && ts.elapsed() < Duration::from_secs(5)
+        {
+            return Ok(value);
+        };
+
         let mut res = DB
             .query("SELECT (role = 'admin') AS value FROM user WHERE id = $user AND is_deleted = false;")
             .bind(("user", self.user_record_id.clone()))
             .await?;
-        let value: Option<IsAdmin> = res.take(0)?;
-        Ok(value.unwrap_or_default().value())
+        let value: bool = res.take::<Option<IsAdmin>>(0)?.unwrap_or_default().value();
+        self.is_admin_cache = Some(value);
+        self.cache_instant = Some(Instant::now());
+        Ok(value)
     }
 
     // NOTE: me when i dont check the name before doing anything :heavysob:
@@ -264,7 +282,7 @@ impl UserService {
         res.ok_or(BaseError::CreateFailed.into())
     }
 
-    pub async fn delete_base(&self, base: BaseId) -> Result<(), Irror> {
+    pub async fn delete_base(&mut self, base: BaseId) -> Result<(), Irror> {
         let res = DB
             .query(
                 "
@@ -272,11 +290,9 @@ impl UserService {
             
             LET $authorized = (
                 SELECT id FROM base WHERE id = $base AND owner = $user
-            ) OR (
-                SELECT id FROM user WHERE id = $user AND role = 'admin'
-            );
+            ) ;
 
-            IF count($authorized) == 0 {
+            IF count($authorized) == 0 OR $is_admin {
                 THROW 'Unauthorized: Only the owner or an admin can delete this base.';
             };
  
@@ -287,6 +303,7 @@ impl UserService {
             )
             .bind(("user", self.user_record_id.clone()))
             .bind(("base", base))
+            .bind(("is_admin", self.is_admin().await?))
             .await?;
         res.check()?;
         Ok(())
@@ -338,18 +355,6 @@ impl UserService {
             .await?;
         let bases: Vec<Base> = res.take(0)?;
         Ok(bases)
-    }
-
-    pub async fn create_api_token(&self) -> Result<String, Irror> {
-        let bytes: Vec<u8> = (0..32).map(|_| rand::rng().random()).collect();
-        let raw_token = general_purpose::STANDARD.encode(bytes).to_string();
-        let res = DB
-            .query("CREATE api_token SET user = $user, `token` = $tokenn")
-            .bind(("user", self.user_record_id.clone())) //
-            .bind(("tokenn", raw_token.clone()))
-            .await?;
-        res.check().map_err(|e| Irror::Db(e.to_string()))?;
-        Ok(raw_token)
     }
 }
 

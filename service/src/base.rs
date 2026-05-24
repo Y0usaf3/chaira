@@ -1,7 +1,12 @@
-use crate::kinds::FieldConfig;
-use crate::migration::MigrationStrategy;
 use crate::prelude::*;
 use crate::table::TableService;
+use std::time::{Duration, Instant};
+
+#[derive(Debug, Clone)]
+struct StateCache {
+    permissions: BasePermissions,
+    is_owner: bool,
+}
 
 #[derive(Debug, Clone)]
 pub struct BaseService {
@@ -9,6 +14,8 @@ pub struct BaseService {
     pub user: UserId,
     base_record_id: BaseId,
     pub current_table: Option<TableService>,
+    cache: Option<StateCache>,
+    cache_instant: Option<Instant>,
 }
 
 impl BaseService {
@@ -20,52 +27,67 @@ impl BaseService {
         let mut res = DB
             .query(
                 "
-BEGIN TRANSACTION;
-
-LET $base_record = (SELECT * FROM $base WHERE is_deleted = false)[0];
-
-LET $accessible_base = (
-    SELECT * FROM $base WHERE 
-        is_deleted = false AND (
-            owner = $user OR 
-            fn::bit(
-                (SELECT VALUE perms FROM can_access_base WHERE in = $user AND out = $this.id)[0], 
-                2
+           BEGIN TRANSACTION;
+            SELECT * FROM $base 
+            WHERE is_deleted = false AND (
+                owner = $user OR 
+                fn::can((SELECT VALUE perms FROM can_access_base WHERE in = $user AND out = $this.id)[0], 2)
             )
-        )
-)[0];
-
-IF $accessible_base == NONE {
-    THROW 'Permission Denied: User ' + <string>$user + ' cannot access ' + <string>$base;
-};
-
-RETURN $accessible_base;
-
-COMMIT TRANSACTION;
-            ",
+            LIMIT 1;
+            COMMIT TRANSACTION;",
             )
             .bind(("base", base_id.clone()))
             .bind(("user", user.clone()))
             .await?;
-        let base: Base = res.take::<Option<Base>>(4)?.ok_or(BaseError::NotFound)?;
+        let base: Base = res.take::<Option<Base>>(1)?.ok_or(BaseError::NotFound)?;
         Ok(Self {
             base,
             base_record_id: base_id,
             user,
             current_table: None,
+            cache: None,
+            cache_instant: None,
         })
     }
 
-    pub async fn invite_user(&self, user: UserId, perms: BasePermissions) -> Result<(), Irror> {
-        let res = DB.query("
+    async fn load_state(&mut self) -> Result<StateCache, Irror> {
+        if let Some((value, ts)) = self.cache.clone().zip(self.cache_instant)
+            && ts.elapsed() < Duration::from_secs(5)
+        {
+            return Ok(value);
+        };
+
+        let mut res = DB
+            .query(
+                "(SELECT VALUE owner FROM $base)[0] == $user;
+                (SELECT VALUE perms FROM can_access_base WHERE in = $user AND out = $base)[0];",
+            )
+            .bind(("user", self.user.clone()))
+            .bind(("base", self.base_record_id.clone()))
+            .await?;
+        let is_owner = res.take::<Option<bool>>(0)?.unwrap_or(false);
+        let permissions = res
+            .take::<Option<BasePermissions>>(1)?
+            .unwrap_or(BasePermissions::from(0));
+        let value = StateCache {
+            is_owner,
+            permissions,
+        };
+
+        self.cache = Some(value.clone());
+        self.cache_instant = Some(Instant::now());
+        Ok(value)
+    }
+
+    pub async fn invite_user(&mut self, user: UserId, perms: BasePermissions) -> Result<(), Irror> {
+        let state = self.load_state().await?;
+        let res = DB
+            .query(
+                "
             BEGIN TRANSACTION;
 
 -- View (1 << 1) = 2 + ManageInvitations (1 << 8) = 256
-
-LET $is_owner = (SELECT VALUE owner FROM $target_base)[0] == $inviter_id;
-LET $inviter_perms = (SELECT VALUE perms FROM can_access_base WHERE in = $inviter_id AND out = $target_base)[0] OR 0;
-
-IF !$is_owner AND !fn::bit($inviter_perms, 258) {
+IF !$is_owner AND !fn::can($inviter_perms, 258) {
     THROW 'Unauthorized: You need [View] and [ManageInvitations] to invite others.';
 };
 
@@ -73,26 +95,31 @@ RELATE $invited_id->can_access_base->$target_base
     SET perms = $perms;
 
 COMMIT TRANSACTION;
-            ")
-        .bind(("inviter_id",self.user.clone()))
-        .bind(("invited_id",user))
-        .bind(("target_base",self.base_record_id.clone()))
-        .bind(("perms",perms)).await?;
+            ",
+            )
+            .bind(("inviter_id", self.user.clone()))
+            .bind(("invited_id", user))
+            .bind(("target_base", self.base_record_id.clone()))
+            .bind(("perms", perms))
+            .bind(("is_owner", state.is_owner))
+            .bind(("inviter_perms", state.permissions))
+            .await?;
         res.check()?;
         Ok(())
     }
 
-    pub async fn delete(&self) -> Result<Base, Irror> {
-        let mut res = DB.query("
+    pub async fn delete(&mut self) -> Result<Base, Irror> {
+        let state = self.load_state().await?;
+        let mut res = DB
+            .query(
+                "
         BEGIN TRANSACTION;
 
         -- 'Delete' (1 << 3 = 8) 
         
-        LET $is_owner = (SELECT VALUE owner FROM $base)[0] == $user;
         LET $is_admin = (SELECT VALUE role FROM $user WHERE id = $user)[0] == 'admin';
-        LET $user_perms = (SELECT VALUE perms FROM can_access_base WHERE in = $user AND out = $base)[0] OR 0;
         
-        IF !$is_owner AND !$is_admin AND !fn::bit($user_perms, 8) {
+        IF !$is_owner AND !$is_admin AND !fn::can($user_perms, 8) {
             THROW 'Unauthorized: You do not have permission to delete this base.';
         };
 
@@ -101,26 +128,28 @@ COMMIT TRANSACTION;
             updated_at = time::now();
 
         COMMIT TRANSACTION;
-    ")
-    .bind(("base", self.base_record_id.clone()))
-    .bind(("user", self.user.clone()))
-    .await?;
+    ",
+            )
+            .bind(("base", self.base_record_id.clone()))
+            .bind(("user", self.user.clone()))
+            .bind(("is_owner", state.is_owner))
+            .bind(("user_perms", state.permissions))
+            .await?;
 
-        let base: Option<Base> = res.take(5)?;
+        let base: Option<Base> = res.take(3)?;
         let base = base.ok_or(BaseError::DeleteFailed)?;
 
         Ok(base)
     }
 
-    pub async fn create_table(&self, name: String) -> Result<Table, Irror> {
+    pub async fn create_table(&mut self, name: String) -> Result<Table, Irror> {
         approved(&name)?;
-        let mut res = DB.query("
+        let state = self.load_state().await?;
+        let mut res = DB
+            .query(
+                "
             BEGIN TRANSACTION;
-
-            LET $is_owner = (SELECT VALUE owner FROM $base)[0] == $user;
-            LET $user_perms = (SELECT VALUE perms FROM can_access_base WHERE in = $user AND out = $base)[0] OR 0;
-
-            IF !$is_owner AND !fn::bit($user_perms, 16) {
+            IF !$is_owner AND !fn::can($user_perms, 16) {
                 THROW 'Unauthorized: You do not have ManageTables permission.';
             };
 
@@ -137,28 +166,29 @@ COMMIT TRANSACTION;
             RETURN $table;
 
             COMMIT TRANSACTION;
-        ")
-        .bind(("user", self.user.clone()))
-        .bind(("base", self.base_record_id.clone()))
-        .bind(("name", name))
-        .await?;
+        ",
+            )
+            .bind(("user", self.user.clone()))
+            .bind(("base", self.base_record_id.clone()))
+            .bind(("name", name))
+            .bind(("is_owner", state.is_owner))
+            .bind(("user_perms", state.permissions))
+            .await?;
 
-        let table: Table = res
-            .take::<Option<Table>>(6)?
-            .ok_or(TableError::CreateFailed)?;
-        Ok(table)
+        let table = res.take::<Vec<Table>>(4)?;
+        if table.is_empty() {
+            return Err(Irror::Table(TableError::CreateFailed));
+        };
+        Ok(table[0].clone())
     }
 
-    pub async fn delete_table(&self, table_id: TableId) -> Result<(), Irror> {
+    pub async fn delete_table(&mut self, table_id: TableId) -> Result<(), Irror> {
+        let state = self.load_state().await?;
         let res = DB.query("
             BEGIN TRANSACTION;
-
-            LET $is_owner = (SELECT VALUE owner FROM $base)[0] == $user;
-            LET $base_perms = (SELECT VALUE perms FROM can_access_base WHERE in = $user AND out = $base)[0] OR 0;
-            
             LET $table_perms = (SELECT VALUE perms FROM can_access_table WHERE in = $user AND out = $table_id)[0] OR 0;
 
-            IF !$is_owner AND !fn::bit($base_perms, 16) AND !mod::bit::can($table_perms, 4) {
+            IF !$is_owner AND !fn::can($base_perms, 16) AND !mod::bit::can($table_perms, 4) {
                 THROW 'Unauthorized: Cannot delete this table.';
             };
 
@@ -171,29 +201,35 @@ COMMIT TRANSACTION;
         .bind(("user", self.user.clone()))
         .bind(("base", self.base_record_id.clone()))
         .bind(("table_id", table_id))
+        .bind(("is_owner", state.is_owner))
+        .bind(("base_perms", state.permissions))
         .await?;
 
         res.check()?;
         Ok(())
     }
 
-    pub async fn list_tables(&self) -> Result<Vec<Table>, Irror> {
-        let mut res = DB.query("
-            LET $is_owner = (SELECT VALUE owner FROM $base)[0] == $user;
-            
+    pub async fn list_tables(&mut self) -> Result<Vec<Table>, Irror> {
+        let state = self.load_state().await?;
+        let mut res = DB
+            .query(
+                "
             SELECT * FROM table WHERE base = $base AND is_deleted = false AND (
                 $is_owner OR 
-                fn::bit(
-                    (SELECT VALUE perms FROM can_access_table WHERE in = $user AND out = $this.id)[0], 
+                fn::can(
+                    $perms, 
                     2
                 )
             ) ORDER BY created_at ASC;
-        ")
-        .bind(("user", self.user.clone()))
-        .bind(("base", self.base_record_id.clone()))
-        .await?;
+        ",
+            )
+            .bind(("user", self.user.clone()))
+            .bind(("base", self.base_record_id.clone()))
+            .bind(("is_owner", state.is_owner))
+            .bind(("perms", state.permissions))
+            .await?;
 
-        let tables: Vec<Table> = res.take(1)?;
+        let tables: Vec<Table> = res.take(0)?;
         Ok(tables)
     }
 

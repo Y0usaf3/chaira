@@ -96,6 +96,15 @@ macro_rules! bitmask_serde {
             }
         }
 
+        impl std::fmt::Debug for $ty {
+            fn fmt(
+                &self,
+                _: &mut std::fmt::Formatter<'_>,
+            ) -> std::result::Result<(), std::fmt::Error> {
+                Ok(())
+            }
+        }
+
         impl SurrealValue for $ty {
             fn kind_of() -> Kind {
                 Kind::Number

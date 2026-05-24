@@ -47,14 +47,23 @@
           })
         openssl
         glib
+        bacon
+        opencode
+        llvmPackages.libclang
+        stdenv.cc.cc.lib
         surrealist # used for debugging ig
         surrealdb-bin.packages.${system}.latest
       ];
 
       RUST_LOG = "info";
       SURREAL_BUCKET_FOLDER_ALLOWLIST = "/purrjects/chara/charli/";
+      LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
+      BINDGEN_EXTRA_CLANG_ARGS = "-I${pkgs.stdenv.cc.libc.dev}/include";
 
-      nativeBuildInputs = [pkgs.pkg-config];
+      nativeBuildInputs = with pkgs; [
+        pkg-config
+        stdenv.cc
+      ];
 
       env.RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
 

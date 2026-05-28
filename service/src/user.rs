@@ -256,7 +256,7 @@ impl UserService {
 
     pub async fn is_admin(&mut self) -> Result<bool, Irror> {
         if let Some((value, ts)) = self.is_admin_cache.zip(self.cache_instant)
-            && ts.elapsed() < Duration::from_secs(5)
+            && ts.elapsed() < Duration::from_secs(1)
         {
             return Ok(value);
         };

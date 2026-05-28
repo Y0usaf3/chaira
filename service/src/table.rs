@@ -97,7 +97,7 @@ impl TableService {
 
     async fn load_state(&mut self) -> Result<StateCache, Irror> {
         if let Some((value, ts)) = self.cache.clone().zip(self.cache_instant)
-            && ts.elapsed() < Duration::from_secs(5)
+            && ts.elapsed() < Duration::from_secs(1)
         {
             return Ok(value);
         };

@@ -52,7 +52,7 @@ impl BaseService {
 
     async fn load_state(&mut self) -> Result<StateCache, Irror> {
         if let Some((value, ts)) = self.cache.clone().zip(self.cache_instant)
-            && ts.elapsed() < Duration::from_secs(5)
+            && ts.elapsed() < Duration::from_secs(1)
         {
             return Ok(value);
         };
@@ -160,7 +160,9 @@ COMMIT TRANSACTION;
 
     #[requires(BasePermission, ManageTables)]
     pub async fn delete_table(&mut self, table_id: TableId) -> Result<(), Irror> {
-        let res = DB.query("
+        let res = DB
+            .query(
+                "
             BEGIN TRANSACTION;
 
             UPDATE $table_id SET is_deleted = true, updated_at = time::now();
@@ -168,9 +170,10 @@ COMMIT TRANSACTION;
             UPDATE record SET is_deleted = true WHERE table = $table_id;
 
             COMMIT TRANSACTION;
-        ")
-        .bind(("table_id", table_id))
-        .await?;
+        ",
+            )
+            .bind(("table_id", table_id))
+            .await?;
 
         res.check()?;
         Ok(())

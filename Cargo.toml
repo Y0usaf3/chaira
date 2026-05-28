@@ -3,6 +3,13 @@ resolver = "3"
 exclude = ["charli"]
 members = ["models", "service", "service-macros"]
 
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = 'abort'
+strip = true
+
 [workspace.dependencies]
 surrealdb = {version = "3.1.0-beta.3", features = ["kv-mem", "scripting"]}
 thiserror = "2.0.18"

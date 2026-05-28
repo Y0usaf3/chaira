@@ -356,6 +356,109 @@ impl UserService {
         let bases: Vec<Base> = res.take(0)?;
         Ok(bases)
     }
+
+    pub async fn delete_all_soft_deleted_users(&self) -> Result<Vec<models::User>, Irror> {
+        let mut res = DB
+            .query("DELETE * FROM user WHERE is_deleted = true;")
+            .await?;
+        let users = res.take::<Vec<User>>(0)?;
+        Ok(users)
+    }
+
+    // we also delete tables and fields and records related to it
+    pub async fn delete_all_soft_deleted_bases(&mut self) -> Result<Vec<models::Base>, Irror> {
+        if !self.is_admin().await? {
+            return Err(PermissionError::AdminRequired.into());
+        };
+
+        let mut res = DB
+            .query(
+                "
+                BEGIN TRANSACTION;
+                LET $deleted_bases = (SELECT id FROM base WHERE is_deleted = true);
+                DELETE FROM record WHERE table IN (
+                    SELECT id FROM table WHERE base IN $deleted_bases
+                );
+                DELETE FROM field WHERE table IN (
+                    SELECT id FROM table WHERE base IN $deleted_bases
+                );
+                DELETE FROM can_access_table WHERE out IN (
+                    SELECT id FROM table WHERE base IN $deleted_bases
+                );
+                DELETE FROM can_access_field WHERE out IN (
+                    SELECT id FROM field WHERE table IN (
+                        SELECT id FROM table WHERE base IN $deleted_bases
+                    )
+                );
+                DELETE FROM table WHERE base IN $deleted_bases;
+                DELETE FROM can_access_base WHERE out IN $deleted_bases;
+                DELETE FROM base WHERE is_deleted = true;
+                COMMIT TRANSACTION;
+                ",
+            )
+            .await?;
+        let bases = res.take::<Vec<Base>>(7)?;
+        Ok(bases)
+    }
+
+    // we also delete fields and records realted to it
+    pub async fn delete_all_soft_deleted_tables(&mut self) -> Result<Vec<models::Table>, Irror> {
+        if !self.is_admin().await? {
+            return Err(PermissionError::AdminRequired.into());
+        };
+
+        let mut res = DB
+            .query(
+                "
+                BEGIN TRANSACTION;
+                LET $deleted_tables = (SELECT id FROM table WHERE is_deleted = true);
+                DELETE FROM record WHERE table IN $deleted_tables;
+                DELETE FROM field WHERE table IN $deleted_tables;
+                DELETE FROM can_access_table WHERE out IN $deleted_tables;
+                DELETE FROM can_access_field WHERE out IN (
+                    SELECT id FROM field WHERE table IN $deleted_tables
+                );
+                DELETE FROM table WHERE is_deleted = true;
+                COMMIT TRANSACTION;
+                ",
+            )
+            .await?;
+        let tables = res.take::<Vec<Table>>(5)?;
+        Ok(tables)
+    }
+
+    // we also delete cells deleted to it
+    pub async fn delete_all_soft_deleted_fields(&mut self) -> Result<Vec<models::Field>, Irror> {
+        if !self.is_admin().await? {
+            return Err(PermissionError::AdminRequired.into());
+        };
+
+        let mut res = DB
+            .query(
+                "
+                BEGIN TRANSACTION;
+                LET $deleted_fields = (SELECT id FROM field WHERE is_deleted = true);
+                LET $affected_records = (SELECT id, cells FROM record WHERE cells CONTAINS ANY $deleted_fields);
+                
+                FOR $record IN $affected_records {
+                    LET $updated_cells = {};
+                    FOR $field_id, $cell_value IN $record.cells {
+                        IF $field_id NOT IN $deleted_fields {
+                            $updated_cells[$field_id] = $cell_value;
+                        };
+                    };
+                    UPDATE $record.id SET cells = $updated_cells;
+                };
+                
+                DELETE FROM can_access_field WHERE out IN $deleted_fields;
+                DELETE FROM field WHERE is_deleted = true;
+                COMMIT TRANSACTION;
+                ",
+            )
+            .await?;
+        let fields = res.take::<Vec<Field>>(6)?;
+        Ok(fields)
+    }
 }
 
 // ok, i gotta learn how argon2 works again, dam i forgot how it works its been like, 6months or

@@ -148,6 +148,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Phase 8: Concurrent Operations
     test_concurrent_operations(&mut base_service, &user_id, &base_id).await?;
 
+    // Phase 9: Real-world 250k Records Test
+    test_large_dataset(&mut base_service, &user_id, &base_id).await?;
+
     println!("\n");
     println!("╔════════════════════════════════════════════════════════════════════════════════╗");
     println!("║                      ALL TESTS COMPLETED SUCCESSFULLY ✓                        ║");
@@ -1140,6 +1143,458 @@ async fn test_concurrent_operations(
     println!(
         "⚡ Concurrent Test: {} concurrent record creations completed in {:?}",
         success_count, duration
+    );
+
+    Ok(())
+}
+
+// ============================================================================
+// PHASE 9: REAL-WORLD 250K RECORDS TEST
+// ============================================================================
+
+async fn test_large_dataset(
+    base_service: &mut BaseService,
+    user_id: &UserId,
+    base_id: &BaseId,
+) -> Result<(), Box<dyn std::error::Error>> {
+    print_performance_test_header("Real-World 250K Records Dataset");
+
+    let table = base_service
+        .create_table("large_dataset_table".to_string())
+        .await?;
+    let table_id = TableId(table.id.unwrap().0);
+    let mut table_service =
+        TableService::new(table_id.clone(), base_id.clone(), user_id.clone()).await?;
+
+    // Create realistic schema for a customer/order database
+    let schema = vec![
+        (
+            "customer_id",
+            FieldConfig::Text(TextConfig::SingleLine {
+                default: None,
+                max_length: 50,
+            }),
+        ),
+        (
+            "first_name",
+            FieldConfig::Text(TextConfig::SingleLine {
+                default: None,
+                max_length: 100,
+            }),
+        ),
+        (
+            "last_name",
+            FieldConfig::Text(TextConfig::SingleLine {
+                default: None,
+                max_length: 100,
+            }),
+        ),
+        ("email", FieldConfig::Text(TextConfig::Email)),
+        (
+            "phone",
+            FieldConfig::Text(TextConfig::SingleLine {
+                default: None,
+                max_length: 20,
+            }),
+        ),
+        (
+            "city",
+            FieldConfig::Text(TextConfig::SingleLine {
+                default: None,
+                max_length: 100,
+            }),
+        ),
+        (
+            "country",
+            FieldConfig::Text(TextConfig::SingleLine {
+                default: None,
+                max_length: 100,
+            }),
+        ),
+        (
+            "purchase_amount",
+            FieldConfig::Number(NumberConfig::Decimal {
+                default: None,
+                precision: 2,
+            }),
+        ),
+        (
+            "purchase_count",
+            FieldConfig::Number(NumberConfig::Number { default: None }),
+        ),
+    ];
+
+    println!("\n📊 Creating schema with {} fields...", schema.len());
+    let start = Instant::now();
+    let inserts: Vec<InsertField> = schema
+        .iter()
+        .map(|a| InsertField::new(a.0.to_string(), a.1.clone(), false, true, false))
+        .collect();
+    let fields = table_service.create_a_lot_of_fields(inserts).await?;
+    let duration = start.elapsed();
+
+    println!("✓ Schema created in {:?}", duration);
+
+    print_bench_table(
+        "250K Dataset: Schema Setup",
+        vec![("Fields Created".to_string(), fields.len().to_string())],
+        duration,
+    );
+
+    // Sample data for realistic records
+    let first_names = vec![
+        "John", "Jane", "Michael", "Sarah", "David", "Emma", "Robert", "Lisa", "James", "Mary",
+        "William", "Patricia", "Richard", "Jennifer", "Charles", "Barbara", "Joseph", "Susan",
+        "Thomas", "Jessica", "Daniel", "Karen", "Matthew", "Nancy", "Mark", "Linda",
+    ];
+
+    let last_names = vec![
+        "Smith",
+        "Johnson",
+        "Williams",
+        "Brown",
+        "Jones",
+        "Miller",
+        "Davis",
+        "Rodriguez",
+        "Martinez",
+        "Garcia",
+        "Wilson",
+        "Anderson",
+        "Taylor",
+        "Thomas",
+        "Moore",
+        "Jackson",
+        "Martin",
+        "Lee",
+        "Perez",
+        "Thompson",
+        "White",
+        "Harris",
+        "Sanchez",
+        "Clark",
+    ];
+
+    let cities = vec![
+        "New York",
+        "Los Angeles",
+        "Chicago",
+        "Houston",
+        "Phoenix",
+        "Philadelphia",
+        "San Antonio",
+        "San Diego",
+        "Dallas",
+        "San Jose",
+        "Austin",
+        "Jacksonville",
+        "Seattle",
+        "Denver",
+        "Boston",
+        "Miami",
+        "Portland",
+        "Atlanta",
+        "Detroit",
+        "Minneapolis",
+    ];
+
+    let countries = vec![
+        "USA",
+        "Canada",
+        "UK",
+        "Germany",
+        "France",
+        "Spain",
+        "Italy",
+        "Australia",
+    ];
+
+    // Phase 1: Bulk insert 250k records
+    println!("\n📝 Bulk inserting 250,000 records...");
+    let start = Instant::now();
+    let batch_size = 5000;
+    let total_records = 250_000;
+    let mut batches_inserted = 0;
+
+    for batch_start in (0..total_records).step_by(batch_size) {
+        let batch_end = std::cmp::min(batch_start + batch_size, total_records);
+        let mut insert_records = Vec::with_capacity(batch_size);
+
+        for i in batch_start..batch_end {
+            let mut cells = HashMap::new();
+
+            // Generate realistic data
+            cells.insert(
+                "customer_id".to_string(),
+                CellValue::new(Value::SingleLine(SingleLineValue::new(
+                    None,
+                    Some(format!("CUST-{:06}", i)),
+                )?)),
+            );
+
+            let first_name = first_names[i % first_names.len()];
+            cells.insert(
+                "first_name".to_string(),
+                CellValue::new(Value::SingleLine(SingleLineValue::new(
+                    None,
+                    Some(first_name.to_string()),
+                )?)),
+            );
+
+            let last_name = last_names[i % last_names.len()];
+            cells.insert(
+                "last_name".to_string(),
+                CellValue::new(Value::SingleLine(SingleLineValue::new(
+                    None,
+                    Some(last_name.to_string()),
+                )?)),
+            );
+
+            cells.insert(
+                "email".to_string(),
+                CellValue::new(Value::Email(Email::new(format!(
+                    "customer{}@example.com",
+                    i
+                ))?)),
+            );
+
+            let phone_prefix = 200 + (i % 700);
+            cells.insert(
+                "phone".to_string(),
+                CellValue::new(Value::SingleLine(SingleLineValue::new(
+                    None,
+                    Some(format!("+1-{}-555-{:04}", phone_prefix, i % 10000)),
+                )?)),
+            );
+
+            let city = cities[i % cities.len()];
+            cells.insert(
+                "city".to_string(),
+                CellValue::new(Value::SingleLine(SingleLineValue::new(
+                    None,
+                    Some(city.to_string()),
+                )?)),
+            );
+
+            let country = countries[i % countries.len()];
+            cells.insert(
+                "country".to_string(),
+                CellValue::new(Value::SingleLine(SingleLineValue::new(
+                    None,
+                    Some(country.to_string()),
+                )?)),
+            );
+
+            let purchase_amount = (i as f64 % 5000.0) + 10.0 * (1.0 + (i % 100) as f64 / 100.0);
+            cells.insert(
+                "purchase_amount".to_string(),
+                CellValue::new(Value::Decimal(DecimalValue::new(
+                    Some(purchase_amount),
+                    None,
+                )?)),
+            );
+
+            cells.insert(
+                "purchase_count".to_string(),
+                CellValue::new(Value::Number(NumberValue::new(Some(1 + (i % 50)), None)?)),
+            );
+
+            let insert = InsertRecord::new(table_id.clone(), cells);
+            insert_records.push(insert);
+        }
+
+        table_service
+            .create_a_lot_of_records(insert_records)
+            .await?;
+
+        batches_inserted += 1;
+        if batches_inserted % 10 == 0 {
+            let elapsed = start.elapsed();
+            let records_so_far = batch_end;
+            let rate = records_so_far as f64 / elapsed.as_secs_f64();
+            println!(
+                "  ⏳ Inserted {}/{} records ({:.0} records/sec)",
+                records_so_far, total_records, rate
+            );
+        }
+    }
+
+    let insert_duration = start.elapsed();
+    println!(
+        "✓ All 250,000 records inserted in {:?} ({:.0} records/sec)\n",
+        insert_duration,
+        total_records as f64 / insert_duration.as_secs_f64()
+    );
+
+    print_bench_table(
+        "250K Dataset: Bulk Insert",
+        vec![
+            ("Records Inserted".to_string(), total_records.to_string()),
+            ("Total Time".to_string(), format!("{:?}", insert_duration)),
+            (
+                "Throughput".to_string(),
+                format!(
+                    "{:.0} records/sec",
+                    total_records as f64 / insert_duration.as_secs_f64()
+                ),
+            ),
+        ],
+        insert_duration,
+    );
+
+    // Phase 2: Test pagination with different page sizes
+    println!("\n📄 Testing pagination performance...");
+    let pagination_tests = vec![
+        ("Small page (10 records)", 10),
+        ("Medium page (100 records)", 100),
+        ("Large page (1000 records)", 1000),
+    ];
+
+    for (test_name, page_size) in pagination_tests {
+        let start = Instant::now();
+        let _records = table_service
+            .list_records(PaginationParams {
+                offset: Some(0),
+                limit: Some(page_size),
+            })
+            .await?;
+        let duration = start.elapsed();
+
+        println!("  ⏳ {} in {:?}", test_name, duration);
+    }
+
+    // Phase 3: Full data retrieval test
+    println!("\n🔍 Testing full data retrieval...");
+    let start = Instant::now();
+    let (fields_result, records_result) = table_service.get_full_data(Some(1000)).await?;
+    let full_data_duration = start.elapsed();
+
+    println!(
+        "✓ Retrieved all fields and records in {:?}",
+        full_data_duration
+    );
+
+    print_bench_table(
+        "250K Dataset: Full Data Retrieval",
+        vec![
+            ("Fields".to_string(), fields_result.len().to_string()),
+            (
+                "Records Retrieved".to_string(),
+                records_result.len().to_string(),
+            ),
+            (
+                "Total Time".to_string(),
+                format!("{:?}", full_data_duration),
+            ),
+        ],
+        full_data_duration,
+    );
+
+    // Phase 4: Random access test (fetch random records)
+    println!("\n🎲 Testing random access performance...");
+    let start = Instant::now();
+    let sample_size = 100;
+
+    for i in 0..sample_size {
+        let offset = (i * total_records / sample_size) as u32;
+        let _records = table_service
+            .list_records(PaginationParams {
+                offset: Some(offset),
+                limit: Some(1),
+            })
+            .await?;
+    }
+
+    let random_access_duration = start.elapsed();
+    println!(
+        "✓ Random access test ({} random reads) completed in {:?}",
+        sample_size, random_access_duration
+    );
+
+    print_bench_table(
+        "250K Dataset: Random Access",
+        vec![
+            ("Random Reads".to_string(), sample_size.to_string()),
+            (
+                "Total Time".to_string(),
+                format!("{:?}", random_access_duration),
+            ),
+            (
+                "Avg Per Read".to_string(),
+                format!("{:?}", random_access_duration / sample_size as u32),
+            ),
+        ],
+        random_access_duration,
+    );
+
+    // Phase 5: Concurrent reads test
+    println!("\n⚡ Testing concurrent reads on 250K dataset...");
+    let start = Instant::now();
+    let mut handles = vec![];
+    let concurrent_tasks = 20;
+
+    for i in 0..concurrent_tasks {
+        let table_id_clone = table_id.clone();
+        let user_id_clone = user_id.clone();
+        let base_id_clone = base_id.clone();
+
+        let handle = tokio::spawn(async move {
+            match TableService::new(table_id_clone, base_id_clone, user_id_clone).await {
+                Ok(mut table_service) => {
+                    let offset = (i as u32 * total_records as u32 / concurrent_tasks as u32);
+                    table_service
+                        .list_records(PaginationParams {
+                            offset: Some(offset),
+                            limit: Some(100),
+                        })
+                        .await
+                        .ok()
+                }
+                Err(_) => None,
+            }
+        });
+
+        handles.push(handle);
+    }
+
+    let mut success_count = 0;
+    for handle in handles {
+        if handle.await.ok().flatten().is_some() {
+            success_count += 1;
+        }
+    }
+
+    let concurrent_duration = start.elapsed();
+    println!(
+        "✓ Concurrent reads ({}/{} tasks successful) completed in {:?}",
+        success_count, concurrent_tasks, concurrent_duration
+    );
+
+    print_bench_table(
+        "250K Dataset: Concurrent Reads",
+        vec![
+            ("Concurrent Tasks".to_string(), concurrent_tasks.to_string()),
+            ("Successful".to_string(), success_count.to_string()),
+            (
+                "Total Time".to_string(),
+                format!("{:?}", concurrent_duration),
+            ),
+        ],
+        concurrent_duration,
+    );
+
+    // Phase 6: Summary statistics
+    println!("\n📈 250K Dataset Performance Summary:");
+    println!("  • Total insertion time: {:?}", insert_duration);
+    println!("  • Full data retrieval time: {:?}", full_data_duration);
+    println!(
+        "  • Random access (100 reads): {:?}",
+        random_access_duration
+    );
+    println!("  • Concurrent reads (20 tasks): {:?}", concurrent_duration);
+    println!(
+        "  • Overall throughput: {:.0} records/sec (insertion)",
+        total_records as f64 / insert_duration.as_secs_f64()
     );
 
     Ok(())

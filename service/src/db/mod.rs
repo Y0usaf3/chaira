@@ -13,7 +13,7 @@ macro_rules! env_required {
 
 use std::sync::LazyLock;
 use surrealdb::Surreal;
-use surrealdb::engine::local::{Db, Mem};
+use surrealdb::engine::local::{Db, Mem, RocksDb};
 use surrealdb::opt::Config;
 
 pub mod error;
@@ -31,7 +31,7 @@ pub static DB: LazyLock<Surreal<Db>> = LazyLock::new(Surreal::init);
 pub async fn init() {
     let config = Config::default()
         .capabilities(Capabilities::all().with_all_experimental_features_allowed());
-    let _ = DB.connect::<Mem>(("memory", config)).await;
+    let _ = DB.connect::<RocksDb>(("rocksdb://tst.db", config)).await;
     /*  DB.connect::<Ws>(env_required!("DB_URL")).await.unwrap(); */
     // DB.signin(Root {
     //     username: env_required!("DB_USERNAME"),

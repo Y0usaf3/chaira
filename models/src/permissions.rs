@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use crate::{bitmask_serde, relation};
+use crate::{bitmask_serde, can, relation};
 use bitmask::bitmask;
 use surrealdb_types::{Error, Value};
 
@@ -19,6 +19,7 @@ bitmask! {
 }
 bitmask_serde!(BasePermissions);
 relation!(CanAccessBase, BasePermissions);
+can!(BasePermissions, BasePermission);
 
 bitmask! {
     pub mask TablePermissions: i32 where flags TablePermission {
@@ -35,6 +36,7 @@ bitmask! {
 }
 bitmask_serde!(TablePermissions);
 relation!(CanAccessTable, TablePermissions);
+can!(TablePermissions, TablePermission);
 
 bitmask! {
     pub mask FieldPermissions: i32 where flags FieldPermission {
@@ -51,6 +53,7 @@ bitmask! {
 }
 bitmask_serde!(FieldPermissions);
 relation!(CanAccessField, FieldPermissions);
+can!(FieldPermissions, FieldPermission);
 
 #[macro_export]
 macro_rules! relation {
@@ -59,6 +62,17 @@ macro_rules! relation {
         $(pub struct $x {
             pub perm: $y,
         })*
+    };
+}
+
+#[macro_export]
+macro_rules! can {
+    ($ty:ident, $py:ident) => {
+        impl $ty {
+            pub fn can(&self, permission: $py) -> bool {
+                self.contains(permission) || self.contains($py::Admin)
+            }
+        }
     };
 }
 

@@ -7,10 +7,6 @@
       url = "github:nix-community/naersk";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    rust-overlay = {
-      url = "github:oxalica/rust-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     surrealdb-bin.url = "github:dmitriiStepanidenko/surrealdb-nixos";
   };
 
@@ -18,14 +14,12 @@
     self,
     nixpkgs,
     naersk,
-    rust-overlay,
     surrealdb-bin,
   }: let
-    overlays = [(import rust-overlay)];
     system = "x86_64-linux";
     pkgs = import nixpkgs {
       config.allowUnfree = true;
-      inherit overlays system;
+      inherit system;
     };
     naerskLib = pkgs.callPackage naersk {};
   in {
@@ -36,15 +30,9 @@
     };
     devShells.${system}.default = pkgs.mkShell {
       buildInputs = with pkgs; [
-        (rust-bin.stable.latest.default.override
-          {
-            extensions = ["rust-src" "rust-analyzer"];
-            targets = [
-              "wasm32-wasip1"
-              "wasm32-unknown-unknown"
-              "x86_64-unknown-linux-musl"
-            ];
-          })
+        cargo
+        rust-analyzer
+        clippy
         openssl
         glib
         bacon

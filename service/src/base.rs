@@ -79,17 +79,12 @@ impl BaseService {
         Ok(value)
     }
 
+    #[requires(BasePermission, ManageInvitations)]
     pub async fn invite_user(&mut self, user: UserId, perms: BasePermissions) -> Result<(), Irror> {
-        let state = self.load_state().await?;
         let res = DB
             .query(
                 "
             BEGIN TRANSACTION;
-
--- View (1 << 1) = 2 + ManageInvitations (1 << 8) = 256
-IF !$is_owner AND !fn::can($inviter_perms, 258) {
-    THROW 'Unauthorized: You need [View] and [ManageInvitations] to invite others.';
-};
 
 RELATE $invited_id->can_access_base->$target_base 
     SET perms = $perms;
@@ -97,31 +92,20 @@ RELATE $invited_id->can_access_base->$target_base
 COMMIT TRANSACTION;
             ",
             )
-            .bind(("inviter_id", self.user.clone()))
             .bind(("invited_id", user))
             .bind(("target_base", self.base_record_id.clone()))
             .bind(("perms", perms))
-            .bind(("is_owner", state.is_owner))
-            .bind(("inviter_perms", state.permissions))
             .await?;
         res.check()?;
         Ok(())
     }
 
+    #[requires(BasePermission, Delete)]
     pub async fn delete(&mut self) -> Result<Base, Irror> {
-        let state = self.load_state().await?;
         let mut res = DB
             .query(
                 "
         BEGIN TRANSACTION;
-
-        -- 'Delete' (1 << 3 = 8) 
-        
-        LET $is_admin = (SELECT VALUE role FROM $user WHERE id = $user)[0] == 'admin';
-        
-        IF !$is_owner AND !$is_admin AND !fn::can($user_perms, 8) {
-            THROW 'Unauthorized: You do not have permission to delete this base.';
-        };
 
         UPDATE $base SET 
             is_deleted = true, 
@@ -131,27 +115,21 @@ COMMIT TRANSACTION;
     ",
             )
             .bind(("base", self.base_record_id.clone()))
-            .bind(("user", self.user.clone()))
-            .bind(("is_owner", state.is_owner))
-            .bind(("user_perms", state.permissions))
             .await?;
 
-        let base: Option<Base> = res.take(3)?;
+        let base: Option<Base> = res.take(2)?;
         let base = base.ok_or(BaseError::DeleteFailed)?;
 
         Ok(base)
     }
 
+    #[requires(BasePermission, ManageTables)]
     pub async fn create_table(&mut self, name: String) -> Result<Table, Irror> {
         approved(&name)?;
-        let state = self.load_state().await?;
         let mut res = DB
             .query(
                 "
             BEGIN TRANSACTION;
-            IF !$is_owner AND !fn::can($user_perms, 16) {
-                THROW 'Unauthorized: You do not have ManageTables permission.';
-            };
 
             -- Create the table linked to this base
             LET $table = (CREATE table SET 
@@ -171,26 +149,19 @@ COMMIT TRANSACTION;
             .bind(("user", self.user.clone()))
             .bind(("base", self.base_record_id.clone()))
             .bind(("name", name))
-            .bind(("is_owner", state.is_owner))
-            .bind(("user_perms", state.permissions))
             .await?;
 
-        let table = res.take::<Vec<Table>>(4)?;
+        let table = res.take::<Vec<Table>>(3)?;
         if table.is_empty() {
             return Err(Irror::Table(TableError::CreateFailed));
         };
         Ok(table[0].clone())
     }
 
+    #[requires(BasePermission, ManageTables)]
     pub async fn delete_table(&mut self, table_id: TableId) -> Result<(), Irror> {
-        let state = self.load_state().await?;
         let res = DB.query("
             BEGIN TRANSACTION;
-            LET $table_perms = (SELECT VALUE perms FROM can_access_table WHERE in = $user AND out = $table_id)[0] OR 0;
-
-            IF !$is_owner AND !fn::can($base_perms, 16) AND !mod::bit::can($table_perms, 4) {
-                THROW 'Unauthorized: Cannot delete this table.';
-            };
 
             UPDATE $table_id SET is_deleted = true, updated_at = time::now();
             
@@ -198,11 +169,7 @@ COMMIT TRANSACTION;
 
             COMMIT TRANSACTION;
         ")
-        .bind(("user", self.user.clone()))
-        .bind(("base", self.base_record_id.clone()))
         .bind(("table_id", table_id))
-        .bind(("is_owner", state.is_owner))
-        .bind(("base_perms", state.permissions))
         .await?;
 
         res.check()?;

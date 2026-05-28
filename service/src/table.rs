@@ -158,17 +158,9 @@ impl TableService {
             None => Err(Irror::Table(TableError::NotFound)),
         }
     }
+    #[requires(TablePermission, Edit)]
     pub async fn create_field(&mut self, field: InsertField) -> Result<Field, Irror> {
         let field = Field::from_insert(field);
-        let state = self.load_state().await?;
-        let is_authorized = state.is_owner
-            || state.permissions.contains(TablePermission::Edit)
-            || state.permissions.contains(TablePermission::Admin);
-
-        if !is_authorized {
-            return Err(Irror::Table(TableError::Unauthorized));
-        }
-
         let mut res = DB
             .query(
                 "CREATE field SET 
@@ -194,6 +186,7 @@ impl TableService {
             None => Err(Irror::Table(TableError::CreateFailed)),
         }
     }
+    #[requires(TablePermission, Edit)]
     pub async fn create_a_lot_of_fields(
         &mut self,
         fields: Vec<InsertField>,
@@ -202,42 +195,30 @@ impl TableService {
             return Err(Irror::Table(TableError::Unauthorized));
         };
         let fields_data: Vec<Field> = fields.into_iter().map(Field::from_insert).collect();
-        let state = self.load_state().await?;
 
         let mut res = DB
             .query(
                 "
-        LET $has_table_edit = fn::can(
-            $permissions, 
-            4
-        );
-
-        IF $is_owner OR $has_table_edit THEN
-            (INSERT INTO field (
-                SELECT 
-                    name,
-                    $table_id AS table,
-                    is_primary,
-                    is_nullable,
-                    is_unique,
-                    order,
-                    description,
-                    config,
-                    time::now() AS created_at,
-                    time::now() AS updated_at
-                FROM $data
-            ))
-        END;",
+        (INSERT INTO field (
+            SELECT 
+                name,
+                $table_id AS table,
+                is_primary,
+                is_nullable,
+                is_unique,
+                order,
+                description,
+                config,
+                time::now() AS created_at,
+                time::now() AS updated_at
+            FROM $data
+        ))",
             )
-            .bind(("user", self.user.clone()))
-            .bind(("base_id", self.base.clone()))
             .bind(("table_id", self.table_record_id.clone()))
             .bind(("data", fields_data))
-            .bind(("is_owner", state.is_owner))
-            .bind(("permissions", state.permissions))
             .await?;
 
-        let created_fields: Vec<Field> = res.take(1)?;
+        let created_fields: Vec<Field> = res.take(0)?;
 
         if created_fields.is_empty() {
             Err(Irror::Table(TableError::NotFound))
@@ -246,19 +227,13 @@ impl TableService {
         }
     }
 
+    #[requires(TablePermission, Edit)]
     pub async fn update_field(
         &mut self,
         field_id: FieldId,
         field: InsertField,
     ) -> Result<Result<Field, MigrationStrategy>, Irror> {
         let field = Field::from_insert(field);
-        let state = self.load_state().await?;
-        let is_authorized = state.is_owner
-            || state.permissions.contains(TablePermission::Edit)
-            || state.permissions.contains(TablePermission::Admin);
-        if !is_authorized {
-            return Err(Irror::Table(TableError::Unauthorized));
-        };
         let mut res = DB
             .query("SELECT * FROM $field WHERE table = $table_id")
             .bind(("field", field_id.clone()))
@@ -288,27 +263,20 @@ impl TableService {
         Ok(Ok(updated))
     }
 
+    #[requires(TablePermission, Edit)]
     pub async fn delete_field(&mut self, field: FieldId) -> Result<Field, Irror> {
-        let state = self.load_state().await?;
         let mut res = DB
             .query(
                 "
-        LET $is_authorized = $is_owner OR fn::can($perms, 8);
-
-        IF $is_authorized THEN {
-            UPDATE $field SET 
-                is_deleted = true,
-                updated_at = time::now();
-        } END;
+        UPDATE $field SET 
+            is_deleted = true,
+            updated_at = time::now();
         ",
             )
-            .bind(("user", self.user.clone()))
             .bind(("table_id", self.table_record_id.clone()))
             .bind(("field", field))
-            .bind(("is_owner", state.is_owner))
-            .bind(("perms", state.permissions))
             .await?;
-        let deleted_field: Option<Field> = res.take(1)?;
+        let deleted_field: Option<Field> = res.take(0)?;
 
         match deleted_field {
             Some(f) => Ok(f),
@@ -316,31 +284,24 @@ impl TableService {
         }
     }
 
+    #[requires(TablePermission, Edit)]
     pub async fn delete_a_lot_of_fields(
         &mut self,
         fields: Vec<FieldId>,
     ) -> Result<Vec<Field>, Irror> {
-        let state = self.load_state().await?;
         let mut res = DB
             .query(
                 "
-        LET $is_authorized = $is_owner OR fn::can($perms, 4);
-        
-        IF $is_authorized {
-            (UPDATE field SET 
-                is_deleted = true,
-                updated_at = time::now()
-            WHERE id IN $fields)
-        }
+        (UPDATE field SET 
+            is_deleted = true,
+            updated_at = time::now()
+        WHERE id IN $fields)
         ",
             )
-            .bind(("user", self.user.clone()))
             .bind(("table_id", self.table_record_id.clone()))
             .bind(("fields", fields))
-            .bind(("is_owner", state.is_owner))
-            .bind(("perms", state.permissions))
             .await?;
-        let delected_fields: Option<Vec<Field>> = res.take(1)?;
+        let delected_fields: Option<Vec<Field>> = res.take(0)?;
         match delected_fields {
             Some(f) => Ok(f),
             _ => Err(Irror::Table(TableError::DeleteFailed)),
@@ -440,16 +401,9 @@ impl TableService {
         Ok((fields, records))
     }
 
+    #[requires(TablePermission, Edit)]
     pub async fn create_record(&mut self, record: InsertRecord) -> Result<Record, Irror> {
         let record = Record::from_insert(record);
-        let state = self.load_state().await?;
-        let is_authorized = state.is_owner
-            || state.permissions.contains(TablePermission::Edit)
-            || state.permissions.contains(TablePermission::Admin);
-
-        if !is_authorized {
-            return Err(Irror::Table(TableError::Unauthorized));
-        }
 
         let mut res = DB
             .query(
@@ -472,19 +426,11 @@ impl TableService {
         }
     }
 
+    #[requires(TablePermission, Edit)]
     pub async fn create_a_lot_of_records(
         &mut self,
         records: Vec<InsertRecord>,
     ) -> Result<(), Irror> {
-        let state = self.load_state().await?;
-        let is_authorized = state.is_owner
-            || state.permissions.contains(TablePermission::Edit)
-            || state.permissions.contains(TablePermission::Admin);
-
-        if !is_authorized {
-            return Err(Irror::Table(TableError::Unauthorized));
-        }
-
         // Convert all records once, then batch insert
         let records_data: Vec<Record> = records.into_iter().map(Record::from_insert).collect();
 
@@ -495,7 +441,7 @@ impl TableService {
                 new_record.table = self.table_record_id.clone();
                 batch_records.push(new_record);
             }
-            
+
             let res = DB
                 .query("INSERT INTO record (SELECT * FROM $data);")
                 .bind(("data", batch_records))
@@ -506,6 +452,7 @@ impl TableService {
         Ok(())
     }
 
+    #[requires(TablePermission, Edit)]
     pub async fn update_record(
         &mut self,
         record_id: RecordId,
@@ -520,15 +467,6 @@ impl TableService {
         } else {
             (None, false)
         };
-
-        let state = self.load_state().await?;
-        let is_authorized = state.is_owner
-            || state.permissions.contains(TablePermission::Edit)
-            || state.permissions.contains(TablePermission::Admin);
-
-        if !is_authorized {
-            return Err(Irror::Table(TableError::Unauthorized));
-        }
 
         let query_str = if has_cells {
             "UPDATE $record_id SET cells = object::extend(cells, $cells), updated_at = time::now();"
@@ -551,20 +489,10 @@ impl TableService {
         }
     }
 
+    #[requires(TablePermission, Edit)]
     pub async fn delete_record(&mut self, record_id: RecordId) -> Result<Record, Irror> {
-        let state = self.load_state().await?;
-        let is_authorized = state.is_owner
-            || state.permissions.contains(TablePermission::Edit)
-            || state.permissions.contains(TablePermission::Admin);
-
-        if !is_authorized {
-            return Err(Irror::Table(TableError::Unauthorized));
-        }
-
         let mut res = DB
-            .query(
-                "UPDATE $record_id SET is_deleted = true, updated_at = time::now();",
-            )
+            .query("UPDATE $record_id SET is_deleted = true, updated_at = time::now();")
             .bind(("record_id", record_id))
             .await?;
 
@@ -576,18 +504,12 @@ impl TableService {
         }
     }
 
+    #[requires(TablePermission, View)]
     pub async fn check_migration(
         &mut self,
         field_id: FieldId,
         target_config: FieldConfig,
     ) -> Result<MigrationReport, Irror> {
-        let state = self.load_state().await?;
-        let is_authorized = state.is_owner
-            || state.permissions.contains(TablePermission::View)
-            || state.permissions.contains(TablePermission::Admin);
-        if !is_authorized {
-            return Err(Irror::Table(TableError::Unauthorized));
-        };
         let mut field_res = DB
             .query("SELECT VALUE name FROM $field_id WHERE table = $table_id")
             .bind(("field_id", field_id))
@@ -639,18 +561,12 @@ impl TableService {
         })
     }
 
+    #[requires(TablePermission, View)]
     pub async fn migrate_field_type(
         &mut self,
         field_id: FieldId,
         new_config: FieldConfig,
     ) -> Result<Result<Field, String>, Irror> {
-        let state = self.load_state().await?;
-        let is_authorized = state.is_owner
-            || state.permissions.contains(TablePermission::View)
-            || state.permissions.contains(TablePermission::Admin);
-        if !is_authorized {
-            return Err(Irror::Table(TableError::Unauthorized));
-        };
         let mut field_res = DB
             .query("SELECT * FROM $field_id WHERE table = $table_id")
             .bind(("field_id", field_id.clone()))

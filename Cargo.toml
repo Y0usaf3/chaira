@@ -1,7 +1,7 @@
 [workspace]
 resolver = "3"
 exclude = ["charli"]
-members = ["models", "service"]
+members = ["models", "service", "service-macros"]
 
 [workspace.dependencies]
 surrealdb = {version = "3.1.0-beta.3", features = ["kv-mem", "scripting"]}

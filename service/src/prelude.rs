@@ -10,6 +10,7 @@ pub use dotenvy;
 pub use hackclub_auth_api::HCAuth;
 pub use rand::RngExt;
 pub use serde::{Deserialize, Serialize};
+pub use service_macros::requires;
 pub use surrealdb::{
     opt::PatchOp,
     types::{Datetime, SurrealValue},

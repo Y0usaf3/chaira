@@ -216,3 +216,13 @@ DEFINE INDEX idx_record_table_id ON TABLE record FIELDS table, id;
 DEFINE INDEX idx_user_email ON TABLE user FIELDS email;
 DEFINE INDEX idx_session_user ON TABLE session FIELDS user;
 DEFINE INDEX idx_identity_user ON TABLE identity FIELDS user;
+DEFINE INDEX idx_base_owner ON TABLE base FIELDS owner;
+DEFINE INDEX idx_table_base_created ON TABLE table FIELDS base, is_deleted, created_at;
+DEFINE INDEX idx_can_access_base_user ON TABLE can_access_base FIELDS in;
+DEFINE INDEX idx_can_access_table_user ON TABLE can_access_table FIELDS in;
+
+-- Optimized Indexes for Random Access & Cursor-Based Pagination
+DEFINE INDEX idx_record_created_id ON TABLE record FIELDS created_at, id;
+DEFINE INDEX idx_record_random_access ON TABLE record FIELDS id, table, is_deleted;
+DEFINE INDEX idx_field_created_id ON TABLE field FIELDS created_at, id;
+DEFINE INDEX idx_field_table_name ON TABLE field FIELDS table, name, is_deleted;

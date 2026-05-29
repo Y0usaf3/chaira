@@ -124,12 +124,11 @@
           }
 
           start_redis() {
-            # Kill existing Redis if running
             pkill -f "redis-server" > /dev/null 2>&1
             sleep 0.3
 
             log_info "Starting Redis..."
-            redis-server --port 6379 --loglevel notice > .dev-logs/redis.log 2>&1 &
+            redis-server --port 6379 --loglevel notice --requirepass test > .dev-logs/redis.log 2>&1 &
             REDIS_PID=$!
             sleep 0.5
 

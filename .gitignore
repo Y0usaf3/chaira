@@ -6,3 +6,4 @@
 /charli/target/
 /.dev-logs
 dump.rdb
+/rocksdb:

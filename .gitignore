@@ -5,3 +5,4 @@
 /db.log
 /charli/target/
 /.dev-logs
+dump.rdb

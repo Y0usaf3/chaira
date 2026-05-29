@@ -1,6 +1,26 @@
 {
   description = "chaira dev shell";
 
+  # ========================================
+  # Chaira Development Environment
+  # ========================================
+  # This flake sets up a complete development environment for the Chaira project.
+  #
+  # Project Structure:
+  #   /                     - Root project directory
+  #   src/                  - Rust source code
+  #   target/               - Build artifacts and compiled binaries
+  #   .dev-logs/            - Development service logs (created at shell startup)
+  #     ├── surreal.log     - SurrealDB server logs
+  #     └── redis.log       - Redis server logs
+  #   charli/               - Character/entity data folder
+  #
+  # Services Running:
+  #   - SurrealDB           - In-memory database (default port: 8000)
+  #   - Redis               - Cache/session store (default port: 6379)
+  #
+  # ========================================
+
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
     naersk = {
@@ -40,6 +60,7 @@
         llvmPackages.libclang
         stdenv.cc.cc.lib
         surrealist # used for debugging ig
+        redis
         surrealdb-bin.packages.${system}.latest
       ];
 
@@ -55,35 +76,111 @@
 
       env.RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
 
-      shellHook = ''
-        echo "hai in chaira's DEV SHELL UwU"
+      shellHook =
+        ''
+          RED='\033[0;31m'
+          GREEN='\033[0;32m'
+          YELLOW='\033[1;33m'
+          BLUE='\033[0;34m'
+          MAGENTA='\033[0;35m'
+          CYAN='\033[0;36m'
+          NC='\033[0m' # No Color
 
-        start_db() {
-          surreal start --allow-scripting --allow-experimental files,surrealism --user test --pass test memory > db.log 2>&1 &
-          SURREAL_PID=$!
-          echo "the database is running ! (PID: $SURREAL_PID)!"
-        }
+          log_info() {
+            echo -e "''${BLUE}[INFO]''${NC} $1"
+          }
 
-        stop_db() {
-          echo "Shutting down SurrealDB..."
-          pkill -f "surreal start" > /dev/null 2>&1
-        }
+          log_success() {
+            echo -e "''${GREEN}[✓]''${NC} $1"
+          }
 
-        start_db
+          log_error() {
+            echo -e "''${RED}[✗]''${NC} $1"
+          }
 
-        trap stop_db EXIT
+          log_warn() {
+            echo -e "''${YELLOW}[!]''${NC} $1"
+          }
 
-        alias watch-db="tail -f db.log"
+          mkdir -p .dev-logs
 
-        restart-db() {
-          stop_db
-          sleep 0.5
-          start_db
-        }
+          start_surreal() {
+            # Kill existing SurrealDB if running
+            pkill -f "surreal start" > /dev/null 2>&1
+            sleep 0.3
 
-        echo "'restart-db' to restart the current db, do it when you want to wipe all the data as the db stores it in memory"
-        echo "'watch-db' check the logs whenever you think the db got something to tell you"
-      '';
+            log_info "Starting SurrealDB..."
+            surreal start --allow-scripting --allow-experimental files,surrealism --user test --pass test memory > .dev-logs/surreal.log 2>&1 &
+            SURREAL_PID=$!
+            sleep 0.5
+
+            if kill -0 $SURREAL_PID 2>/dev/null; then
+              log_success "SurrealDB running (PID: $SURREAL_PID)"
+              echo $SURREAL_PID > .dev-logs/surreal.pid
+            else
+              log_error "Failed to start SurrealDB"
+              return 1
+            fi
+          }
+
+          start_redis() {
+            # Kill existing Redis if running
+            pkill -f "redis-server" > /dev/null 2>&1
+            sleep 0.3
+
+            log_info "Starting Redis..."
+            redis-server --port 6379 --loglevel notice > .dev-logs/redis.log 2>&1 &
+            REDIS_PID=$!
+            sleep 0.5
+
+            if kill -0 $REDIS_PID 2>/dev/null; then
+              log_success "Redis running (PID: $REDIS_PID)"
+              echo $REDIS_PID > .dev-logs/redis.pid
+            else
+              log_error "Failed to start Redis"
+              return 1
+            fi
+          }
+
+          cleanup() {
+            log_warn "Shutting down services..."
+            pkill -f "surreal start" > /dev/null 2>&1
+            pkill -f "redis-server" > /dev/null 2>&1
+            log_info "Services stopped"
+          }
+
+          trap cleanup EXIT
+
+          # Start both services
+          start_surreal
+          start_redis
+
+          echo ""
+          log_info "Chaira's Dev Environment is ready! UwU"
+          echo ""
+          echo -e "''${CYAN}Available commands:''${NC}"
+          echo -e "  ''${MAGENTA}watch-surreal''${NC}    - Tail SurrealDB logs"
+          echo -e "  ''${MAGENTA}watch-redis''${NC}      - Tail Redis logs"
+          echo -e "  ''${MAGENTA}restart-surreal''${NC}  - Restart SurrealDB (clears memory data)"
+          echo -e "  ''${MAGENTA}restart-redis''${NC}    - Restart Redis"
+          echo ""
+        ''
+        + ''
+          alias watch-surreal="tail -f .dev-logs/surreal.log"
+          alias watch-redis="tail -f .dev-logs/redis.log"
+
+          restart-surreal() {
+            pkill -f "surreal start" > /dev/null 2>&1
+            sleep 0.3
+            start_surreal
+          }
+
+          restart-redis() {
+            pkill -f "redis-server" > /dev/null 2>&1
+            sleep 0.3
+            start_redis
+          }
+        '';
     };
   };
 }

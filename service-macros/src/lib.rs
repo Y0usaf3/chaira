@@ -1,4 +1,4 @@
-use proc_macro::{Span, TokenStream};
+use proc_macro::TokenStream;
 use quote::quote;
 use syn::parse::Parser;
 use syn::punctuated::Punctuated;
@@ -21,7 +21,7 @@ pub fn requires(attr: TokenStream, item: TokenStream) -> TokenStream {
     let mut iter = idents.into_iter();
     let perm_type = match iter.next() {
         Some(id) => id,
-        None => {
+        _ => {
             return syn::Error::new(
                 proc_macro2::Span::call_site(),
                 "[<PERMISSION>, <edit, view, etc...>, ...]",
@@ -47,7 +47,6 @@ pub fn requires(attr: TokenStream, item: TokenStream) -> TokenStream {
         block,
     } = input;
 
-    // Grab the internal statements of the function body
     let stmts = &block.stmts;
 
     let expanded = quote! {

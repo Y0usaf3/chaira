@@ -158,6 +158,7 @@ impl TableService {
             None => Err(Irror::Table(TableError::NotFound)),
         }
     }
+
     #[requires(TablePermission, Edit)]
     pub async fn create_field(&mut self, field: InsertField) -> Result<Field, Irror> {
         let field = Field::from_insert(field);
@@ -186,6 +187,7 @@ impl TableService {
             None => Err(Irror::Table(TableError::CreateFailed)),
         }
     }
+
     #[requires(TablePermission, Edit)]
     pub async fn create_a_lot_of_fields(
         &mut self,

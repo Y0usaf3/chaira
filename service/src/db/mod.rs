@@ -26,6 +26,9 @@ use surrealdb::opt::capabilities::Capabilities;
 /* pub static DB: LazyLock<Surreal<Client>> = LazyLock::new(Surreal::init); */
 pub static DB: LazyLock<Surreal<Db>> = LazyLock::new(Surreal::init);
 
+pub static CACHE: LazyLock<redis::Client> =
+    LazyLock::new(|| redis::Client::open(env_required!("REDIS_URL")).unwrap());
+
 // TODO: use env vars to choose which surli file to use
 
 pub async fn init() {

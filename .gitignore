@@ -7,3 +7,4 @@
 /.dev-logs
 dump.rdb
 /rocksdb:
+/memory

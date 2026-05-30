@@ -29,26 +29,26 @@ PERMISSIONS
   FOR update WHERE $user.role == 'admin';
 
 -- SESSION 
-DEFINE TABLE OVERWRITE session SCHEMAFULL
-PERMISSIONS
-   FOR select FULL
-   FOR create FULL
-   FOR update NONE
-   FOR delete FULL;
-DEFINE FIELD OVERWRITE token ON TABLE session TYPE string
-    VALUE  crypto::sha512($value);
-DEFINE FIELD OVERWRITE ip ON TABLE session TYPE string
-    ASSERT string::is_ip($value);
-DEFINE FIELD OVERWRITE user_agent ON TABLE session TYPE string;
-DEFINE FIELD OVERWRITE created_at ON TABLE session TYPE datetime
-VALUE time::now() READONLY;
-DEFINE FIELD OVERWRITE expires_at ON TABLE session TYPE datetime
-VALUE time::now() + 2d READONLY;
-DEFINE FIELD OVERWRITE last_used_at ON TABLE session TYPE datetime 
-VALUE time::now();
-DEFINE FIELD OVERWRITE user ON TABLE session TYPE record<user>;
-DEFINE INDEX OVERWRITE unique ON TABLE session 
-    FIELDS user, token, user_agent UNIQUE;
+-- DEFINE TABLE OVERWRITE session SCHEMAFULL
+-- PERMISSIONS
+--    FOR select FULL
+--    FOR create FULL
+--    FOR update NONE
+--    FOR delete FULL;
+-- DEFINE FIELD OVERWRITE token ON TABLE session TYPE string
+--     VALUE  crypto::sha512($value);
+-- DEFINE FIELD OVERWRITE ip ON TABLE session TYPE string
+--     ASSERT string::is_ip($value);
+-- DEFINE FIELD OVERWRITE user_agent ON TABLE session TYPE string;
+-- DEFINE FIELD OVERWRITE created_at ON TABLE session TYPE datetime
+-- VALUE time::now() READONLY;
+-- DEFINE FIELD OVERWRITE expires_at ON TABLE session TYPE datetime
+-- VALUE time::now() + 2d READONLY;
+-- DEFINE FIELD OVERWRITE last_used_at ON TABLE session TYPE datetime 
+-- VALUE time::now();
+-- DEFINE FIELD OVERWRITE user ON TABLE session TYPE record<user>;
+-- DEFINE INDEX OVERWRITE unique ON TABLE session 
+--     FIELDS user, token, user_agent UNIQUE;
 
 -- IDENTITY 
 DEFINE TABLE OVERWRITE identity SCHEMAFULL
@@ -214,7 +214,7 @@ DEFINE INDEX idx_record_table_created ON TABLE record FIELDS table, is_deleted, 
 DEFINE INDEX idx_field_name_table ON TABLE field FIELDS name, table;
 DEFINE INDEX idx_record_table_id ON TABLE record FIELDS table, id;
 DEFINE INDEX idx_user_email ON TABLE user FIELDS email;
-DEFINE INDEX idx_session_user ON TABLE session FIELDS user;
+-- DEFINE INDEX idx_session_user ON TABLE session FIELDS user;
 DEFINE INDEX idx_identity_user ON TABLE identity FIELDS user;
 DEFINE INDEX idx_base_owner ON TABLE base FIELDS owner;
 DEFINE INDEX idx_table_base_created ON TABLE table FIELDS base, is_deleted, created_at;

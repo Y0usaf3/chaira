@@ -44,7 +44,7 @@ pub enum AuthMethod {
 #[derive(Debug)]
 pub struct UserService {
     pub user: User,
-    pub user_record_id: UserId,
+    user_record_id: UserId,
     pub current_base: Option<BaseService>,
     is_admin_cache: Option<bool>,
     cache_instant: Option<Instant>,
@@ -489,3 +489,23 @@ impl UserService {
 // nop.. there isnt, so ig ill add a loop event where we delete old sessions every , lets say 5min
 //
 // also switched to sha512 bc argon2 has uh, constant time, so it WILL slow down the server uh
+//
+//
+// now i fucking have to plan abt CACHING stuff wth, so erm, i have to set a list of usage for
+// caching, first of all , i will use open code to help with this shit :cryin: (just planning not
+// actuall code, like how to use the damn crate i suppose)
+//
+// oh right so for session
+// what abt a fucking session service muhahaha, to manage sessions
+// in the session there would be only the data of the session AND the UserId, then we still fucking
+// have to get the damn user data bc of the service
+// so yeah
+// - create_session : (only if we were authentified by hca)
+// - authentify : we give the ip token agent and we receive an user id that we have to fetch using DB
+// - refesh token : if the user logged 1 day or less before the expiration then we create a new
+// session and change the current token in da cookie
+// - revoke: we delete the current session
+// - revoke_all: we delete all the sessions for all the users inside the cache
+//
+// so now there wouldnt be any need of registering the session in the DB
+// lemme remove the session from the DB now

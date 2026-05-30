@@ -16,7 +16,6 @@ pub struct Session {
     pub last_used_at: DateTime<Utc>,
 }
 
-#[derive(SurrealValue)]
 pub struct InsertSession {
     pub user: UserId,
     pub token: String,

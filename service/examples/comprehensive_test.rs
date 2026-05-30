@@ -4,6 +4,7 @@ use service::base::BaseService;
 use service::db::DB;
 use service::db::init;
 use service::prelude::*;
+use service::session::SessionService;
 use service::table::PaginationParams;
 use service::table::TableService;
 use service::user::AuthMethod;
@@ -377,12 +378,12 @@ async fn test_user_service_functions() -> Result<(UserService, UserId), Box<dyn 
     let ip = "192.168.1.1".to_string();
     let agent = "ComprehensiveTestAgent".to_string();
 
-    DB.query("CREATE session SET user = $user, token = $tokenn, ip = $ip, user_agent = $agent, expires_at = time::now() + 1d")
-        .bind(("user", user_id.clone()))
-        .bind(("tokenn", token))
-        .bind(("ip", ip.clone()))
-        .bind(("agent", agent.clone()))
-        .await?;
+    let insert_session = models::InsertSession {
+        ip: ip.clone(),
+        user_agent: agent.clone(),
+        user: user_id.clone(),
+    };
+    let mock_session = SessionService::create_session(insert_session, true).await?;
 
     let mut user_service = UserService::login(AuthMethod::Session(Session {
         token: token.to_string(),

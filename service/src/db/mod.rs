@@ -34,7 +34,7 @@ pub static CACHE: LazyLock<redis::Client> =
 pub async fn init() {
     let config = Config::default()
         .capabilities(Capabilities::all().with_all_experimental_features_allowed());
-    let _ = DB.connect::<RocksDb>(("rocksdb://tst.db", config)).await;
+    let _ = DB.connect::<Mem>(("memory", config)).await;
     /*  DB.connect::<Ws>(env_required!("DB_URL")).await.unwrap(); */
     // DB.signin(Root {
     //     username: env_required!("DB_USERNAME"),

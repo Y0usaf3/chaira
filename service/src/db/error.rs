@@ -4,6 +4,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use chacha20poly1305::Error as EncryptionErr;
+use redis::RedisError as RedisErr;
 use serde_json::json;
 use thiserror::Error;
 
@@ -17,6 +18,27 @@ pub enum AuthError {
 
     #[error("Session token does not exist or has expired")]
     SessionNotFound,
+}
+
+#[derive(Error, Debug)]
+pub enum SessionError {
+    #[error("You have to be authentified by HackClub Auth to be able to create new sessions")]
+    NotAuthentifiedByHca,
+
+    #[error("Session not found or has expired")]
+    NotFound,
+
+    #[error("Failed to parse session data from the cache")]
+    ParseError,
+
+    #[error("Session invalid: IP or User-Agent mismatch. Possible session theft detected!")]
+    InvalidAgentOrIp,
+
+    #[error("Session has expired")]
+    Expired,
+
+    #[error("The user associated with this session does not exist or has been deleted")]
+    UserNotFoundOrDeleted,
 }
 
 #[derive(Error, Debug)]
@@ -110,6 +132,36 @@ pub enum ApiError {
 }
 
 #[derive(Error, Debug)]
+pub enum RedisError {
+    #[error("Failed to connect to Redis")]
+    ConnectionFailed,
+
+    #[error("Redis command failed: {0}")]
+    CommandFailed(String),
+
+    #[error("Failed to retrieve value from Redis")]
+    GetFailed,
+
+    #[error("Failed to store value in Redis")]
+    SetFailed,
+
+    #[error("Failed to delete value from Redis")]
+    DeleteFailed,
+
+    #[error("Redis key not found")]
+    KeyNotFound,
+
+    #[error("Redis operation timed out")]
+    Timeout,
+
+    #[error("Failed to serialize data for Redis")]
+    SerializationFailed,
+
+    #[error("Failed to deserialize data from Redis")]
+    DeserializationFailed,
+}
+
+#[derive(Error, Debug)]
 pub enum Irror {
     #[error("database error: {0}")]
     Db(String),
@@ -138,8 +190,14 @@ pub enum Irror {
     #[error("api error: {0}")]
     Api(#[from] ApiError),
 
+    #[error("redis error: {0}")]
+    Redis(#[from] RedisError),
+
     #[error("couldnt serialize")]
     Serialization,
+
+    #[error("Session error: {0}")]
+    Session(SessionError),
 }
 
 impl IntoResponse for Irror {
@@ -174,5 +232,12 @@ impl From<EncryptionErr> for Irror {
     fn from(error: EncryptionErr) -> Self {
         eprintln!("{error:?}");
         Self::Encryption(EncryptionError::EncryptionFailed)
+    }
+}
+
+impl From<RedisErr> for Irror {
+    fn from(error: RedisErr) -> Self {
+        eprintln!("{error:?}");
+        Self::Redis(RedisError::CommandFailed(error.to_string()))
     }
 }

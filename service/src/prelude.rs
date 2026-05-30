@@ -18,8 +18,7 @@ pub use surrealdb::{
 
 pub use crate::{
     HCAUTH, MASTER_KEY, approved,
-    db::{DB, error::*},
+    db::{CACHE, DB, error::*},
     encrypter::*,
 };
 pub use models::*;
-

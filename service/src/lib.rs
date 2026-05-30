@@ -2,6 +2,7 @@ pub mod base;
 pub mod db;
 mod encrypter;
 pub mod prelude;
+pub mod session;
 pub mod table;
 pub mod user;
 

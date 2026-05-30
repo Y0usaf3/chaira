@@ -13,6 +13,7 @@
 
 // make a function to get record id insteado f having to rerun this shit a million time
 
+use crate::session::SessionService;
 use std::time::Instant;
 
 // TODO: add functions to fetch data from HC auth
@@ -30,12 +31,14 @@ impl IsAdmin {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Session {
     pub token: String,
     pub ip: String,
     pub agent: String,
 }
 
+#[derive(Debug, Clone)]
 pub enum AuthMethod {
     Hca(String),
     Session(Session),
@@ -48,6 +51,7 @@ pub struct UserService {
     pub current_base: Option<BaseService>,
     is_admin_cache: Option<bool>,
     cache_instant: Option<Instant>,
+    authentified_by_hca: bool,
 }
 
 impl UserService {
@@ -56,7 +60,7 @@ impl UserService {
     }
 
     pub async fn login(method: AuthMethod) -> Result<Self, Irror> {
-        let user: User = match method {
+        let user: User = match method.clone() {
             AuthMethod::Hca(code) => {
                 // NOTE: are we sure hackclub auth is really a secure source, what could go wrong
                 // ????
@@ -82,22 +86,7 @@ impl UserService {
                 ident.ok_or(AuthError::VerificationFailed)?
             }
             AuthMethod::Session(session) => {
-                let mut res = DB
-                    .query(
-                        "SELECT VALUE user.* FROM session 
-                        WHERE ip = $ip 
-                        AND crypto::sha512($tokenn) == `token` 
-                        AND user_agent = $user_agent 
-                        AND expires_at > time::now()
-                        AND user.is_deleted = false",
-                    )
-                    .bind(("ip", session.ip))
-                    .bind(("tokenn", session.token))
-                    .bind(("user_agent", session.agent))
-                    .await?;
-                let ident: Option<User> = res.take(0)?;
-
-                ident.ok_or(AuthError::SessionNotFound)?
+                SessionService::authentify(&session.token, &session.ip, &session.agent).await?
             }
         };
         let record_id = user
@@ -113,6 +102,10 @@ impl UserService {
             current_base: None,
             is_admin_cache: None,
             cache_instant: None,
+            authentified_by_hca: match method {
+                AuthMethod::Hca(_) => true,
+                AuthMethod::Session(_) => false,
+            },
         })
     }
 
@@ -197,6 +190,7 @@ impl UserService {
             current_base: None,
             is_admin_cache: None,
             cache_instant: None,
+            authentified_by_hca: false,
         })
     }
 
@@ -319,19 +313,14 @@ impl UserService {
         if !validator::ValidateIp::validate_ip(&ip) {
             return Err(Irror::Db("Invalid String".to_string()));
         };
-        let bytes: Vec<u8> = (0..32).map(|_| rand::rng().random()).collect();
-        let random_token = general_purpose::STANDARD.encode(bytes);
-        let session = models::Session::from_insert(InsertSession {
+        let insert_session = InsertSession {
             ip,
             user_agent: agent,
             user: self.user_record_id.clone(),
-            token: random_token.clone(),
-        });
-        DB.create::<Option<models::Session>>("session")
-            .content(session)
-            .await
-            .map_err(|e| Irror::Db(e.to_string()))?;
-        Ok(random_token)
+        };
+        let (token, _) =
+            SessionService::create_session(insert_session, self.authentified_by_hca).await?;
+        Ok(token)
     }
 
     pub async fn list_bases(&self) -> Result<Vec<models::Base>, Irror> {

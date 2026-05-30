@@ -2587,6 +2587,7 @@ name = "models"
 version = "0.0.1"
 dependencies = [
  "bitmask",
+ "chrono",
  "iso_currency",
  "mime",
  "ordered-float",

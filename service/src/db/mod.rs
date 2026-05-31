@@ -19,6 +19,8 @@ use surrealdb::opt::Config;
 pub mod error;
 pub use error::Irror;
 
+// TODO: REDIS CON premade connection i suppose
+
 // use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::opt::auth::Root;
 use surrealdb::opt::capabilities::Capabilities;

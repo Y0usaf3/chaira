@@ -383,7 +383,7 @@ async fn test_user_service_functions() -> Result<(UserService, UserId), Box<dyn 
         user_agent: agent.clone(),
         user: user_id.clone(),
     };
-    let mock_session = SessionService::create_session(insert_session, true).await?;
+    let (token, mock_session) = SessionService::create_session(insert_session, true).await?;
 
     let mut user_service = UserService::login(AuthMethod::Session(Session {
         token: token.to_string(),

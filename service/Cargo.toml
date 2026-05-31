@@ -13,7 +13,6 @@ models = { path="../models/" }
 base64 = "0.22.1"
 dotenvy = "0.15.7"
 chacha20poly1305 = "0.10.1"
-hex = "0.4.3"
 serde_json.workspace = true
 validator.workspace = true
 serde.workspace = true
@@ -23,3 +22,5 @@ tokio.workspace = true
 service-macros = { path = "../service-macros/" }
 redis = { version="1.2.2", features = ["tokio-native-tls-comp", "tokio-comp", "json"] }
 rustls = "0.24.0-dev.0"
+sha2.workspace = true 
+hex.workspace = true

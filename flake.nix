@@ -23,6 +23,7 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+    redis-pr.url = "github:nixos/nixpkgs/pull/525226/head";
     naersk = {
       url = "github:nix-community/naersk";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -38,12 +39,17 @@
     self,
     nixpkgs,
     naersk,
+    redis-pr,
     surrealdb-bin,
     rust-overlay,
   }: let
     system = "x86_64-linux";
     overlays = [(import rust-overlay)];
     pkgs = import nixpkgs {
+      config.allowUnfree = true;
+      inherit overlays system;
+    };
+    redis-pkgs = import redis-pr {
       config.allowUnfree = true;
       inherit overlays system;
     };
@@ -67,7 +73,8 @@
         llvmPackages.libclang
         stdenv.cc.cc.lib
         surrealist # used for debugging ig
-        redis
+        redis-pkgs.redisjson
+        redis-pkgs.redis
         surrealdb-bin.packages.${system}.latest
       ];
 
@@ -135,7 +142,7 @@
             sleep 0.3
 
             log_info "Starting Redis..."
-            redis-server --port 6379 --loglevel notice --requirepass test > .dev-logs/redis.log 2>&1 &
+            redis-server --port 6379 --loglevel notice --requirepass test --loadmodule ${redis-pkgs.redisjson}/lib/librejson.so > .dev-logs/redis.log 2>&1 &
             REDIS_PID=$!
             sleep 0.5
 

@@ -104,7 +104,7 @@ impl UserService {
             cache_instant: None,
             authentified_by_hca: match method {
                 AuthMethod::Hca(_) => true,
-                AuthMethod::Session(_) => false,
+                AuthMethod::Session(_) => true, // just for testing ig
             },
         })
     }

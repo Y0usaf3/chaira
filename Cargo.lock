@@ -4424,6 +4424,7 @@ dependencies = [
  "serde",
  "serde_json",
  "service-macros",
+ "sha2 0.11.0",
  "surrealdb",
  "thiserror",
  "tokio",

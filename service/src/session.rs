@@ -1,6 +1,7 @@
 use crate::prelude::*;
 use models::UserId;
 use redis::{AsyncCommands, JsonAsyncCommands};
+use sha2::{Digest, Sha512};
 
 #[derive(Debug)]
 pub struct SessionService {
@@ -28,6 +29,9 @@ impl SessionService {
 
     pub async fn authentify(token: &str, ip: &str, agent: &str) -> Result<User, Irror> {
         let mut con = CACHE.get_multiplexed_async_connection().await?;
+        let mut hasher = Sha512::new();
+        hasher.update(token);
+        let token = hex::encode(hasher.finalize());
 
         let session_str: String = con
             .json_get(token, "$")

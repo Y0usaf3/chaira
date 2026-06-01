@@ -16,7 +16,7 @@ define_ids!(
 );
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct SessionId(String);
+pub struct SessionId(pub String);
 
 impl SessionId {
     pub fn new() -> Self {

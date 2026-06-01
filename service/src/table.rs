@@ -1,7 +1,9 @@
+use std::collections::HashMap;
+use std::time::Instant;
+
 use crate::kinds::FieldConfig;
 use crate::migration::MigrationStrategy;
 use crate::prelude::*;
-use std::time::Instant;
 
 // TODO: gotta work here :sob:
 // fr :noooooovanish:
@@ -26,6 +28,12 @@ struct StateCache {
 }
 
 #[derive(Debug, Clone)]
+struct FieldPermsCache {
+    perms: HashMap<FieldId, FieldPermissions>,
+    loaded_at: Instant,
+}
+
+#[derive(Debug, Clone)]
 pub struct TableService {
     pub table: Table,
     pub user: UserId,
@@ -33,6 +41,7 @@ pub struct TableService {
     table_record_id: TableId,
     cache: Option<StateCache>,
     cache_instant: Option<Instant>,
+    field_perms: Option<FieldPermsCache>,
 }
 
 // NOTE: FR stands for frontend :p
@@ -92,6 +101,7 @@ impl TableService {
             table_record_id: tablee,
             cache: None,
             cache_instant: None,
+            field_perms: None,
         })
     }
 
@@ -125,8 +135,45 @@ impl TableService {
         Ok(value)
     }
 
-    pub async fn get_field_config(&mut self, field_id: FieldId) -> Result<FieldConfigFR, Irror> {
-        let state = self.load_state().await?;
+    async fn load_field_perms(&mut self) -> Result<HashMap<FieldId, FieldPermissions>, Irror> {
+        if let Some(cache) = self.field_perms.as_ref()
+            && cache.loaded_at.elapsed() < Duration::from_secs(1)
+        {
+            return Ok(cache.perms.clone());
+        }
+
+        let mut res = DB
+            .query(
+                "SELECT out, perms FROM can_access_field WHERE in = $user AND out.table = $table_id;",
+            )
+            .bind(("user", self.user.clone()))
+            .bind(("table_id", self.table_record_id.clone()))
+            .await?;
+
+        let rows: Vec<serde_json::Value> = res.take(0)?;
+        let mut perms = HashMap::new();
+
+        for row in rows {
+            let fid = row
+                .get("out")
+                .and_then(|v| serde_json::from_value::<FieldId>(v.clone()).ok());
+            let fp = row
+                .get("perms")
+                .and_then(|v| serde_json::from_value::<FieldPermissions>(v.clone()).ok());
+            if let (Some(fid), Some(fp)) = (fid, fp) {
+                perms.insert(fid, fp);
+            }
+        }
+
+        self.field_perms = Some(FieldPermsCache {
+            perms: perms.clone(),
+            loaded_at: Instant::now(),
+        });
+        Ok(perms)
+    }
+
+    #[requires(FieldPermission, View)]
+    pub async fn get_field_config(&mut self, field: FieldId) -> Result<FieldConfigFR, Irror> {
         let mut res = DB
             .query(
                 "
@@ -135,20 +182,11 @@ impl TableService {
                 table = $table_id AND 
                 table.base = $base_id AND 
                 is_deleted = false AND
-                (
-                    $is_owner OR
-                    fn::can(
-                        $permissions, 
-                        2
-                    )
-                )
         ",
             )
-            .bind(("field", field_id))
+            .bind(("field", field))
             .bind(("table_id", self.table_record_id.clone()))
             .bind(("base_id", self.base.clone()))
-            .bind(("is_owner", state.is_owner))
-            .bind(("permissions", state.permissions))
             .await?;
 
         let field_config: Option<FieldConfigFR> = res.take(0)?;
@@ -229,7 +267,7 @@ impl TableService {
         }
     }
 
-    #[requires(TablePermission, Edit)]
+    #[requires(FieldPermission, Edit)]
     pub async fn update_field(
         &mut self,
         field_id: FieldId,
@@ -265,7 +303,7 @@ impl TableService {
         Ok(Ok(updated))
     }
 
-    #[requires(TablePermission, Edit)]
+    #[requires(FieldPermission, Edit)]
     pub async fn delete_field(&mut self, field: FieldId) -> Result<Field, Irror> {
         let mut res = DB
             .query(
@@ -310,29 +348,20 @@ impl TableService {
         }
     }
 
+    #[requires(TablePermission, View)]
     pub async fn get_record(&mut self, record_id: RecordId) -> Result<Record, Irror> {
-        let state = self.load_state().await?;
         let mut res = DB
             .query(
                 "
         SELECT * FROM $record_id 
         WHERE 
             table = $table_id AND 
-            is_deleted = false AND
-            (
-                $is_owner OR
-                fn::can(
-                    $perms,
-                    2
-                )
-            )
+            is_deleted = false
     ",
             )
             .bind(("record_id", record_id))
             .bind(("table_id", self.table_record_id.clone()))
             .bind(("user", self.user.clone()))
-            .bind(("is_owner", state.is_owner))
-            .bind(("perms", state.permissions))
             .await?;
 
         let record: Option<Record> = res.take(0)?;
@@ -343,21 +372,20 @@ impl TableService {
         }
     }
 
+    #[requires(TablePermission, View)]
     pub async fn list_records(
         &mut self,
         pagination_params: PaginationParams,
     ) -> Result<Vec<Record>, Irror> {
         let limit = pagination_params.limit.unwrap_or(10);
         let skip = pagination_params.offset.unwrap_or(0);
-        let state = self.load_state().await?;
 
         let mut res = DB
             .query(
                 "SELECT * FROM record 
          WHERE 
              table = $table_id AND 
-             is_deleted = false AND
-             ($is_owner OR fn::can($perms, 2))
+             is_deleted = false
          ORDER BY created_at ASC
          LIMIT $limit
          START $skip;",
@@ -365,40 +393,48 @@ impl TableService {
             .bind(("table_id", self.table_record_id.clone()))
             .bind(("limit", limit))
             .bind(("skip", skip))
-            .bind(("is_owner", state.is_owner))
-            .bind(("perms", state.permissions))
             .await?;
         let records: Vec<Record> = res.take(0)?;
 
         Ok(records)
     }
 
+    #[requires(FieldPermission, View)]
     pub async fn get_full_data(
         &mut self,
         limit: Option<u32>,
     ) -> Result<(Vec<Field>, Vec<Record>), Irror> {
         let limit = limit.unwrap_or(50);
-        let state = self.load_state().await?;
         let mut res = DB
             .query(
                 "
-                IF !$is_owner AND !fn::can($perms, 2) {
-                    THROW 'Permission Denied';
-                };
-
-                SELECT * FROM field WHERE table = $table_id AND is_deleted = false ORDER BY created_at ASC;
+                SELECT * FROM field WHERE table = $table_id AND is_deleted = false AND ($is_owner OR id IN $visible_fields) ORDER BY created_at ASC;
                 SELECT * FROM record WHERE table = $table_id AND is_deleted = false ORDER BY created_at ASC LIMIT $limit;
             ",
             )
             .bind(("table_id", self.table_record_id.clone()))
-            .bind(("user", self.user.clone()))
             .bind(("limit", limit))
+            .bind(("visible_fields", __visible_fields))
             .bind(("is_owner", state.is_owner))
-            .bind(("perms", state.permissions))
             .await?;
 
-        let fields: Vec<Field> = res.take(1)?;
-        let records: Vec<Record> = res.take(2)?;
+        let fields: Vec<Field> = res.take(0)?;
+        let records: Vec<Record> = res.take(1)?;
+
+        let visible_names: std::collections::HashSet<&str> =
+            fields.iter().map(|f| f.name.as_str()).collect();
+
+        let records: Vec<Record> = if state.is_owner {
+            records
+        } else {
+            records
+                .into_iter()
+                .map(|mut r| {
+                    r.cells.retain(|k, _| visible_names.contains(k.as_str()));
+                    r
+                })
+                .collect()
+        };
 
         Ok((fields, records))
     }
@@ -506,7 +542,7 @@ impl TableService {
         }
     }
 
-    #[requires(TablePermission, View)]
+    #[requires(FieldPermission, View)]
     pub async fn check_migration(
         &mut self,
         field_id: FieldId,
@@ -563,7 +599,7 @@ impl TableService {
         })
     }
 
-    #[requires(TablePermission, View)]
+    #[requires(FieldPermission, View)]
     pub async fn migrate_field_type(
         &mut self,
         field_id: FieldId,

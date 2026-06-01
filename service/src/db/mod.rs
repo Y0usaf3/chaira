@@ -14,8 +14,8 @@ macro_rules! env_required {
 use bb8_redis::bb8::Pool;
 use std::sync::LazyLock;
 use surrealdb::Surreal;
-// use surrealdb::engine::local::{Db, Mem};
-// use surrealdb::opt::Config;
+use surrealdb::engine::local::{Db, Mem};
+use surrealdb::opt::Config;
 use tokio::sync::OnceCell;
 
 pub mod error;
@@ -26,10 +26,10 @@ pub use error::Irror;
 use bb8_redis::RedisConnectionManager;
 use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::opt::auth::Root;
-/* use surrealdb::opt::capabilities::Capabilities; */
+use surrealdb::opt::capabilities::Capabilities;
 
-pub static DB: LazyLock<Surreal<Client>> = LazyLock::new(Surreal::init);
-/* pub static DB: LazyLock<Surreal<Db>> = LazyLock::new(Surreal::init); */
+/* pub static DB: LazyLock<Surreal<Client>> = LazyLock::new(Surreal::init); */
+pub static DB: LazyLock<Surreal<Db>> = LazyLock::new(Surreal::init);
 
 pub static CACHE: OnceCell<Pool<RedisConnectionManager>> = OnceCell::const_new();
 
@@ -46,17 +46,17 @@ pub async fn get_cache() -> &'static Pool<RedisConnectionManager> {
 // TODO: use env vars to choose which surli file to use
 
 pub async fn init() {
-    // let config = Config::default()
-    //     .capabilities(Capabilities::all().with_all_experimental_features_allowed());
-    // let _ = DB.connect::<Mem>(("memory", config)).await;
+    let config = Config::default()
+        .capabilities(Capabilities::all().with_all_experimental_features_allowed());
+    let _ = DB.connect::<Mem>(("memory", config)).await;
     let _ = get_cache().await; // warming the cache ig
-    DB.connect::<Ws>(env_required!("DB_URL")).await.unwrap();
-    DB.signin(Root {
-        username: env_required!("DB_USERNAME"),
-        password: env_required!("DB_PASSWORD"),
-    })
-    .await
-    .unwrap();
+    // DB.connect::<Ws>(env_required!("DB_URL")).await.unwrap();
+    // DB.signin(Root {
+    //     username: env_required!("DB_USERNAME"),
+    //     password: env_required!("DB_PASSWORD"),
+    // })
+    // .await
+    // .unwrap();
 
     // let bit_path = env_required!("BIT_PATH");
     // let bit_bucket_path = format!("file:/{}", bit_path);

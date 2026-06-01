@@ -241,3 +241,17 @@ impl From<RedisErr> for Irror {
         Self::Redis(RedisError::CommandFailed(error.to_string()))
     }
 }
+
+impl From<bb8_redis::bb8::RunError<redis::RedisError>> for Irror {
+    fn from(error: bb8_redis::bb8::RunError<redis::RedisError>) -> Self {
+        eprintln!("{error:?}");
+        match error {
+            bb8_redis::bb8::RunError::User(redis_err) => {
+                Self::Redis(RedisError::CommandFailed(redis_err.to_string()))
+            }
+            bb8_redis::bb8::RunError::TimedOut => Self::Redis(RedisError::CommandFailed(
+                "Redis pool connection timed out".to_string(),
+            )),
+        }
+    }
+}

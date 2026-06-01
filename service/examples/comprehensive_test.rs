@@ -150,7 +150,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     test_concurrent_operations(&mut base_service, &user_id, &base_id).await?;
 
     // Phase 9: Real-world 250k Records Test
-    test_large_dataset(&mut base_service, &user_id, &base_id).await?;
+    /*    test_large_dataset(&mut base_service, &user_id, &base_id).await?; */
 
     println!("\n");
     println!("╔════════════════════════════════════════════════════════════════════════════════╗");

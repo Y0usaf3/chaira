@@ -24,3 +24,4 @@ redis.workspace = true
 rustls = "0.24.0-dev.0"
 sha2.workspace = true 
 hex.workspace = true
+bb8-redis = "0.26.0"

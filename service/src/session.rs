@@ -1,4 +1,6 @@
-use crate::prelude::*;
+use std::time::Instant;
+
+use crate::{db::get_cache, prelude::*};
 use models::UserId;
 use redis::{AsyncCommands, JsonAsyncCommands};
 use sha2::{Digest, Sha512};
@@ -17,7 +19,7 @@ impl SessionService {
             let bytes: Vec<u8> = (0..32).map(|_| rand::rng().random()).collect();
             let random_token = general_purpose::STANDARD.encode(bytes);
             let session = Session::from_insert(insert, random_token.clone());
-            let mut con = CACHE.get_multiplexed_async_connection().await?;
+            let mut con = get_cache().await.get().await?;
             let _: () = con.json_set(session.token.clone(), "$", &session).await?;
             // THE FUCK U MEAN "ResponseError: unknown command 'JSON.SET', with args beginning with: 'c489ff145e5ea2dbd7ca2f285e1e2943f5b4e3dd25782a8a95485e57bcf75230d9505520685194d271c2bb80ad826011dc9d5d76b1ab5c26ea389437d0cd992c'" RAHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
             let _: () = con.expire(session.token.clone(), 604800).await?;
@@ -28,7 +30,9 @@ impl SessionService {
     }
 
     pub async fn authentify(token: &str, ip: &str, agent: &str) -> Result<User, Irror> {
-        let mut con = CACHE.get_multiplexed_async_connection().await?;
+        let mut con = get_cache().await.get().await?;
+        let a = Instant::now();
+
         let mut hasher = Sha512::new();
         hasher.update(token);
         let token = hex::encode(hasher.finalize());

@@ -46,8 +46,8 @@ pub enum AuthMethod {
 
 #[derive(Debug)]
 pub struct UserService {
-    pub user: User,
     user_record_id: UserId,
+    user_cache: Option<(Instant, User)>,
     pub current_base: Option<BaseService>,
     is_admin_cache: Option<bool>,
     cache_instant: Option<Instant>,
@@ -57,6 +57,23 @@ pub struct UserService {
 impl UserService {
     pub fn id(&self) -> &UserId {
         &self.user_record_id
+    }
+
+    pub async fn user(&mut self) -> Result<User, Irror> {
+        if let Some((ts, user)) = &self.user_cache
+            && ts.elapsed() < Duration::from_secs(1)
+        {
+            return Ok(user.clone());
+        }
+
+        let user: Option<User> = DB
+            .query("SELECT * FROM user WHERE id = $id AND is_deleted = false")
+            .bind(("id", self.user_record_id.clone()))
+            .await?
+            .take(0)?;
+        let user = user.ok_or(UserError::Deleted)?;
+        self.user_cache = Some((Instant::now(), user.clone()));
+        Ok(user)
     }
 
     pub async fn login(method: AuthMethod) -> Result<Self, Irror> {
@@ -97,7 +114,7 @@ impl UserService {
             .clone();
 
         Ok(UserService {
-            user,
+            user_cache: Some((Instant::now(), user)),
             user_record_id: UserId(record_id),
             current_base: None,
             is_admin_cache: None,
@@ -185,7 +202,7 @@ impl UserService {
         let record_id = UserId(user.id.as_ref().ok_or(UserError::NotFound)?.0.clone());
 
         Ok(UserService {
-            user,
+            user_cache: Some((Instant::now(), user)),
             user_record_id: record_id,
             current_base: None,
             is_admin_cache: None,
@@ -195,19 +212,20 @@ impl UserService {
     }
 
     pub async fn update_self_user(&mut self, patch: UserPatch) -> Result<User, Irror> {
+        let current = self.user().await?;
         let user: Option<User> = DB
             .update(&self.user_record_id.0)
             .patch(PatchOp::replace(
                 "/first_name",
-                patch.first_name.unwrap_or(self.user.first_name.clone()),
+                patch.first_name.unwrap_or(current.first_name),
             ))
             .patch(PatchOp::replace(
                 "/last_name",
-                patch.last_name.unwrap_or(self.user.last_name.clone()),
+                patch.last_name.unwrap_or(current.last_name),
             ))
             .await?;
 
-        self.refresh_user().await?;
+        self.user_cache = None;
 
         user.ok_or(UserError::UpdateFailed(format!("{}:{}", file!(), line!())).into())
     }
@@ -235,17 +253,6 @@ impl UserService {
             .take(4)?;
 
         user.ok_or(UserError::NotFound.into())
-    }
-
-    pub async fn refresh_user(&mut self) -> Result<User, Irror> {
-        let user: Option<User> = DB
-            .query("SELECT * FROM user WHERE id = $id AND is_deleted = false")
-            .bind(("id", self.user_record_id.clone()))
-            .await?
-            .take(0)?;
-        let user = user.ok_or(UserError::Deleted)?;
-        self.user = user.clone();
-        Ok(user)
     }
 
     pub async fn is_admin(&mut self) -> Result<bool, Irror> {
@@ -309,7 +316,7 @@ impl UserService {
         Ok(service.base)
     }
 
-    pub async fn create_session(&self, ip: String, agent: String) -> Result<String, Irror> {
+    pub async fn create_session(&mut self, ip: String, agent: String) -> Result<String, Irror> {
         if !validator::ValidateIp::validate_ip(&ip) {
             return Err(Irror::Db("Invalid String".to_string()));
         };
@@ -318,8 +325,9 @@ impl UserService {
             user_agent: agent,
             user: self.user_record_id.clone(),
         };
+        let user = self.user().await?;
         let (token, _) =
-            SessionService::create_session(insert_session, self.authentified_by_hca).await?;
+            SessionService::create_session(insert_session, user, self.authentified_by_hca).await?;
         Ok(token)
     }
 

@@ -242,6 +242,13 @@ impl From<RedisErr> for Irror {
     }
 }
 
+impl From<serde_json::Error> for Irror {
+    fn from(error: serde_json::Error) -> Self {
+        eprintln!("{error:?}");
+        Self::Serialization
+    }
+}
+
 impl From<bb8_redis::bb8::RunError<redis::RedisError>> for Irror {
     fn from(error: bb8_redis::bb8::RunError<redis::RedisError>) -> Self {
         eprintln!("{error:?}");

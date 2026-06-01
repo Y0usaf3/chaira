@@ -132,7 +132,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     test_approval_functions().await?;
 
     // Phase 3: User Service Functions
-    let (user_service, user_id) = test_user_service_functions().await?;
+    let (mut user_service, user_id) = test_user_service_functions().await?;
 
     // Phase 4: Base Service Functions
     let (mut base_service, base_id) = test_base_service_functions(&user_service, &user_id).await?;
@@ -141,7 +141,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     test_table_service_functions(&mut base_service, &user_id, &base_id).await?;
 
     // Phase 6: Security Tests
-    test_security_mechanisms(&user_service, &base_service).await?;
+    test_security_mechanisms(&mut user_service, &base_service).await?;
 
     // Phase 7: Performance Stress Tests
     test_performance_stress(&mut base_service, &user_id, &base_id).await?;
@@ -383,7 +383,7 @@ async fn test_user_service_functions() -> Result<(UserService, UserId), Box<dyn 
         user_agent: agent.clone(),
         user: user_id.clone(),
     };
-    let (token, mock_session) = SessionService::create_session(insert_session, true).await?;
+    let (token, mock_session) = SessionService::create_session(insert_session, user.clone(), true).await?;
 
     let mut user_service = UserService::login(AuthMethod::Session(Session {
         token: token.to_string(),
@@ -396,7 +396,7 @@ async fn test_user_service_functions() -> Result<(UserService, UserId), Box<dyn 
     print_bench_table(
         "UserService: Session Login",
         vec![
-            ("Email".to_string(), user_service.user.email.clone()),
+            ("Email".to_string(), user_service.user().await?.email.clone()),
             ("Auth Method".to_string(), "Session".to_string()),
             ("Success".to_string(), "✓ Yes".to_string()),
         ],
@@ -826,7 +826,7 @@ async fn test_table_service_functions(
 // ============================================================================
 
 async fn test_security_mechanisms(
-    user_service: &UserService,
+    user_service: &mut UserService,
     _base_service: &BaseService,
 ) -> Result<(), Box<dyn std::error::Error>> {
     print_security_test_header("Token Encryption & Storage");

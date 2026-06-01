@@ -15,7 +15,7 @@ define_ids!(
     BaseId, TableId, UserId, CellId, RowId, RecordId, FieldId, RelationId, IdentityId, ViewId
 );
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SessionId(pub String);
 
 impl SessionId {

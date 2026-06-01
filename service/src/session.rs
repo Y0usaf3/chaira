@@ -1,9 +1,30 @@
+use std::collections::HashMap;
+use std::sync::Mutex;
 use std::time::Instant;
 
 use crate::{db::get_cache, prelude::*};
-use models::UserId;
-use redis::{AsyncCommands, JsonAsyncCommands};
-use sha2::{Digest, Sha512};
+use models::{User, UserId};
+use redis::AsyncCommands;
+
+#[derive(Serialize, Deserialize)]
+struct UserSession {
+    session: Session,
+    user: User,
+}
+
+#[derive(Clone)]
+struct CachedSession {
+    user: User,
+    ip: String,
+    agent: String,
+    inserted_at: Instant,
+}
+
+const SESSION_CACHE_TTL: Duration = Duration::from_secs(5);
+const SESSION_CACHE_MAX_SIZE: usize = 10_000;
+
+static SESSION_CACHE: LazyLock<Mutex<HashMap<String, CachedSession>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
 
 #[derive(Debug)]
 pub struct SessionService {
@@ -13,16 +34,26 @@ pub struct SessionService {
 impl SessionService {
     pub async fn create_session(
         insert: models::InsertSession,
+        user: User,
         authentified_by_hca: bool,
     ) -> Result<(String, Session), Irror> {
         if authentified_by_hca {
-            let bytes: Vec<u8> = (0..32).map(|_| rand::rng().random()).collect();
+            let bytes: [u8; 32] = rand::rng().random();
             let random_token = general_purpose::STANDARD.encode(bytes);
             let session = Session::from_insert(insert, random_token.clone());
             let mut con = get_cache().await.get().await?;
-            let _: () = con.json_set(session.token.clone(), "$", &session).await?;
-            // THE FUCK U MEAN "ResponseError: unknown command 'JSON.SET', with args beginning with: 'c489ff145e5ea2dbd7ca2f285e1e2943f5b4e3dd25782a8a95485e57bcf75230d9505520685194d271c2bb80ad826011dc9d5d76b1ab5c26ea389437d0cd992c'" RAHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
-            let _: () = con.expire(session.token.clone(), 604800).await?;
+            let user_session = UserSession {
+                session: session.clone(),
+                user,
+            };
+            let json = serde_json::to_string(&user_session)?;
+            redis::pipe()
+                .set(&session.token, &json)
+                .ignore()
+                .expire(&session.token, 604800)
+                .ignore()
+                .query_async::<()>(&mut *con)
+                .await?;
             Ok((random_token, session))
         } else {
             Err(Irror::Session(SessionError::NotAuthentifiedByHca))
@@ -30,39 +61,47 @@ impl SessionService {
     }
 
     pub async fn authentify(token: &str, ip: &str, agent: &str) -> Result<User, Irror> {
-        let mut con = get_cache().await.get().await?;
-        let a = Instant::now();
+        {
+            let cache = SESSION_CACHE.lock().unwrap();
+            if let Some(entry) = cache.get(token)
+                && entry.ip == ip
+                && entry.agent == agent
+                && entry.inserted_at.elapsed() < SESSION_CACHE_TTL
+            {
+                return Ok(entry.user.clone());
+            }
+        }
 
-        let mut hasher = Sha512::new();
-        hasher.update(token);
-        let token = hex::encode(hasher.finalize());
+        let mut con = get_cache().await.get().await?;
 
         let session_str: String = con
-            .json_get(token, "$")
+            .get(token)
             .await
             .map_err(|_| Irror::Session(SessionError::NotFound))?;
 
-        let parsed_sessions: Vec<Session> = serde_json::from_str(&session_str)
+        let user_session: UserSession = serde_json::from_str(&session_str)
             .map_err(|_| Irror::Session(SessionError::ParseError))?;
 
-        let current_session = parsed_sessions
-            .into_iter()
-            .next()
-            .ok_or(Irror::Session(SessionError::NotFound))?;
-
-        if current_session.ip != ip || current_session.user_agent != agent {
+        if user_session.session.ip != ip || user_session.session.user_agent != agent {
             return Err(Irror::Session(SessionError::InvalidAgentOrIp));
         }
 
-        let mut response = DB
-            .query("SELECT * FROM user WHERE id = $user_id AND is_deleted = false")
-            .bind(("user_id", current_session.user))
-            .await?;
+        {
+            let mut cache = SESSION_CACHE.lock().unwrap();
+            if cache.len() >= SESSION_CACHE_MAX_SIZE {
+                cache.clear();
+            }
+            cache.insert(
+                token.to_string(),
+                CachedSession {
+                    user: user_session.user.clone(),
+                    ip: ip.to_string(),
+                    agent: agent.to_string(),
+                    inserted_at: Instant::now(),
+                },
+            );
+        }
 
-        let user: Option<User> = response.take(0)?;
-
-        let user = user.ok_or(Irror::Session(SessionError::UserNotFoundOrDeleted))?;
-
-        Ok(user)
+        Ok(user_session.user)
     }
 }

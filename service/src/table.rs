@@ -181,7 +181,7 @@ impl TableService {
             WHERE 
                 table = $table_id AND 
                 table.base = $base_id AND 
-                is_deleted = false AND
+                is_deleted = false;
         ",
             )
             .bind(("field", field))

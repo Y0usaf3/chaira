@@ -7,21 +7,20 @@ use syn::{FnArg, Ident, ItemFn, Pat, Token, Type, parse_macro_input};
 
 fn find_field_id_param(inputs: &Punctuated<FnArg, syn::token::Comma>) -> Option<Ident> {
     inputs.iter().find_map(|arg| {
-        if let FnArg::Typed(pat_type) = arg {
-            if let Type::Path(type_path) = pat_type.ty.as_ref() {
-                let is_field_id = type_path
-                    .path
-                    .segments
-                    .last()
-                    .map(|s| s.ident == "FieldId")
-                    .unwrap_or(false);
-                if is_field_id {
-                    if let Pat::Ident(pat_ident) = pat_type.pat.as_ref() {
-                        return Some(pat_ident.ident.clone());
-                    }
-                }
+        if let FnArg::Typed(pat_type) = arg
+            && let Type::Path(type_path) = pat_type.ty.as_ref()
+        {
+            let is_field_id = type_path
+                .path
+                .segments
+                .last()
+                .map(|s| s.ident == "FieldId")
+                .unwrap_or(false);
+            if is_field_id && let Pat::Ident(pat_ident) = pat_type.pat.as_ref() {
+                return Some(pat_ident.ident.clone());
             }
         }
+
         None
     })
 }

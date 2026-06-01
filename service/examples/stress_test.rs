@@ -16,6 +16,8 @@ use tokio::sync::Semaphore;
 const CONCURRENCY: usize = 40;
 const BURST_SECONDS: u64 = 10;
 const SEED_RECORDS: usize = 100;
+const THINK_MS_MIN: u64 = 50;
+const THINK_MS_MAX: u64 = 200;
 
 struct OpStat {
     total_ns: AtomicU64,
@@ -224,6 +226,9 @@ async fn burst_worker(worker_id: usize) -> Result<(), String> {
                 ERRORS.fetch_add(1, Ordering::Relaxed);
             }
         }
+
+        let pause = rng.random_range(THINK_MS_MIN..=THINK_MS_MAX);
+        tokio::time::sleep(Duration::from_millis(pause)).await;
     }
 
     {

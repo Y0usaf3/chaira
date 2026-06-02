@@ -46,4 +46,7 @@ pub enum ValueError {
 
     #[error("Wrong type! got {0}")]
     WrongType(String),
+
+    #[error("Contains rich text when it shouldnt!")]
+    UnallowedRichType,
 }

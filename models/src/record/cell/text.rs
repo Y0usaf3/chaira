@@ -13,7 +13,7 @@ impl ValueType<str> for SingleLineValue {
         if let FieldConfig::Text(TextConfig::SingleLine { max_length, .. }) = config {
             let text_lenght = self.value.length().ok_or(ValueError::Unknown)?;
             if text_lenght > max_length.into() {
-                Err(ValueError::TextTooBig(text_lenght.into()))
+                Err(ValueError::TextTooBig(text_lenght))
             } else {
                 Ok(())
             }
@@ -26,19 +26,11 @@ impl ValueType<str> for SingleLineValue {
     where
         Self: Sized,
     {
-        match target_config {
-            FieldConfig::Text(config) => match config {
-                TextConfig::Email => Ok(Value::Email(Email {
-                    value: self.value.clone(),
-                })),
-                _ => Err(ValueError::WrongType(
-                    "cant convert to this type".to_string(),
-                )),
-            },
-            _ => Err(ValueError::WrongType(
-                "cant convert to this type".to_string(),
-            )),
-        }
+        try_convert!(target_config {
+            Text {
+                Email => Value::Email(Email { value: self.value.clone() });
+            }
+        })
     }
 
     fn value(&self) -> &str {
@@ -65,6 +57,35 @@ pub struct LongTextValue {
     value: String,
 }
 
+impl ValueType<str> for LongTextValue {
+    fn verify(&self, config: FieldConfig) -> Result<(), ValueError> {
+        if let FieldConfig::Text(TextConfig::LongText { rich_text }) = config {
+            if !rich_text && self.value.contains(['*', '_', '#', '`', '[', ']']) {
+                return Err(ValueError::UnallowedRichType);
+            };
+            Ok(())
+        } else {
+            Err(ValueError::WrongType(format!("{:?}", config)))
+        }
+    }
+
+    fn convert_to(&self, target_config: &FieldConfig) -> Result<Value, ValueError>
+    where
+        Self: Sized,
+    {
+        try_convert!(target_config {
+            Text {
+                Email => Value::Email(Email { value: self.value.clone() });
+                SingleLine {max_length, default} => Value::SingleLine(SingleLineValue { value: self.value.clone().chars().take(*max_length as usize).collect() });
+            }
+        })
+    }
+
+    fn value(&self) -> &str {
+        &self.value
+    }
+}
+
 impl LongTextValue {
     pub fn new(value: String, rich_text: bool) -> Result<Self, super::ValueError> {
         let processed = if rich_text {
@@ -80,10 +101,6 @@ impl LongTextValue {
             return Err(super::ValueError::TextTooBig(text_lenght));
         };
         Ok(Self { value: processed })
-    }
-
-    pub fn value(&self) -> &str {
-        &self.value
     }
 }
 

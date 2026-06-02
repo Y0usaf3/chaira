@@ -11,7 +11,7 @@ panic = 'abort'
 strip = true
 
 [workspace.dependencies]
-surrealdb = {version = "3.1.0-beta.3", features = ["kv-mem", "scripting", "kv-rocksdb"]}
+surrealdb = {version = "3.1.0-beta.3", features = ["kv-mem", "scripting"]}
 thiserror = "2.0.18"
 tokio = { version = "1.52.2", features = ["full"] }
 surrealdb-types = "3.1.0-beta.3"

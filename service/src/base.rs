@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use crate::table::TableService;
+// use crate::table::TableService;
 use std::time::{Duration, Instant};
 
 #[derive(Debug, Clone)]
@@ -13,7 +13,7 @@ pub struct BaseService {
     pub base: Base,
     pub user: UserId,
     base_record_id: BaseId,
-    pub current_table: Option<TableService>,
+    //  pub current_table: Option<TableService>,
     cache: Option<StateCache>,
     cache_instant: Option<Instant>,
 }
@@ -44,7 +44,7 @@ impl BaseService {
             base,
             base_record_id: base_id,
             user,
-            current_table: None,
+            //  current_table: None,
             cache: None,
             cache_instant: None,
         })
@@ -203,10 +203,10 @@ COMMIT TRANSACTION;
         Ok(tables)
     }
 
-    pub async fn open_table(&self, table_id: TableId) -> Result<TableService, Irror> {
-        let service =
-            TableService::new(table_id, self.base_record_id.clone(), self.user.clone()).await?;
-
-        Ok(service)
-    }
+    // pub async fn open_table(&self, table_id: TableId) -> Result<TableService, Irror> {
+    //     let service =
+    //         TableService::new(table_id, self.base_record_id.clone(), self.user.clone()).await?;
+    //
+    //     Ok(service)
+    // }
 }

@@ -2,6 +2,10 @@ use crate::prelude::*;
 pub mod cell;
 pub use self::cell::*;
 
+// TODO: Verify trait to automaticly verify if the record is FieldConfig compliant
+// TODO: rework the whole damn record thing
+// TODO: snapshots and stuff
+
 #[derive(Debug, Clone, PartialEq, Eq, SurrealValue, serde::Serialize, serde::Deserialize)]
 pub struct Record {
     pub id: Option<RecordId>,

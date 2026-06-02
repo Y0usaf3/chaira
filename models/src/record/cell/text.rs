@@ -172,3 +172,5 @@ impl PhoneValue {
         &self.value
     }
 }
+
+// was redesigning the Record/field system since it was poorly made, i made a trait for ValueTypes and a macro to easly write convertion code for each type (also hackatime wouldnt track all da time i spent writing on my note book 3:<)

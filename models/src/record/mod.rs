@@ -1,5 +1,6 @@
 use crate::prelude::*;
 use std::collections::HashMap;
+
 pub mod cell;
 pub use self::cell::*;
 
@@ -13,7 +14,7 @@ pub struct Record {
     pub created_at: Option<Datetime>,
     pub updated_at: Option<Datetime>,
     pub is_deleted: bool,
-    pub cells: HashMap<String, Value>,
+    pub cells: HashMap<String, cell::Value>,
     pub cell_metadata: Vec<CellMetadata>,
     pub schema_version: u32,
     pub schema_snapshots: SchemaSnapshots,
@@ -21,25 +22,25 @@ pub struct Record {
 
 #[derive(Debug, SurrealValue, Deserialize, Serialize)]
 pub struct CellMetadata {
-    id: CellId,
-    updated_at: Datetime,
-    created_at: Datetime,
+    pub id: CellId,
+    pub updated_at: Datetime,
+    pub created_at: Datetime,
 }
 
 #[derive(Debug, SurrealValue, Deserialize, Serialize)]
 pub struct SchemaSnapshots {
-    version: u32,
-    created_at: Datetime,
-    fields: Vec<FieldSnapshot>,
-    hash: String,
+    pub version: u32,
+    pub created_at: Datetime,
+    pub fields: Vec<FieldSnapshot>,
+    pub hash: String,
 }
 
 #[derive(Debug, SurrealValue, Deserialize, Serialize)]
 pub struct FieldSnapshot {
-    field_id: FieldId,
-    name: String,
-    config_version: u32,
-    config_hash: String,
+    pub field_id: FieldId,
+    pub name: String,
+    pub config_version: u32,
+    pub config_hash: String,
 }
 
 //

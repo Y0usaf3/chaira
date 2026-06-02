@@ -38,7 +38,7 @@ Record {
 
 ### Record Storage Layer
 
-```
+```rust 
 Record {
   id: RecordId,
   created_at: Datetime,
@@ -590,7 +590,7 @@ BEFORE:
 │ Record                                   │
 ├─────────────────────────────────────────┤
 │ cells: HashMap {                         │
-│   "field_name_1": {                      │ ← String key (slow)
+│   "field_name_1": {                      │ ← String key (slow) e
 │     id, created_at, updated_at,          │ ← Repeated metadata
 │     value: "hello"                       │
 │   },                                     │

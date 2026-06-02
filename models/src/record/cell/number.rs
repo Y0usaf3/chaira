@@ -9,9 +9,9 @@ pub struct NumberValue {
 }
 
 impl NumberValue {
-    pub fn new(value: Option<usize>, default: Option<usize>) -> Result<Self, super::CellError> {
+    pub fn new(value: Option<usize>, default: Option<usize>) -> Result<Self, super::ValueError> {
         if value.is_none() && default.is_none() {
-            return Err(super::CellError::MissingValue);
+            return Err(super::ValueError::MissingValue);
         };
         if let Some(v) = value {
             Ok(NumberValue { value: v })
@@ -60,9 +60,9 @@ impl surrealdb_types::SurrealValue for OrderedFloatIThink {
 }
 
 impl DecimalValue {
-    pub fn new(value: Option<f64>, default: Option<f64>) -> Result<Self, super::CellError> {
+    pub fn new(value: Option<f64>, default: Option<f64>) -> Result<Self, super::ValueError> {
         if value.is_none() && default.is_none() {
-            return Err(super::CellError::MissingValue);
+            return Err(super::ValueError::MissingValue);
         };
         if let Some(v) = value {
             Ok(DecimalValue {
@@ -126,10 +126,10 @@ pub struct RatingValue {
 }
 
 impl RatingValue {
-    pub fn new(value: Option<u8>, max: u8) -> Result<Self, super::CellError> {
+    pub fn new(value: Option<u8>, max: u8) -> Result<Self, super::ValueError> {
         let ratings = value.unwrap_or(0);
         if ratings > max {
-            return Err(super::CellError::RatingExceedsMax {
+            return Err(super::ValueError::RatingExceedsMax {
                 value: ratings,
                 max,
             });

@@ -80,9 +80,9 @@ pub struct JsonValue {
 }
 
 impl JsonValue {
-    pub fn new(value: String) -> Result<Self, super::CellError> {
+    pub fn new(value: String) -> Result<Self, super::ValueError> {
         serde_json::from_str::<serde_json::Value>(&value)
-            .map_err(|e| super::CellError::InvalidJson(e.to_string()))?;
+            .map_err(|e| super::ValueError::InvalidJson(e.to_string()))?;
         Ok(JsonValue { value })
     }
 

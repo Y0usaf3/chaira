@@ -1,11 +1,10 @@
 use crate::prelude::*;
-use surrealdb_types::Value as XValue;
 use thiserror::Error;
 
 #[derive(
     Error, Debug, Clone, PartialEq, Eq, SurrealValue, serde::Serialize, serde::Deserialize,
 )]
-pub enum CellError {
+pub enum ValueError {
     #[error("Invalid email format: {0}")]
     InvalidEmail(String),
 
@@ -41,4 +40,10 @@ pub enum CellError {
 
     #[error("Text too big (lenght: {0})")]
     TextTooBig(u64),
+
+    #[error("Unknown :p")]
+    Unknown,
+
+    #[error("Wrong type! got {0}")]
+    WrongType(String),
 }

@@ -1,5 +1,10 @@
+use std::str::FromStr;
+
 use crate::{Value, ValueError, ValueType, cell::FieldConfig, kinds::TextConfig, prelude::*};
+use phonenumber::PhoneNumber;
+use validator::ValidateEmail;
 use validator::ValidateLength;
+use validator::ValidateUrl;
 
 pub const MAX_TEXT_LENGHT: u32 = 999_999; // ~1MB single byte chars
 
@@ -28,8 +33,33 @@ impl ValueType<str> for SingleLineValue {
     {
         try_convert!(target_config {
             Text {
-                Email => Value::Email(Email { value: self.value.clone() });
-            }
+                LongText { rich_text } => {
+                    let mut value = self.value.clone();
+                    if !rich_text {
+                        value = value.replace(['*', '_', '#', '`', '[', ']'], "");
+                    };
+                    Value::LongText(Box::new(LongTextValue { value }))
+                };
+                Email => {
+                    let value = self.value.clone();
+                    if value.validate_email() {
+                        return Err(ValueError::CantConvertTo("Email"))
+                    };
+                    Value::Email(Email { value })
+                };
+                URL => {
+                    let value = self.value.clone();
+                    if value.validate_url() {
+                        return Err(ValueError::CantConvertTo("Url"))
+                    };
+                    Value::URL(UrlValue { value })
+                };
+                Phone => {
+                    let value = self.value.clone();
+                    let value = PhoneNumber::from_str(value.as_str()).ok().ok_or(ValueError::CantConvertTo("Phone number"))?;
+                    Value::Phone(PhoneValue { value: value.format().mode(phonenumber::Mode::E164).to_string() })
+                }
+            };
         })
     }
 

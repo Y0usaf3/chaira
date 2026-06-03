@@ -49,4 +49,7 @@ pub enum ValueError {
 
     #[error("Contains rich text when it shouldnt!")]
     UnallowedRichType,
+
+    #[error("Cant convert to {0}")]
+    CantConvertTo(&str),
 }

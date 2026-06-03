@@ -43,20 +43,20 @@ impl ValueType<str> for SingleLineValue {
                 Email => {
                     let value = self.value.clone();
                     if value.validate_email() {
-                        return Err(ValueError::CantConvertTo("Email"))
+                        return Err(ValueError::CantConvertTo("Email".to_string()))
                     };
                     Value::Email(Email { value })
                 };
                 URL => {
                     let value = self.value.clone();
                     if value.validate_url() {
-                        return Err(ValueError::CantConvertTo("Url"))
+                        return Err(ValueError::CantConvertTo("Url".to_string()))
                     };
                     Value::URL(UrlValue { value })
                 };
                 Phone => {
                     let value = self.value.clone();
-                    let value = PhoneNumber::from_str(value.as_str()).ok().ok_or(ValueError::CantConvertTo("Phone number"))?;
+                    let value = PhoneNumber::from_str(value.as_str()).ok().ok_or(ValueError::CantConvertTo("Phone number".to_string()))?;
                     Value::Phone(PhoneValue { value: value.format().mode(phonenumber::Mode::E164).to_string() })
                 }
             };
@@ -105,9 +105,32 @@ impl ValueType<str> for LongTextValue {
     {
         try_convert!(target_config {
             Text {
-                Email => Value::Email(Email { value: self.value.clone() });
-                SingleLine {max_length, default} => Value::SingleLine(SingleLineValue { value: self.value.clone().chars().take(*max_length as usize).collect() });
-            }
+                 SingleLine { max_length, default } => {
+                    let value = self.value.clone().replace("\n", " ").replace("\r", " ");
+                    Value::SingleLine(SingleLineValue { value: value.chars().take(*max_length as usize).collect() })
+                };
+                Email => {
+                    let valid_email = self.value
+                        .lines()
+                        .map(|v| v.trim())
+                        .find(|v| v.validate_email());
+                    Value::Email(Email { value: valid_email.ok_or(ValueError::CantConvertTo("Email".to_string()))?.to_string() })
+                };
+                URL => {
+                    let valid_url = self.value.lines().map(|v| v.trim()).find(|v| v.validate_url());
+                    Value::URL(UrlValue { value: valid_url.ok_or(ValueError::CantConvertTo("URL".to_string()))?.to_string() })
+                };
+                Phone => {
+                    let valid_phone = self.value.lines().map(|v| v.trim()).find(|v| PhoneNumber::from_str(v).is_ok());
+                    Value::Phone(PhoneValue { value: PhoneNumber::from_str(
+                        valid_phone
+                            .ok_or(ValueError::CantConvertTo("Phone".to_string()))?)
+                            .ok()
+                            .ok_or(ValueError::CantConvertTo("Phone".to_string()))?
+                            .format().mode(phonenumber::Mode::E164).to_string()
+                    })
+                }
+            };
         })
     }
 

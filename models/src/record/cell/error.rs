@@ -51,5 +51,5 @@ pub enum ValueError {
     UnallowedRichType,
 
     #[error("Cant convert to {0}")]
-    CantConvertTo(&str),
+    CantConvertTo(String),
 }

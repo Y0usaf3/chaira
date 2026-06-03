@@ -23,6 +23,7 @@ macro_rules! try_convert {
 
     // inner arm with destructuring; arm ends with `;`
     (@grp $cfg:ident ; $outer:ident ; $sub:ident { $($field:ident),* } => $result:expr ; $($rest:tt)*) => {
+        #[allow(unused_variables)]
         if let $crate::kinds::FieldConfig::$outer(
             $crate::try_convert!(@inner_path $outer ; $sub { $($field),* }),
         ) = $cfg {
@@ -125,4 +126,3 @@ pub trait ValueType<T: ?Sized> {
         Self: Sized;
     fn value(&self) -> &T;
 }
-

@@ -1,3 +1,5 @@
+#![allow(unexpected_cfgs)]
+
 mod ids;
 mod user;
 mod identity;

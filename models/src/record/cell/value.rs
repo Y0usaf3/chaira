@@ -33,7 +33,7 @@ pub enum Value {
 }
 
 impl Value {
-    pub fn verify(&self, config: FieldConfig) -> Result<(), ValueError> {
+    pub fn verify(&self, _config: FieldConfig) -> Result<(), ValueError> {
         Ok(())
     }
 }

@@ -52,4 +52,7 @@ pub enum ValueError {
 
     #[error("Cant convert to {0}")]
     CantConvertTo(String),
+
+    #[error("Impossible to convert to this type")]
+    Impossible,
 }

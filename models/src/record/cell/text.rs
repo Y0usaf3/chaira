@@ -117,11 +117,11 @@ impl ValueType<str> for LongTextValue {
                     Value::Email(Email { value: valid_email.ok_or(ValueError::CantConvertTo("Email".to_string()))?.to_string() })
                 };
                 URL => {
-                    let valid_url = self.value.lines().map(|v| v.trim()).find(|v| v.validate_url());
+                    let valid_url = self.value.trim().split(' ').find(|v| v.validate_url());
                     Value::URL(UrlValue { value: valid_url.ok_or(ValueError::CantConvertTo("URL".to_string()))?.to_string() })
                 };
                 Phone => {
-                    let valid_phone = self.value.lines().map(|v| v.trim()).find(|v| PhoneNumber::from_str(v).is_ok());
+                    let valid_phone = self.value.trim().split(' ').find(|v| PhoneNumber::from_str(v).is_ok());
                     Value::Phone(PhoneValue { value: PhoneNumber::from_str(
                         valid_phone
                             .ok_or(ValueError::CantConvertTo("Phone".to_string()))?)
@@ -254,13 +254,13 @@ impl ValueType<str> for UrlValue {
 
 impl UrlValue {
     pub fn new(value: String) -> Result<Self, super::ValueError> {
-        if validator::ValidateUrl::validate_url(&value) {
-            Ok(Self {
-                value: value.trim().to_string(),
-            })
-        } else {
-            Err(super::ValueError::InvalidUrl(value))
-        }
+        let value = value
+            .split(' ')
+            .find(|v| v.validate_url())
+            .ok_or(ValueError::InvalidUrl("SORRY".to_string()))?;
+        Ok(Self {
+            value: value.trim().to_string(),
+        })
     }
 }
 
@@ -306,19 +306,575 @@ impl ValueType<str> for PhoneValue {
 impl PhoneValue {
     pub fn new(value: String, default_region: Option<&str>) -> Result<Self, super::ValueError> {
         let region = default_region.and_then(|r| r.parse().ok());
+        let value = value
+            .split(" ")
+            .find(|v| PhoneNumber::from_str(v).is_ok())
+            .ok_or(ValueError::InvalidPhoneNumber("SORRY".to_string()))?;
 
-        match phonenumber::parse(region, &value) {
+        match phonenumber::parse(region, value) {
             Ok(phone) => {
                 if phonenumber::is_valid(&phone) {
                     let formatted = phone.format().mode(phonenumber::Mode::E164).to_string();
                     Ok(Self { value: formatted })
                 } else {
-                    Err(super::ValueError::InvalidPhoneNumber(value))
+                    Err(super::ValueError::InvalidPhoneNumber(value.to_string()))
                 }
             }
-            Err(_) => Err(super::ValueError::UnparseablePhoneNumber(value)),
+            Err(_) => Err(super::ValueError::UnparseablePhoneNumber(value.to_string())),
         }
     }
 }
 
 // was redesigning the Record/field system since it was poorly made, i made a trait for ValueTypes and a macro to easly write convertion code for each type (also hackatime wouldnt track all da time i spent writing on my note book 3:<)
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::kinds::{FieldConfig, TextConfig};
+
+    // ---- SingleLineValue ----
+
+    #[test]
+    fn sl_value() {
+        let v = SingleLineValue::new(None, Some("hello".into())).unwrap();
+        assert_eq!(v.value(), "hello");
+    }
+
+    #[test]
+    fn sl_verify_ok() {
+        let v = SingleLineValue::new(None, Some("hi".into())).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::SingleLine {
+            default: None,
+            max_length: 10,
+        });
+        assert!(v.verify(cfg).is_ok());
+    }
+
+    #[test]
+    fn sl_verify_exceeds_max_length() {
+        let v = SingleLineValue::new(None, Some("a".repeat(200))).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::SingleLine {
+            default: None,
+            max_length: 10,
+        });
+        assert_eq!(v.verify(cfg), Err(ValueError::TextTooBig(200)));
+    }
+
+    #[test]
+    fn sl_verify_wrong_type() {
+        let v = SingleLineValue::new(None, Some("hi".into())).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::Email);
+        assert!(matches!(v.verify(cfg), Err(ValueError::WrongType(_))));
+    }
+
+    #[test]
+    fn sl_convert_to_long_text_rich() {
+        let v = SingleLineValue::new(None, Some("a **b**".into())).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::LongText { rich_text: true });
+        let res = v.convert_to(&cfg).unwrap();
+        assert_eq!(
+            res,
+            Value::LongText(Box::new(LongTextValue {
+                value: "a **b**".into()
+            }))
+        );
+    }
+
+    #[test]
+    fn sl_convert_to_long_text_plain() {
+        let v = SingleLineValue::new(None, Some("a **b**".into())).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::LongText { rich_text: false });
+        let res = v.convert_to(&cfg).unwrap();
+        assert_eq!(
+            res,
+            Value::LongText(Box::new(LongTextValue {
+                value: "a b".into()
+            }))
+        );
+    }
+
+    #[test]
+    fn sl_convert_to_email_with_valid_email_fails() {
+        let v = SingleLineValue::new(None, Some("user@example.com".into())).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::Email);
+        assert_eq!(
+            v.convert_to(&cfg),
+            Err(ValueError::CantConvertTo("Email".to_string()))
+        );
+    }
+
+    #[test]
+    fn sl_convert_to_email_with_invalid_email_succeeds() {
+        let v = SingleLineValue::new(None, Some("not-an-email".into())).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::Email);
+        let res = v.convert_to(&cfg).unwrap();
+        assert_eq!(
+            res,
+            Value::Email(Email {
+                value: "not-an-email".into()
+            })
+        );
+    }
+
+    #[test]
+    fn sl_convert_to_url_with_valid_url_fails() {
+        let v = SingleLineValue::new(None, Some("https://example.com".into())).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::URL);
+        assert_eq!(
+            v.convert_to(&cfg),
+            Err(ValueError::CantConvertTo("Url".to_string()))
+        );
+    }
+
+    #[test]
+    fn sl_convert_to_url_with_invalid_url_succeeds() {
+        let v = SingleLineValue::new(None, Some("not-a-url".into())).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::URL);
+        let res = v.convert_to(&cfg).unwrap();
+        assert_eq!(
+            res,
+            Value::URL(UrlValue {
+                value: "not-a-url".into()
+            })
+        );
+    }
+
+    #[test]
+    fn sl_convert_to_phone_ok() {
+        let v = SingleLineValue::new(None, Some("+14155552671".into())).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::Phone);
+        let res = v.convert_to(&cfg).unwrap();
+        assert_eq!(
+            res,
+            Value::Phone(PhoneValue {
+                value: "+14155552671".into()
+            })
+        );
+    }
+
+    #[test]
+    fn sl_convert_to_phone_invalid() {
+        let v = SingleLineValue::new(None, Some("not-a-phone".into())).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::Phone);
+        assert_eq!(
+            v.convert_to(&cfg),
+            Err(ValueError::CantConvertTo("Phone number".to_string()))
+        );
+    }
+
+    #[test]
+    fn sl_convert_to_wrong_outer_group() {
+        let v = SingleLineValue::new(None, Some("hi".into())).unwrap();
+        let cfg = FieldConfig::Number(crate::kinds::NumberConfig::Number { default: None });
+        assert_eq!(
+            v.convert_to(&cfg),
+            Err(ValueError::WrongType(
+                "cant convert to this type".to_string()
+            ))
+        );
+    }
+
+    // ---- LongTextValue ----
+
+    #[test]
+    fn lt_value() {
+        let v = LongTextValue::new("hello".into(), false).unwrap();
+        assert_eq!(v.value(), "hello");
+    }
+
+    #[test]
+    fn lt_verify_rich_text_ok() {
+        let v = LongTextValue::new("**bold**".into(), true).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::LongText { rich_text: true });
+        assert!(v.verify(cfg).is_ok());
+    }
+
+    #[test]
+    fn lt_verify_plain_text_with_rich_fails() {
+        let v = LongTextValue::new("**bold**".into(), true).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::LongText { rich_text: false });
+        assert_eq!(v.verify(cfg), Err(ValueError::UnallowedRichType));
+    }
+
+    #[test]
+    fn lt_verify_plain_text_ok() {
+        let v = LongTextValue::new("plain text".into(), false).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::LongText { rich_text: false });
+        assert!(v.verify(cfg).is_ok());
+    }
+
+    #[test]
+    fn lt_verify_wrong_type() {
+        let v = LongTextValue::new("hi".into(), false).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::Email);
+        assert!(matches!(v.verify(cfg), Err(ValueError::WrongType(_))));
+    }
+
+    #[test]
+    fn lt_convert_to_single_line_truncates() {
+        let v = LongTextValue::new("hello world foo bar".into(), false).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::SingleLine {
+            default: None,
+            max_length: 5,
+        });
+        let res = v.convert_to(&cfg).unwrap();
+        assert_eq!(
+            res,
+            Value::SingleLine(SingleLineValue {
+                value: "hello".into()
+            })
+        );
+    }
+
+    #[test]
+    fn lt_convert_to_single_line_replaces_newlines() {
+        let v = LongTextValue::new("hello\nworld\rfoo".into(), false).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::SingleLine {
+            default: None,
+            max_length: 100,
+        });
+        let res = v.convert_to(&cfg).unwrap();
+        assert_eq!(
+            res,
+            Value::SingleLine(SingleLineValue {
+                value: "hello world foo".into()
+            })
+        );
+    }
+
+    #[test]
+    fn lt_convert_to_email_finds_valid() {
+        let v = LongTextValue::new("some text\nuser@example.com\nmore".into(), false).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::Email);
+        let res = v.convert_to(&cfg).unwrap();
+        assert_eq!(
+            res,
+            Value::Email(Email {
+                value: "user@example.com".into()
+            })
+        );
+    }
+
+    #[test]
+    fn lt_convert_to_email_no_valid() {
+        let v = LongTextValue::new("no email here".into(), false).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::Email);
+        assert_eq!(
+            v.convert_to(&cfg),
+            Err(ValueError::CantConvertTo("Email".to_string()))
+        );
+    }
+
+    #[test]
+    fn lt_convert_to_url_finds_valid() {
+        let v = LongTextValue::new("visit https://example.com now".into(), false).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::URL);
+        let res = v.convert_to(&cfg).unwrap();
+        assert_eq!(
+            res,
+            Value::URL(UrlValue {
+                value: "https://example.com".into()
+            })
+        );
+    }
+
+    #[test]
+    fn lt_convert_to_url_no_valid() {
+        let v = LongTextValue::new("no url here".into(), false).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::URL);
+        assert_eq!(
+            v.convert_to(&cfg),
+            Err(ValueError::CantConvertTo("URL".to_string()))
+        );
+    }
+
+    #[test]
+    fn lt_convert_to_phone_finds_valid() {
+        let v = LongTextValue::new("call +14155552671 for info".into(), false).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::Phone);
+        let res = v.convert_to(&cfg).unwrap();
+        assert_eq!(
+            res,
+            Value::Phone(PhoneValue {
+                value: "+14155552671".into()
+            })
+        );
+    }
+
+    #[test]
+    fn lt_convert_to_phone_no_valid() {
+        let v = LongTextValue::new("no phone".into(), false).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::Phone);
+        assert_eq!(
+            v.convert_to(&cfg),
+            Err(ValueError::CantConvertTo("Phone".to_string()))
+        );
+    }
+
+    #[test]
+    fn lt_convert_to_wrong_outer_group() {
+        let v = LongTextValue::new("hi".into(), false).unwrap();
+        let cfg = FieldConfig::Number(crate::kinds::NumberConfig::Number { default: None });
+        assert_eq!(
+            v.convert_to(&cfg),
+            Err(ValueError::WrongType(
+                "cant convert to this type".to_string()
+            ))
+        );
+    }
+
+    // ---- Email ----
+
+    #[test]
+    fn email_value() {
+        let v = Email::new("user@example.com".into()).unwrap();
+        assert_eq!(v.value(), "user@example.com");
+    }
+
+    #[test]
+    fn email_verify_ok() {
+        let v = Email::new("user@example.com".into()).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::Email);
+        assert!(v.verify(cfg).is_ok());
+    }
+
+    #[test]
+    fn email_verify_invalid() {
+        let v = Email {
+            value: "not-an-email".into(),
+        };
+        let cfg = FieldConfig::Text(TextConfig::Email);
+        assert_eq!(
+            v.verify(cfg),
+            Err(ValueError::InvalidEmail("not-an-email".into()))
+        );
+    }
+
+    #[test]
+    fn email_verify_wrong_type() {
+        let v = Email::new("user@example.com".into()).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::URL);
+        assert!(matches!(v.verify(cfg), Err(ValueError::WrongType(_))));
+    }
+
+    #[test]
+    fn email_convert_to_single_line() {
+        let v = Email::new("user@example.com".into()).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::SingleLine {
+            default: None,
+            max_length: 100,
+        });
+        let res = v.convert_to(&cfg).unwrap();
+        assert_eq!(
+            res,
+            Value::SingleLine(SingleLineValue {
+                value: "user@example.com".into()
+            })
+        );
+    }
+
+    #[test]
+    fn email_convert_to_single_line_truncates() {
+        let v = Email::new("user@example.com".into()).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::SingleLine {
+            default: None,
+            max_length: 5,
+        });
+        let res = v.convert_to(&cfg).unwrap();
+        assert_eq!(
+            res,
+            Value::SingleLine(SingleLineValue {
+                value: "user@".into()
+            })
+        );
+    }
+
+    #[test]
+    fn email_convert_to_long_text() {
+        let v = Email::new("user@example.com".into()).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::LongText { rich_text: false });
+        let res = v.convert_to(&cfg).unwrap();
+        assert_eq!(
+            res,
+            Value::LongText(Box::new(LongTextValue {
+                value: "user@example.com".into()
+            }))
+        );
+    }
+
+    #[test]
+    fn email_convert_to_wrong_outer_group() {
+        let v = Email::new("user@example.com".into()).unwrap();
+        let cfg = FieldConfig::Number(crate::kinds::NumberConfig::Number { default: None });
+        assert_eq!(
+            v.convert_to(&cfg),
+            Err(ValueError::WrongType(
+                "cant convert to this type".to_string()
+            ))
+        );
+    }
+
+    // ---- UrlValue ----
+
+    #[test]
+    fn url_value() {
+        let v = UrlValue::new("https://example.com".into()).unwrap();
+        assert_eq!(v.value(), "https://example.com");
+    }
+
+    #[test]
+    fn url_verify_ok() {
+        let v = UrlValue::new("https://example.com".into()).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::URL);
+        assert!(v.verify(cfg).is_ok());
+    }
+
+    #[test]
+    fn url_verify_invalid() {
+        let v = UrlValue {
+            value: "not-a-url".into(),
+        };
+        let cfg = FieldConfig::Text(TextConfig::URL);
+        assert_eq!(
+            v.verify(cfg),
+            Err(ValueError::InvalidUrl("not-a-url".into()))
+        );
+    }
+
+    #[test]
+    fn url_verify_wrong_type() {
+        let v = UrlValue::new("https://example.com".into()).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::Email);
+        assert!(matches!(v.verify(cfg), Err(ValueError::WrongType(_))));
+    }
+
+    #[test]
+    fn url_convert_to_single_line() {
+        let v = UrlValue::new("https://example.com".into()).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::SingleLine {
+            default: None,
+            max_length: 100,
+        });
+        let res = v.convert_to(&cfg).unwrap();
+        assert_eq!(
+            res,
+            Value::SingleLine(SingleLineValue {
+                value: "https://example.com".into()
+            })
+        );
+    }
+
+    #[test]
+    fn url_convert_to_single_line_truncates() {
+        let v = UrlValue::new("https://example.com".into()).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::SingleLine {
+            default: None,
+            max_length: 10,
+        });
+        let res = v.convert_to(&cfg).unwrap();
+        assert_eq!(
+            res,
+            Value::SingleLine(SingleLineValue {
+                value: "https://ex".into()
+            })
+        );
+    }
+
+    #[test]
+    fn url_convert_to_long_text_rich() {
+        let v = UrlValue::new("https://example.com".into()).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::LongText { rich_text: true });
+        let res = v.convert_to(&cfg).unwrap();
+        let expected = LongTextValue {
+            value: "https://example.com".into(),
+        };
+        assert_eq!(res, Value::LongText(Box::new(expected)));
+    }
+
+    #[test]
+    fn url_convert_to_wrong_outer_group() {
+        let v = UrlValue::new("https://example.com".into()).unwrap();
+        let cfg = FieldConfig::Number(crate::kinds::NumberConfig::Number { default: None });
+        assert_eq!(
+            v.convert_to(&cfg),
+            Err(ValueError::WrongType(
+                "cant convert to this type".to_string()
+            ))
+        );
+    }
+
+    // ---- PhoneValue ----
+
+    #[test]
+    fn phone_value() {
+        let v = PhoneValue::new("+14155552671".into(), None).unwrap();
+        assert_eq!(v.value(), "+14155552671");
+    }
+
+    #[test]
+    fn phone_verify_ok() {
+        let v = PhoneValue::new("+14155552671".into(), None).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::Phone);
+        assert!(v.verify(cfg).is_ok());
+    }
+
+    #[test]
+    fn phone_verify_invalid() {
+        let v = PhoneValue {
+            value: "not-a-phone".into(),
+        };
+        let cfg = FieldConfig::Text(TextConfig::Phone);
+        assert_eq!(
+            v.verify(cfg),
+            Err(ValueError::InvalidPhoneNumber("not-a-phone".into()))
+        );
+    }
+
+    #[test]
+    fn phone_verify_wrong_type() {
+        let v = PhoneValue::new("+14155552671".into(), None).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::Email);
+        assert!(matches!(v.verify(cfg), Err(ValueError::WrongType(_))));
+    }
+
+    #[test]
+    fn phone_convert_to_single_line() {
+        let v = PhoneValue::new("+14155552671".into(), None).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::SingleLine {
+            default: None,
+            max_length: 100,
+        });
+        let res = v.convert_to(&cfg).unwrap();
+        assert_eq!(
+            res,
+            Value::SingleLine(SingleLineValue {
+                value: "+14155552671".into()
+            })
+        );
+    }
+
+    #[test]
+    fn phone_convert_to_long_text_creates_phone_value() {
+        let v = PhoneValue::new("+14155552671".into(), None).unwrap();
+        let cfg = FieldConfig::Text(TextConfig::LongText { rich_text: true });
+        let res = v.convert_to(&cfg).unwrap();
+        assert_eq!(
+            res,
+            Value::Phone(PhoneValue {
+                value: "+14155552671".into()
+            })
+        );
+    }
+
+    #[test]
+    fn phone_convert_to_wrong_outer_group() {
+        let v = PhoneValue::new("+14155552671".into(), None).unwrap();
+        let cfg = FieldConfig::Number(crate::kinds::NumberConfig::Number { default: None });
+        assert_eq!(
+            v.convert_to(&cfg),
+            Err(ValueError::WrongType(
+                "cant convert to this type".to_string()
+            ))
+        );
+    }
+}

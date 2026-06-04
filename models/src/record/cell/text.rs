@@ -212,6 +212,46 @@ pub struct UrlValue {
     value: String,
 }
 
+impl ValueType<str> for UrlValue {
+    fn verify(&self, config: FieldConfig) -> Result<(), ValueError> {
+        if let FieldConfig::Text(TextConfig::URL) = config {
+            if self.value.validate_url() {
+                Ok(())
+            } else {
+                Err(ValueError::InvalidUrl(self.value.clone()))
+            }
+        } else {
+            Err(ValueError::WrongType(format!("{config:?}")))
+        }
+    }
+
+    fn convert_to(&self, target_config: &FieldConfig) -> Result<Value, ValueError>
+    where
+        Self: Sized,
+    {
+        try_convert!(target_config {
+            Text {
+                SingleLine { default, max_length } => {
+                    Value::SingleLine(SingleLineValue { value: self.value.clone().chars().take(*max_length as usize).collect() })
+                };
+                LongText { rich_text } => {
+                    let value = if *rich_text {
+                        self.value.clone().replace(['*', '_', '#', '`', '[', ']'], "")
+                    } else {
+                        self.value.clone()
+                    };
+
+                    Value::LongText(Box::new(LongTextValue { value }))
+                }
+            };
+        })
+    }
+
+    fn value(&self) -> &str {
+        &self.value
+    }
+}
+
 impl UrlValue {
     pub fn new(value: String) -> Result<Self, super::ValueError> {
         if validator::ValidateUrl::validate_url(&value) {
@@ -222,15 +262,45 @@ impl UrlValue {
             Err(super::ValueError::InvalidUrl(value))
         }
     }
-
-    pub fn value(&self) -> &str {
-        &self.value
-    }
 }
 
 #[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct PhoneValue {
     value: String,
+}
+
+impl ValueType<str> for PhoneValue {
+    fn verify(&self, config: FieldConfig) -> Result<(), ValueError> {
+        if let FieldConfig::Text(TextConfig::Phone) = config {
+            if PhoneNumber::from_str(&self.value).is_ok() {
+                Ok(())
+            } else {
+                Err(ValueError::InvalidPhoneNumber(self.value.clone()))
+            }
+        } else {
+            Err(ValueError::WrongType(format!("{config:?}")))
+        }
+    }
+
+    fn convert_to(&self, target_config: &FieldConfig) -> Result<Value, ValueError>
+    where
+        Self: Sized,
+    {
+        try_convert!(target_config {
+            Text {
+                SingleLine { default, max_length } => {
+                    Value::SingleLine(SingleLineValue { value: self.value.clone() })
+                };
+                LongText { rich_text } => {
+                    Value::Phone(PhoneValue { value: self.value.clone() })
+                }
+            };
+        })
+    }
+
+    fn value(&self) -> &str {
+        &self.value
+    }
 }
 
 impl PhoneValue {
@@ -248,10 +318,6 @@ impl PhoneValue {
             }
             Err(_) => Err(super::ValueError::UnparseablePhoneNumber(value)),
         }
-    }
-
-    pub fn value(&self) -> &str {
-        &self.value
     }
 }
 

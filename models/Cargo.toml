@@ -16,4 +16,3 @@ thiserror.workspace = true
 validator.workspace = true
 surrealdb.workspace = true
 chrono.workspace = true
-

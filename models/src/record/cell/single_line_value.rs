@@ -1,12 +1,15 @@
 use std::str::FromStr;
 
+use crate::NumberValue;
 use crate::Value;
 use crate::ValueError;
 use crate::ValueType;
 use crate::cell::FieldConfig;
 use crate::kinds::TextConfig;
 use crate::prelude::*;
+use ordered_float::OrderedFloat;
 use phonenumber::PhoneNumber;
+use serde::de::value;
 use validator::ValidateEmail;
 use validator::ValidateLength;
 use validator::ValidateUrl;
@@ -65,8 +68,31 @@ impl ValueType<str> for SingleLineValue {
                 };
                 Phone => {
                     let value = self.value.clone();
-                    let value = PhoneNumber::from_str(value.as_str()).ok().ok_or(ValueError::CantConvertTo("Phone number".to_string()))?;
+                    let value = PhoneNumber::from_str(value.as_str())
+                        .ok()
+                        .ok_or(ValueError::CantConvertTo("Phone number".to_string()))?;
                     Value::Phone(PhoneValue { value: value.format().mode(phonenumber::Mode::E164).to_string() })
+                }
+            };
+            Number {
+                Number { default } => {
+                    let value = self.value
+                        .trim()
+                        .split(' ')
+                        .find_map(|v| v.parse::<isize>().ok())
+                        .ok_or_else(|| ValueError::CantConvertTo("Number".to_string()))?;
+                    Value::Number(NumberValue { value })
+                };
+                Decimal { default, precision} => {
+                    let value = self.value
+                        .trim()
+                        .split(' ')
+                        .find_map(|v| v.parse::<f64>().ok())
+                        .ok_or_else(|| ValueError::CantConvertTo("Decimal".to_string()))?;
+                    Value::Decimal(crate::DecimalValue { value: crate::OrderedFloatIThink(OrderedFloat::from(value))})
+                };
+                Currency {
+
                 }
             };
         })

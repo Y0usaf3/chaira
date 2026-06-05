@@ -1,10 +1,10 @@
+use super::ordered_float_i_think::OrderedFloatIThink;
 use crate::prelude::*;
 use ordered_float::OrderedFloat;
-use super::ordered_float_i_think::OrderedFloatIThink;
 
 #[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct DecimalValue {
-    value: OrderedFloatIThink,
+    pub value: OrderedFloatIThink,
 }
 
 impl DecimalValue {

@@ -1,9 +1,25 @@
+use super::attachment_value::AttachmentValue;
+use super::auto_number_value::AutoNumberValue;
+use super::created_at_value::CreatedAtValue;
+use super::currency_value::CurrencyValue;
+use super::date_value::DateValue;
+use super::decimal_value::DecimalValue;
+use super::duration_value::DurationValue;
+use super::email::Email;
+use super::formula_value::FormulaValue;
+use super::json_value::JsonValue;
+use super::link_value::LinkValue;
+use super::long_text_value::LongTextValue;
+use super::look_up_value::LookUpValue;
+use super::modified_time_value::ModifiedTimeValue;
+use super::number_value::NumberValue;
+use super::percent_value::PercentValue;
+use super::phone_value::PhoneValue;
+use super::rating_value::RatingValue;
+use super::roll_up_value::RollUpValue;
+use super::single_line_value::SingleLineValue;
+use super::url_value::UrlValue;
 use super::ValueError;
-use super::complex::{AttachmentValue, JsonValue};
-use super::computed::{AutoNumberValue, FormulaValue, LinkValue, LookUpValue, RollUpValue};
-use super::datetime::DateValue;
-use super::number::{DecimalValue, NumberValue};
-use super::text::{Email, LongTextValue, PhoneValue, SingleLineValue, UrlValue};
 use crate::kinds::FieldConfig;
 use crate::prelude::*;
 
@@ -16,18 +32,18 @@ pub enum Value {
     Phone(PhoneValue),
     Number(NumberValue),
     Decimal(DecimalValue),
-    Currency(super::number::CurrencyValue),
-    Percent(super::number::PercentValue),
-    Rating(super::number::RatingValue),
+    Currency(CurrencyValue),
+    Percent(PercentValue),
+    Rating(RatingValue),
     Date(DateValue),
-    Duration(super::datetime::DurationValue),
+    Duration(DurationValue),
     Link(LinkValue),
     LookUp(Box<LookUpValue>),
     RollUp(Box<RollUpValue>),
     Formula(Box<FormulaValue>),
     AutoNumber(AutoNumberValue),
-    CreatedAt(super::datetime::CreatedAtValue),
-    ModifiedTime(super::datetime::ModifiedTimeValue),
+    CreatedAt(CreatedAtValue),
+    ModifiedTime(ModifiedTimeValue),
     Attachment(Box<AttachmentValue>),
     JSON(Box<JsonValue>),
 }

@@ -52,7 +52,6 @@ impl ValueType<str> for SingleLineValue {
     where
         Self: Sized,
     {
-        #[rustfmt::skip]
         try_convert!(target_config {
             Text {
                 LongText { rich_text } => {

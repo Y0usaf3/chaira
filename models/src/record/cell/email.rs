@@ -49,12 +49,14 @@ impl ValueType<str> for Email {
 
 impl Email {
     pub fn new(value: String) -> Result<Self, super::ValueError> {
-        if value.validate_email() {
-            Ok(Self {
-                value: value.trim().to_lowercase(),
-            })
-        } else {
-            Err(super::ValueError::InvalidEmail(value))
-        }
+        Ok(Self {
+            value: value
+                .clone()
+                .trim()
+                .split(' ')
+                .find(|v| v.validate_email())
+                .ok_or(ValueError::InvalidEmail(value))?
+                .to_string(),
+        })
     }
 }

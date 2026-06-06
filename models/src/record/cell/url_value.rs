@@ -4,6 +4,7 @@ use crate::ValueType;
 use crate::cell::FieldConfig;
 use crate::kinds::TextConfig;
 use crate::prelude::*;
+use serde::de::value;
 use validator::ValidateUrl;
 
 use super::long_text_value::LongTextValue;
@@ -56,12 +57,14 @@ impl ValueType<str> for UrlValue {
 
 impl UrlValue {
     pub fn new(value: String) -> Result<Self, super::ValueError> {
-        let value = value
+        let a = value.clone();
+        let valuee = value
+            .trim()
             .split(' ')
             .find(|v| v.validate_url())
-            .ok_or(ValueError::InvalidUrl("SORRY".to_string()))?;
+            .ok_or(ValueError::InvalidUrl(a))?;
         Ok(Self {
-            value: value.trim().to_string(),
+            value: valuee.to_string(),
         })
     }
 }

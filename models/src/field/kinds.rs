@@ -42,7 +42,7 @@ pub enum NumberConfig {
         precision: u8,
     },
     Currency {
-        currency: String,
+        currency: String, // code e.g 'USD' 'XXX'
         precision: usize, /* 0 - 8*/
     },
     Percent {

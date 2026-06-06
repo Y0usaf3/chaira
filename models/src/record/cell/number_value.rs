@@ -1,8 +1,7 @@
-use ordered_float::OrderedFloat;
-
 use crate::kinds::FieldConfig;
-use crate::{DecimalValue, prelude::*};
+use crate::{CurrencyValue, DecimalValue, LongTextValue, PercentValue, Value, prelude::*};
 use crate::{ValueError, ValueType};
+use ordered_float::OrderedFloat;
 
 #[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct NumberValue {
@@ -22,11 +21,25 @@ impl ValueType<isize> for NumberValue {
         Self: Sized,
     {
         try_convert!(target_config {
+            Text {
+                SingleLine { default, max_length } => {
+                    Value::SingleLine(crate::SingleLineValue { value: self.value.to_string().chars().take(*max_length as usize).collect() })
+                };
+                LongText { rich_text } => {
+                    Value::LongText(Box::new(LongTextValue { value: self.value.to_string() }))
+                }
+            };
             Number {
                 Decimal { default, precision } => {
                     crate::Value::Decimal(DecimalValue {
                         value: crate::OrderedFloatIThink(OrderedFloat::from(self.value as f64))
                     })
+                };
+                Currency { currency, precision } => {
+                    Value::Currency(CurrencyValue { value: crate::OrderedFloatIThink(OrderedFloat::from(self.value as f64)) })
+                };
+                Percent { precision, show_bar } => {
+                    Value::Percent(PercentValue { value: self.value as i32 })
                 }
             };
         })

@@ -1,5 +1,5 @@
 use crate::prelude::*;
-// use crate::table::TableService;
+use crate::table::TableService;
 use std::time::{Duration, Instant};
 
 #[derive(Debug, Clone)]
@@ -203,10 +203,10 @@ COMMIT TRANSACTION;
         Ok(tables)
     }
 
-    // pub async fn open_table(&self, table_id: TableId) -> Result<TableService, Irror> {
-    //     let service =
-    //         TableService::new(table_id, self.base_record_id.clone(), self.user.clone()).await?;
-    //
-    //     Ok(service)
-    // }
+    pub async fn open_table(&self, table_id: TableId) -> Result<TableService, Irror> {
+        let service =
+            TableService::new(table_id, self.base_record_id.clone(), self.user.clone()).await?;
+
+        Ok(service)
+    }
 }

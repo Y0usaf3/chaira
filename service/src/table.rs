@@ -499,7 +499,7 @@ impl TableService {
         let (cells_map, has_cells) = if let Some(changed_cells) = patch.changed_cells {
             let mut map = std::collections::HashMap::new();
             for (key, value) in changed_cells {
-                map.insert(key, value);
+                map.insert(key, CellValue::new(value));
             }
             (Some(map), true)
         } else {

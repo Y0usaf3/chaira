@@ -659,7 +659,7 @@ async fn test_table_service_functions(
         None,
         Some("comprehensive test".to_string()),
     )?);
-    cells.insert("test_field".to_string(), CellValue::new(val));
+    cells.insert("test_field".to_string(), val);
     let insert_record = InsertRecord::new(table_id.clone(), cells);
     let record = table_service.create_record(insert_record).await?;
     let duration = start.elapsed();
@@ -690,7 +690,7 @@ async fn test_table_service_functions(
         None,
         Some("updated comprehensive test".to_string()),
     )?);
-    changed_cells.push(("test_field".to_string(), CellValue::new(val_updated)));
+    changed_cells.push(("test_field".to_string(), val_updated));
     let patch = RecordPatch::new(Some(changed_cells));
     let _updated_record = table_service
         .update_record(record_id.clone(), patch)
@@ -764,25 +764,19 @@ async fn test_table_service_functions(
         let mut cells = HashMap::new();
         cells.insert(
             "Name".to_string(),
-            CellValue::new(Value::SingleLine(SingleLineValue::new(
-                None,
-                Some(format!("Record {}", i)),
-            )?)),
+            Value::SingleLine(SingleLineValue::new(None, Some(format!("Record {}", i)))?),
         );
         cells.insert(
             "Email".to_string(),
-            CellValue::new(Value::Email(Email::new(format!("record{}@test.com", i))?)),
+            Value::Email(Email::new(format!("record{}@test.com", i))?),
         );
         cells.insert(
             "Age".to_string(),
-            CellValue::new(Value::Number(NumberValue::new(Some(20 + (i % 30)), None)?)),
+            Value::Number(NumberValue::new(Some(20 + (i % 30)), None)?),
         );
         cells.insert(
             "Score".to_string(),
-            CellValue::new(Value::Decimal(DecimalValue::new(
-                Some(i as f64 * 1.5),
-                None,
-            )?)),
+            Value::Decimal(DecimalValue::new(Some(i as f64 * 1.5), None)?),
         );
 
         let insert = InsertRecord::new(table_id.clone(), cells);
@@ -976,28 +970,22 @@ async fn test_performance_stress(
         let mut cells = HashMap::new();
         cells.insert(
             "Field1".to_string(),
-            CellValue::new(Value::SingleLine(SingleLineValue::new(
-                None,
-                Some(format!("Record {}", i)),
-            )?)),
+            Value::SingleLine(SingleLineValue::new(None, Some(format!("Record {}", i)))?),
         );
         cells.insert(
             "Field2".to_string(),
-            CellValue::new(Value::SingleLine(SingleLineValue::new(
+            Value::SingleLine(SingleLineValue::new(
                 None,
                 Some(format!("Description for record {}", i)),
-            )?)),
+            )?),
         );
         cells.insert(
             "Field3".to_string(),
-            CellValue::new(Value::Number(NumberValue::new(Some(i as usize), None)?)),
+            Value::Number(NumberValue::new(Some(i as isize), None)?),
         );
         cells.insert(
             "Field4".to_string(),
-            CellValue::new(Value::Email(Email::new(format!(
-                "user{}@stress-test.com",
-                i
-            ))?)),
+            Value::Email(Email::new(format!("user{}@stress-test.com", i))?),
         );
 
         let insert = InsertRecord::new(table_id.clone(), cells);
@@ -1040,10 +1028,10 @@ async fn test_performance_stress(
         let mut changes = Vec::new();
         changes.push((
             "Field1".to_string(),
-            CellValue::new(Value::SingleLine(SingleLineValue::new(
+            Value::SingleLine(SingleLineValue::new(
                 None,
                 Some(format!("Updated Record {}", i)),
-            )?)),
+            )?),
         ));
         let patch = RecordPatch::new(Some(changes));
         table_service.update_record(id.clone(), patch).await?;
@@ -1115,16 +1103,14 @@ async fn test_concurrent_operations(
                     let mut cells = HashMap::new();
                     cells.insert(
                         "ConcurrentField1".to_string(),
-                        CellValue::new(Value::SingleLine(
+                        Value::SingleLine(
                             SingleLineValue::new(None, Some(format!("Concurrent Record {}", i)))
                                 .unwrap(),
-                        )),
+                        ),
                     );
                     cells.insert(
                         "ConcurrentField2".to_string(),
-                        CellValue::new(Value::Number(
-                            NumberValue::new(Some(i as usize), None).unwrap(),
-                        )),
+                        Value::Number(NumberValue::new(Some(i as isize), None).unwrap()),
                     );
 
                     let insert = InsertRecord::new(table_id_clone, cells);
@@ -1331,77 +1317,56 @@ async fn test_large_dataset(
             // Generate realistic data
             cells.insert(
                 "customer_id".to_string(),
-                CellValue::new(Value::SingleLine(SingleLineValue::new(
-                    None,
-                    Some(format!("CUST-{:06}", i)),
-                )?)),
+                Value::SingleLine(SingleLineValue::new(None, Some(format!("CUST-{:06}", i)))?),
             );
 
             let first_name = first_names[i % first_names.len()];
             cells.insert(
                 "first_name".to_string(),
-                CellValue::new(Value::SingleLine(SingleLineValue::new(
-                    None,
-                    Some(first_name.to_string()),
-                )?)),
+                Value::SingleLine(SingleLineValue::new(None, Some(first_name.to_string()))?),
             );
 
             let last_name = last_names[i % last_names.len()];
             cells.insert(
                 "last_name".to_string(),
-                CellValue::new(Value::SingleLine(SingleLineValue::new(
-                    None,
-                    Some(last_name.to_string()),
-                )?)),
+                Value::SingleLine(SingleLineValue::new(None, Some(last_name.to_string()))?),
             );
 
             cells.insert(
                 "email".to_string(),
-                CellValue::new(Value::Email(Email::new(format!(
-                    "customer{}@example.com",
-                    i
-                ))?)),
+                Value::Email(Email::new(format!("customer{}@example.com", i))?),
             );
 
             let phone_prefix = 200 + (i % 700);
             cells.insert(
                 "phone".to_string(),
-                CellValue::new(Value::SingleLine(SingleLineValue::new(
+                Value::SingleLine(SingleLineValue::new(
                     None,
                     Some(format!("+1-{}-555-{:04}", phone_prefix, i % 10000)),
-                )?)),
+                )?),
             );
 
             let city = cities[i % cities.len()];
             cells.insert(
                 "city".to_string(),
-                CellValue::new(Value::SingleLine(SingleLineValue::new(
-                    None,
-                    Some(city.to_string()),
-                )?)),
+                Value::SingleLine(SingleLineValue::new(None, Some(city.to_string()))?),
             );
 
             let country = countries[i % countries.len()];
             cells.insert(
                 "country".to_string(),
-                CellValue::new(Value::SingleLine(SingleLineValue::new(
-                    None,
-                    Some(country.to_string()),
-                )?)),
+                Value::SingleLine(SingleLineValue::new(None, Some(country.to_string()))?),
             );
 
             let purchase_amount = (i as f64 % 5000.0) + 10.0 * (1.0 + (i % 100) as f64 / 100.0);
             cells.insert(
                 "purchase_amount".to_string(),
-                CellValue::new(Value::Decimal(DecimalValue::new(
-                    Some(purchase_amount),
-                    None,
-                )?)),
+                Value::Decimal(DecimalValue::new(Some(purchase_amount), None)?),
             );
 
             cells.insert(
                 "purchase_count".to_string(),
-                CellValue::new(Value::Number(NumberValue::new(Some(1 + (i % 50)), None)?)),
+                Value::Number(NumberValue::new(Some((1 + (i % 50)) as isize), None)?),
             );
 
             let insert = InsertRecord::new(table_id.clone(), cells);

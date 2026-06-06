@@ -3,7 +3,7 @@ pub mod db;
 mod encrypter;
 pub mod prelude;
 pub mod session;
-// pub mod table; till we are done with the uh, models
+pub mod table; // till we are done with the uh, models
 pub mod user;
 
 use crate::prelude::*;

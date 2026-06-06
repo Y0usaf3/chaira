@@ -1,3 +1,5 @@
+use surrealdb_types::ToSql;
+
 use crate::prelude::*;
 use std::collections::HashMap;
 
@@ -6,103 +8,74 @@ const VERSION: u8 = 1;
 pub mod cell;
 pub use self::cell::*;
 
-// TODO: Verify trait to automaticly verify if the record is FieldConfig compliant
-// TODO: rework the whole damn record thing
-// TODO: snapshots and stuff
-
-#[derive(Debug, SurrealValue, Deserialize, Serialize)]
+#[derive(Debug, Clone, SurrealValue, Deserialize, Serialize)]
 pub struct Record {
     pub id: Option<RecordId>,
     pub created_at: Option<Datetime>,
     pub updated_at: Option<Datetime>,
     pub is_deleted: bool,
-    pub cells: HashMap<String, (CellId, cell::Value)>,
-    pub cell_metadata: Vec<CellMetadata>,
-    pub schema_version: u8,
-    pub schema_snapshots: SchemaSnapshots,
+    pub cells: HashMap<String, CellValue>,
+    pub version: u8,
+    pub table: TableId,
 }
 
-#[derive(Debug, SurrealValue, Deserialize, Serialize)]
-pub struct CellMetadata {
-    pub id: CellId,
-    pub updated_at: Datetime,
-    pub created_at: Datetime,
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, SurrealValue)]
+pub struct InsertRecord {
+    pub table: TableId,
+    pub cells: HashMap<String, Value>,
 }
 
-#[derive(Debug, SurrealValue, Deserialize, Serialize)]
-pub struct SchemaSnapshots {
-    pub version: u32,
-    pub created_at: Datetime,
-    pub fields: Vec<FieldSnapshot>,
-    pub hash: String,
+impl InsertRecord {
+    pub fn new(table: TableId, cells: HashMap<String, Value>) -> Self {
+        Self { table, cells }
+    }
 }
 
-#[derive(Debug, SurrealValue, Deserialize, Serialize)]
-pub struct FieldSnapshot {
-    pub field_id: FieldId,
-    pub name: String,
-    pub config_version: u32,
-    pub config_hash: String,
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct RecordPatch {
+    pub changed_cells: Option<Vec<(String, Value)>>,
+}
+
+impl RecordPatch {
+    pub fn new(changed_cells: Option<Vec<(String, Value)>>) -> Self {
+        Self { changed_cells }
+    }
 }
 
 impl Record {
-    pub fn new(schema: SchemaSnapshots) -> Self {
-        Self {
+    pub fn from_insert(insert: InsertRecord) -> Self {
+        let cells = insert
+            .cells
+            .into_iter()
+            .map(|(key, value)| (key, CellValue::new(value)))
+            .collect();
+
+        Record {
             id: None,
             created_at: None,
             updated_at: None,
             is_deleted: false,
-            cells: HashMap::new(),
-            cell_metadata: Vec::new(),
-            schema_version: VERSION,
-            schema_snapshots: schema,
+            cells,
+            version: VERSION,
+            table: insert.table,
+        }
+    }
+
+    pub fn upsert_cell(&mut self, field_id: String, value: Value) {
+        self.cells.insert(field_id, CellValue::new(value));
+        self.version = self.version.saturating_add(1);
+    }
+
+    pub fn delete_cell(&mut self, field_id: FieldId) {
+        let field_id = field_id.0.key.to_sql();
+        self.cells.remove(&field_id);
+    }
+
+    pub fn apply_patch(&mut self, patch: RecordPatch) {
+        if let Some(changes) = patch.changed_cells {
+            for (cell_name, new_value) in changes {
+                self.upsert_cell(cell_name, new_value);
+            }
         }
     }
 }
-
-//
-// #[derive(Debug, Clone, PartialEq, Eq, SurrealValue, serde::Serialize, serde::Deserialize)]
-// pub struct Record {
-//     pub id: Option<RecordId>,
-//     pub created_at: Option<Datetime>,
-//     pub updated_at: Option<Datetime>,
-//     pub is_deleted: bool,
-//     pub cells: HashMap<String, CellValue>, // K: FieldId
-//     pub table: TableId,
-// }
-//
-// #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, SurrealValue)]
-// pub struct InsertRecord {
-//     pub table: TableId,
-//     pub cells: HashMap<String, CellValue>,
-// }
-//
-// #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-// pub struct RecordPatch {
-//     pub changed_cells: Option<Vec<(String, CellValue)>>,
-// }
-//
-// impl InsertRecord {
-//     pub fn new(table: TableId, cells: HashMap<String, CellValue>) -> Self {
-//         Self { table, cells }
-//     }
-// }
-//
-// impl RecordPatch {
-//     pub fn new(changed_cells: Option<Vec<(String, CellValue)>>) -> Self {
-//         Self { changed_cells }
-//     }
-// }
-//
-// impl Record {
-//     pub fn from_insert(insert: InsertRecord) -> Self {
-//         Record {
-//             id: None,
-//             created_at: None,
-//             updated_at: None,
-//             is_deleted: false,
-//             cells: insert.cells,
-//             table: insert.table,
-//         }
-//     }
-// }

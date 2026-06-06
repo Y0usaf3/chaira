@@ -4,17 +4,14 @@ use crate::CurrencyValue;
 use crate::DateValue;
 use crate::NumberValue;
 use crate::PercentValue;
+use crate::RatingValue;
 use crate::Value;
 use crate::ValueError;
 use crate::ValueType;
 use crate::cell::FieldConfig;
 use crate::kinds::TextConfig;
 use crate::prelude::*;
-use chrono::DateTime;
-use chrono::Local;
 use chrono::NaiveTime;
-use chrono::TimeZone;
-use chrono::Utc;
 use iso_currency::Currency;
 use ordered_float::OrderedFloat;
 use phonenumber::PhoneNumber;
@@ -76,11 +73,15 @@ impl ValueType<str> for SingleLineValue {
                     Value::URL(UrlValue { value })
                 };
                 Phone => {
-                    let value = self.value.clone();
-                    let value = PhoneNumber::from_str(value.as_str())
-                        .ok()
-                        .ok_or(ValueError::CantConvertTo("Phone number".to_string()))?;
-                    Value::Phone(PhoneValue { value: value.format().mode(phonenumber::Mode::E164).to_string() })
+                    let valid_phone = self.value
+                        .split_whitespace()
+                        .find_map(|v| PhoneNumber::from_str(v).ok())
+                        .ok_or(ValueError::CantConvertTo("Phone".to_string()))?;
+                    Value::Phone(PhoneValue {
+                        value:valid_phone
+                            .format().mode(phonenumber::Mode::E164).to_string()
+                    })
+
                 }
             };
             Number {
@@ -98,6 +99,13 @@ impl ValueType<str> for SingleLineValue {
                 Percent { precision, show_bar } => {
                     let cleaned = self.value.replace('%', " ");
                     Value::Percent(PercentValue { value: parse_word::<i32>(&cleaned, "Percentage")? })
+                };
+                Rating { icon_type, max, color } => {
+                    let number = parse_word::<u8>(&self.value, "Rating")?;
+                    if number as usize > *max {
+                        return Err(ValueError::BiggerThanMax);
+                    };
+                    Value::Rating(RatingValue { value: number })
                 }
             };
             Datetime {

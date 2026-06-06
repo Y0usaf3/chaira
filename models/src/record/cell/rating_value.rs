@@ -1,10 +1,13 @@
+use ordered_float::OrderedFloat;
+
 use crate::{
-    LongTextValue, SingleLineValue, Value, ValueError, ValueType, kinds::FieldConfig, prelude::*,
+    LongTextValue, OrderedFloatIThink, SingleLineValue, Value, ValueError, ValueType,
+    kinds::FieldConfig, prelude::*,
 };
 
 #[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct RatingValue {
-    value: u8,
+    pub value: u8,
 }
 
 impl ValueType<u8> for RatingValue {
@@ -31,6 +34,20 @@ impl ValueType<u8> for RatingValue {
                 };
                 LongText { rich_text } => {
                     Value::LongText(Box::new(LongTextValue { value: self.value.to_string() }))
+                }
+            };
+            Number {
+                Number { default } => {
+                    Value::Number(crate::NumberValue { value: self.value as isize })
+                };
+                Decimal { precision, default } => {
+                    Value::Decimal(crate::DecimalValue { value: crate::OrderedFloatIThink(OrderedFloat::from(self.value as f64)) })
+                };
+                Currency { currency, precision } => {
+                    Value::Currency(crate::CurrencyValue { value: OrderedFloatIThink(OrderedFloat::from(self.value as f64)) })
+                };
+                Percent { show_bar, precision } => {
+                    Value::Percent(crate::PercentValue { value: self.value as i32 })
                 }
             };
         })

@@ -55,4 +55,7 @@ pub enum ValueError {
 
     #[error("Impossible to convert to this type")]
     Impossible,
+
+    #[error("Invalid country code")]
+    InvalidCountryCode,
 }

@@ -1,15 +1,23 @@
 use std::str::FromStr;
 
+use crate::CurrencyValue;
+use crate::DateValue;
 use crate::NumberValue;
+use crate::PercentValue;
 use crate::Value;
 use crate::ValueError;
 use crate::ValueType;
 use crate::cell::FieldConfig;
 use crate::kinds::TextConfig;
 use crate::prelude::*;
+use chrono::DateTime;
+use chrono::Local;
+use chrono::NaiveTime;
+use chrono::TimeZone;
+use chrono::Utc;
+use iso_currency::Currency;
 use ordered_float::OrderedFloat;
 use phonenumber::PhoneNumber;
-use serde::de::value;
 use validator::ValidateEmail;
 use validator::ValidateLength;
 use validator::ValidateUrl;
@@ -91,8 +99,38 @@ impl ValueType<str> for SingleLineValue {
                         .ok_or_else(|| ValueError::CantConvertTo("Decimal".to_string()))?;
                     Value::Decimal(crate::DecimalValue { value: crate::OrderedFloatIThink(OrderedFloat::from(value))})
                 };
-                Currency {
+                Currency { currency, precision } => {
+                    let currency = Currency::from_code(currency).ok_or(ValueError::InvalidCountryCode)?;
+                    let value = self.value.replace(&currency.symbol().symbol, " ")
+                        .trim()
+                        .split(' ')
+                        .find_map(|v| v.parse::<f64>().ok())
+                        .ok_or_else(|| ValueError::CantConvertTo("Currency".to_string()))?;
+                    Value::Currency(CurrencyValue { value: crate::OrderedFloatIThink(OrderedFloat::from(value)) })
+                };
+                Percent { precision, show_bar } => {
+                    let value = self.value
+                        .replace('%', " ")
+                        .split(' ')
+                        .find_map(|v| v.parse::<i32>().ok())
+                        .ok_or_else(|| ValueError::CantConvertTo("Percentage".to_string()))?;
+                    Value::Percent(PercentValue { value })
+                }
+            };
+            Datetime {
+                Date { format, include_time } => {
+                    let value = if *include_time {
+                        format
+                            .parse_datetime(&self.value).ok()
+                            .ok_or(ValueError::CantConvertTo("Datetime".to_string()))?
+                    } else {
+                        format.parse_date(&self.value).ok()
+                            .ok_or(ValueError::CantConvertTo("Date".to_string()))?.and_time(NaiveTime::MIN)
 
+                    };
+                    Value::Date(DateValue {
+                        value: Datetime::from(value.and_utc())
+                     })
                 }
             };
         })

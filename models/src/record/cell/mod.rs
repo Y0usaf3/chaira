@@ -98,6 +98,15 @@ macro_rules! try_convert {
     };
 }
 
+use std::str::FromStr;
+
+pub(crate) fn parse_word<T: FromStr>(s: &str, label: &str) -> Result<T, ValueError> {
+    s.trim()
+        .split(' ')
+        .find_map(|v| v.parse().ok())
+        .ok_or_else(|| ValueError::CantConvertTo(label.into()))
+}
+
 pub mod attachment_item;
 pub mod attachment_value;
 pub mod auto_number_value;

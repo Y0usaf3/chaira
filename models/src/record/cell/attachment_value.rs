@@ -1,5 +1,5 @@
-use crate::prelude::*;
 use super::attachment_item::AttachmentItem;
+use crate::prelude::*;
 
 #[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct AttachmentValue {

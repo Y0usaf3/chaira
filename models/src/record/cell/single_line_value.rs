@@ -25,6 +25,7 @@ use validator::ValidateUrl;
 use super::email::Email;
 use super::long_text_value::LongTextValue;
 use super::max_text_length::MAX_TEXT_LENGHT;
+use super::parse_word;
 use super::phone_value::PhoneValue;
 use super::url_value::UrlValue;
 
@@ -51,6 +52,7 @@ impl ValueType<str> for SingleLineValue {
     where
         Self: Sized,
     {
+        #[rustfmt::skip]
         try_convert!(target_config {
             Text {
                 LongText { rich_text } => {
@@ -84,37 +86,19 @@ impl ValueType<str> for SingleLineValue {
             };
             Number {
                 Number { default } => {
-                    let value = self.value
-                        .trim()
-                        .split(' ')
-                        .find_map(|v| v.parse::<isize>().ok())
-                        .ok_or_else(|| ValueError::CantConvertTo("Number".to_string()))?;
-                    Value::Number(NumberValue { value })
+                    Value::Number(NumberValue { value: parse_word(&self.value, "Number")? })
                 };
                 Decimal { default, precision} => {
-                    let value = self.value
-                        .trim()
-                        .split(' ')
-                        .find_map(|v| v.parse::<f64>().ok())
-                        .ok_or_else(|| ValueError::CantConvertTo("Decimal".to_string()))?;
-                    Value::Decimal(crate::DecimalValue { value: crate::OrderedFloatIThink(OrderedFloat::from(value))})
+                    Value::Decimal(crate::DecimalValue { value: crate::OrderedFloatIThink(OrderedFloat::from(parse_word::<f64>(&self.value, "Decimal")?)) })
                 };
                 Currency { currency, precision } => {
                     let currency = Currency::from_code(currency).ok_or(ValueError::InvalidCountryCode)?;
-                    let value = self.value.replace(&currency.symbol().symbol, " ")
-                        .trim()
-                        .split(' ')
-                        .find_map(|v| v.parse::<f64>().ok())
-                        .ok_or_else(|| ValueError::CantConvertTo("Currency".to_string()))?;
-                    Value::Currency(CurrencyValue { value: crate::OrderedFloatIThink(OrderedFloat::from(value)) })
+                    let cleaned = self.value.replace(&currency.symbol().symbol, " ");
+                    Value::Currency(CurrencyValue { value: crate::OrderedFloatIThink(OrderedFloat::from(parse_word::<f64>(&cleaned, "Currency")?)) })
                 };
                 Percent { precision, show_bar } => {
-                    let value = self.value
-                        .replace('%', " ")
-                        .split(' ')
-                        .find_map(|v| v.parse::<i32>().ok())
-                        .ok_or_else(|| ValueError::CantConvertTo("Percentage".to_string()))?;
-                    Value::Percent(PercentValue { value })
+                    let cleaned = self.value.replace('%', " ");
+                    Value::Percent(PercentValue { value: parse_word::<i32>(&cleaned, "Percentage")? })
                 }
             };
             Datetime {

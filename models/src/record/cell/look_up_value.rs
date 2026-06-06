@@ -8,7 +8,11 @@ pub struct LookUpValue {
 }
 
 impl LookUpValue {
-    pub fn new(link_field_id: FieldId, target_field_id: FieldId, computed_values: super::value::Value) -> Self {
+    pub fn new(
+        link_field_id: FieldId,
+        target_field_id: FieldId,
+        computed_values: super::value::Value,
+    ) -> Self {
         Self {
             link_field_id,
             target_field_id,

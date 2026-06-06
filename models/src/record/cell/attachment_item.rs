@@ -1,5 +1,5 @@
-use crate::prelude::*;
 use super::meme::Meme;
+use crate::prelude::*;
 
 #[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct AttachmentItem {

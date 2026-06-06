@@ -1,3 +1,4 @@
+use super::ValueError;
 use super::attachment_value::AttachmentValue;
 use super::auto_number_value::AutoNumberValue;
 use super::created_at_value::CreatedAtValue;
@@ -19,7 +20,6 @@ use super::rating_value::RatingValue;
 use super::roll_up_value::RollUpValue;
 use super::single_line_value::SingleLineValue;
 use super::url_value::UrlValue;
-use super::ValueError;
 use crate::kinds::FieldConfig;
 use crate::prelude::*;
 
@@ -36,7 +36,7 @@ pub enum Value {
     Percent(PercentValue),
     Rating(RatingValue),
     Date(DateValue),
-    Duration(DurationValue),
+    /*     Duration(DurationValue), */
     Link(LinkValue),
     LookUp(Box<LookUpValue>),
     RollUp(Box<RollUpValue>),

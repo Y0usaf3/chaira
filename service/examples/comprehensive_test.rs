@@ -383,7 +383,8 @@ async fn test_user_service_functions() -> Result<(UserService, UserId), Box<dyn 
         user_agent: agent.clone(),
         user: user_id.clone(),
     };
-    let (token, mock_session) = SessionService::create_session(insert_session, user.clone(), true).await?;
+    let (token, mock_session) =
+        SessionService::create_session(insert_session, user.clone(), true).await?;
 
     let mut user_service = UserService::login(AuthMethod::Session(Session {
         token: token.to_string(),
@@ -396,7 +397,10 @@ async fn test_user_service_functions() -> Result<(UserService, UserId), Box<dyn 
     print_bench_table(
         "UserService: Session Login",
         vec![
-            ("Email".to_string(), user_service.user().await?.email.clone()),
+            (
+                "Email".to_string(),
+                user_service.user().await?.email.clone(),
+            ),
             ("Auth Method".to_string(), "Session".to_string()),
             ("Success".to_string(), "✓ Yes".to_string()),
         ],

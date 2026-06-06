@@ -1,5 +1,5 @@
-use crate::prelude::*;
 use super::value::Value;
+use crate::prelude::*;
 
 #[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct CellValue {

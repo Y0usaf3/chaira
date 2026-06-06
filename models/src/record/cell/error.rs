@@ -58,4 +58,7 @@ pub enum ValueError {
 
     #[error("Invalid country code")]
     InvalidCountryCode,
+
+    #[error("The value is bigger than the max value")]
+    BiggerThanMax,
 }

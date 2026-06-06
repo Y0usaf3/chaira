@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use crate::Value;
 use crate::ValueError;
 use crate::ValueType;
@@ -7,6 +5,8 @@ use crate::cell::FieldConfig;
 use crate::kinds::TextConfig;
 use crate::prelude::*;
 use phonenumber::PhoneNumber;
+use serde::de::value;
+use std::str::FromStr;
 
 use super::single_line_value::SingleLineValue;
 
@@ -52,10 +52,11 @@ impl ValueType<str> for PhoneValue {
 impl PhoneValue {
     pub fn new(value: String, default_region: Option<&str>) -> Result<Self, super::ValueError> {
         let region = default_region.and_then(|r| r.parse().ok());
+        let a = value.clone();
         let value = value
-            .split(" ")
+            .split(' ')
             .find(|v| PhoneNumber::from_str(v).is_ok())
-            .ok_or(ValueError::InvalidPhoneNumber("SORRY".to_string()))?;
+            .ok_or(ValueError::InvalidPhoneNumber(a))?;
 
         match phonenumber::parse(region, value) {
             Ok(phone) => {

@@ -1,6 +1,8 @@
 use crate::prelude::*;
 use std::collections::HashMap;
 
+const VERSION: u8 = 1;
+
 pub mod cell;
 pub use self::cell::*;
 
@@ -14,9 +16,9 @@ pub struct Record {
     pub created_at: Option<Datetime>,
     pub updated_at: Option<Datetime>,
     pub is_deleted: bool,
-    pub cells: HashMap<String, cell::Value>,
+    pub cells: HashMap<String, (CellId, cell::Value)>,
     pub cell_metadata: Vec<CellMetadata>,
-    pub schema_version: u32,
+    pub schema_version: u8,
     pub schema_snapshots: SchemaSnapshots,
 }
 
@@ -41,6 +43,21 @@ pub struct FieldSnapshot {
     pub name: String,
     pub config_version: u32,
     pub config_hash: String,
+}
+
+impl Record {
+    pub fn new(schema: SchemaSnapshots) -> Self {
+        Self {
+            id: None,
+            created_at: None,
+            updated_at: None,
+            is_deleted: false,
+            cells: HashMap::new(),
+            cell_metadata: Vec::new(),
+            schema_version: VERSION,
+            schema_snapshots: schema,
+        }
+    }
 }
 
 //

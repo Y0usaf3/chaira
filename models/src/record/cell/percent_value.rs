@@ -1,5 +1,7 @@
+use ordered_float::OrderedFloat;
+
 use crate::{
-    Value, ValueError, ValueType,
+    CurrencyValue, Value, ValueError, ValueType,
     kinds::{FieldConfig, NumberConfig},
     prelude::*,
 };
@@ -26,6 +28,20 @@ impl ValueType<i32> for PercentValue {
             Text {
                 SingleLine { default, max_length } => {
                     Value::SingleLine(crate::SingleLineValue { value: format!("{} %", self.value) })
+                };
+                LongText { rich_text } => {
+                    Value::LongText(Box::new(crate::LongTextValue { value: format!("{} %", self.value)}))
+                }
+            };
+            Number {
+                Number { default } => {
+                    Value::Number(crate::NumberValue { value: self.value as isize })
+                };
+                Decimal { precision, default } => {
+                    Value::Decimal(crate::DecimalValue { value: crate::OrderedFloatIThink(OrderedFloat::from( self.value as f64)) })
+                };
+                Currency { currency, precision } => {
+                    Value::Currency(CurrencyValue { value: crate::OrderedFloatIThink(OrderedFloat::from( self.value as f64)) })
                 }
             };
         })

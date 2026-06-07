@@ -14,9 +14,26 @@ pub struct Record {
     pub created_at: Option<Datetime>,
     pub updated_at: Option<Datetime>,
     pub is_deleted: bool,
-    pub cells: HashMap<String, CellValue>,
+    pub cells: HashMap<String, Value>,
+    pub cell_metadata: HashMap<String, CellMetadata>,
     pub version: u8,
     pub table: TableId,
+}
+
+#[derive(Debug, Clone, SurrealValue, Deserialize, Serialize)]
+pub struct CellMetadata {
+    pub created_at: Datetime,
+    pub updated_at: Datetime,
+}
+
+impl Default for CellMetadata {
+    fn default() -> Self {
+        let now = Datetime::now();
+        Self {
+            created_at: now,
+            updated_at: now,
+        }
+    }
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, SurrealValue)]
@@ -44,10 +61,11 @@ impl RecordPatch {
 
 impl Record {
     pub fn from_insert(insert: InsertRecord) -> Self {
-        let cells = insert
+        let cells = insert.cells.clone().into_iter().collect();
+        let cell_metadata = insert
             .cells
             .into_iter()
-            .map(|(key, value)| (key, CellValue::new(value)))
+            .map(|key| (key.0, CellMetadata::default()))
             .collect();
 
         Record {
@@ -56,14 +74,14 @@ impl Record {
             updated_at: None,
             is_deleted: false,
             cells,
+            cell_metadata,
             version: VERSION,
             table: insert.table,
         }
     }
 
     pub fn upsert_cell(&mut self, field_id: String, value: Value) {
-        self.cells.insert(field_id, CellValue::new(value));
-        self.version = self.version.saturating_add(1);
+        self.cells.insert(field_id, value);
     }
 
     pub fn delete_cell(&mut self, field_id: FieldId) {

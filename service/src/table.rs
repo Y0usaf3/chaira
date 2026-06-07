@@ -448,6 +448,8 @@ impl TableService {
                 "CREATE record SET 
                     table = $table_id,
                     cells = $data.cells,
+                    cell_metadata = $data.cell_metadata,
+                    version = $data.version,
                     is_deleted = false,
                     created_at = time::now(),
                     updated_at = time::now();",
@@ -496,23 +498,31 @@ impl TableService {
         record_id: RecordId,
         patch: RecordPatch,
     ) -> Result<Record, Irror> {
-        let (cells_map, has_cells) = if let Some(changed_cells) = patch.changed_cells {
-            let mut map = std::collections::HashMap::new();
+        let (cells_map, changed_keys) = if let Some(changed_cells) = patch.changed_cells {
+            let mut c_map = std::collections::HashMap::new();
+            let mut keys = Vec::new();
+
             for (key, value) in changed_cells {
-                map.insert(key, CellValue::new(value));
+                keys.push(key.clone());
+                c_map.insert(key, value);
             }
-            (Some(map), true)
+            (Some(c_map), keys)
         } else {
-            (None, false)
+            (None, vec![])
         };
 
-        let query_str = if has_cells {
-            "UPDATE $record_id SET cells = object::extend(cells, $cells), updated_at = time::now();"
-        } else {
-            "UPDATE $record_id SET updated_at = time::now();"
-        };
+        let mut set_clauses = vec!["updated_at = time::now()".to_string()];
 
-        let mut query = DB.query(query_str).bind(("record_id", record_id));
+        if cells_map.is_some() {
+            set_clauses.push("cells = object::extend(cells, $cells)".to_string());
+            for key in changed_keys {
+                set_clauses.push(format!("cell_metadata.`{}`.updated_at = time::now()", key));
+            }
+        }
+
+        let query_str = format!("UPDATE $record_id SET {}", set_clauses.join(", "));
+
+        let mut query = DB.query(&query_str).bind(("record_id", record_id));
 
         if let Some(cells) = cells_map {
             query = query.bind(("cells", cells));
@@ -568,7 +578,7 @@ impl TableService {
 
         for record in &records {
             if let Some(cell) = record.cells.get(&field_name) {
-                if cell.value.convert_to(&target_config).is_ok() {
+                if cell.convert_to(&target_config).is_ok() {
                     successful += 1;
                 }
             } else {
@@ -633,17 +643,19 @@ impl TableService {
 
         for record in records {
             if let Some(cell) = record.cells.get(&current_field.name)
-                && let Ok(new_value) = cell.value.convert_to(&new_config)
+                && let Ok(new_value) = cell.convert_to(&new_config)
+                && let Some(metadata) = record.cell_metadata.get(&current_field.name)
             {
-                let mut new_cell = cell.clone();
-                new_cell.value = new_value;
-                new_cell.updated_at = Datetime::now();
+                let new_cell = new_value;
+                let mut metadata = metadata.clone();
+                metadata.updated_at = Datetime::now();
 
-                DB.query("UPDATE $record_id SET cells[$field_name] = $new_cell")
+                DB.query("UPDATE $record_id SET cells[$field_name] = $new_cell, cell_metadata[$field_name] = $new_metadata")
                     .bind(("record_id", record.id.clone()))
                     .bind(("field_name", current_field.name.clone()))
                     .bind(("new_cell", new_cell))
-                    .await?;
+                    .bind(("new_metadata", metadata))
+            .await?;
             }
         }
 

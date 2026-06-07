@@ -130,8 +130,8 @@ DEFINE FIELD OVERWRITE is_deleted ON TABLE record TYPE bool
 DEFAULT false;
 DEFINE FIELD OVERWRITE cells ON TABLE record TYPE object FLEXIBLE
 ASSERT type::is_object($value);
-DEFINE FIELD OVERWRITE cell_metadata ON TABLE record 
-TYPE array<{id: uuid, updated_at: datetime, created_at: datetime}>;
+DEFINE FIELD OVERWRITE cell_metadata ON TABLE record TYPE object FLEXIBLE
+ASSERT type::is_object($value);
 DEFINE FIELD OVERWRITE table ON TABLE record TYPE record<table>;
 DEFINE FIELD OVERWRITE version ON TABLE record TYPE int;
 

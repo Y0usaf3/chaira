@@ -23,7 +23,6 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
-    redis-pr.url = "github:nixos/nixpkgs/pull/525226/head";
     naersk = {
       url = "github:nix-community/naersk";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -39,7 +38,6 @@
     self,
     nixpkgs,
     naersk,
-    redis-pr,
     surrealdb-bin,
     rust-overlay,
   }: let
@@ -49,9 +47,24 @@
       config.allowUnfree = true;
       inherit overlays system;
     };
-    redis-pkgs = import redis-pr {
-      config.allowUnfree = true;
-      inherit overlays system;
+    wasmBindgenBin = pkgs.stdenv.mkDerivation rec {
+      pname = "wasm-bindgen";
+      version = "0.2.123";
+
+      src = pkgs.fetchurl {
+        url = "https://github.com/wasm-bindgen/wasm-bindgen/releases/download/${version}/wasm-bindgen-${version}-x86_64-unknown-linux-musl.tar.gz";
+        hash = "sha256-gPxcHVwSj9Z+mbFDGO6r9537rfRZ7OLTi6k6guVXMMY=";
+      };
+
+      nativeBuildInputs = [pkgs.autoPatchelfHook];
+
+      buildInputs = [pkgs.stdenv.cc.cc.lib];
+
+      installPhase = ''
+        mkdir -p $out/bin
+        cp wasm-bindgen $out/bin/
+        cp wasm-bindgen-test-runner $out/bin/
+      '';
     };
     naerskLib = pkgs.callPackage naersk {};
   in {
@@ -65,16 +78,21 @@
         (rust-bin.stable.latest.default.override
           {
             extensions = ["rust-src" "rust-analyzer" "clippy"];
+            targets = ["wasm32-unknown-unknown"];
           })
         openssl
         glib
         bacon
         opencode
         llvmPackages.libclang
+        wasmBindgenBin
+        cargo-leptos
+        leptosfmt
+        binaryen
         stdenv.cc.cc.lib
         surrealist # used for debugging ig
-        redis-pkgs.redisjson
-        redis-pkgs.redis
+        redis
+        dart-sass
         surrealdb-bin.packages.${system}.latest
       ];
 
@@ -142,7 +160,7 @@
             sleep 0.3
 
             log_info "Starting Redis..."
-            redis-server --port 6379 --loglevel notice --requirepass test --loadmodule ${redis-pkgs.redisjson}/lib/librejson.so > .dev-logs/redis.log 2>&1 &
+            redis-server --port 6379 --loglevel notice --requirepass test > .dev-logs/redis.log 2>&1 &
             REDIS_PID=$!
             sleep 0.5
 

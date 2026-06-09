@@ -1,7 +1,6 @@
-use surrealdb_types::ToSql;
-
 use crate::prelude::*;
 use std::collections::HashMap;
+use surrealdb::types::ToSql;
 
 const VERSION: u8 = 1;
 

@@ -110,7 +110,6 @@ pub(crate) fn parse_word<T: FromStr>(s: &str, label: &str) -> Result<T, ValueErr
 pub mod attachment_item;
 pub mod attachment_value;
 pub mod auto_number_value;
-pub mod cell_value;
 pub mod created_at_value;
 pub mod currency_value;
 pub mod date_value;
@@ -138,7 +137,6 @@ pub mod value;
 pub use attachment_item::AttachmentItem;
 pub use attachment_value::AttachmentValue;
 pub use auto_number_value::AutoNumberValue;
-pub use cell_value::CellValue;
 pub use created_at_value::CreatedAtValue;
 pub use currency_value::CurrencyValue;
 pub use date_value::DateValue;

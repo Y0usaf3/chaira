@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use crate::{bitmask_serde, can, relation};
 use bitmask::bitmask;
-use surrealdb_types::{Error, Value};
+use surrealdb::types::{Error, Value};
 
 bitmask! {
     pub mask BasePermissions: i32 where flags BasePermission {

@@ -83,14 +83,14 @@ impl FieldConfig {
                 (DatetimeConfig::Date { .. }, DatetimeConfig::Date { .. }) => {
                     MigrationStrategy::Safe
                 }
-                // DURATION => DURATION (safe: math conversion)
-                (DatetimeConfig::Duration { .. }, DatetimeConfig::Duration { .. }) => {
-                    MigrationStrategy::Safe
-                }
-                // DATE <=> DURATION (destructive: logically incompatible)
+                //     // DURATION => DURATION (safe: math conversion)
+                //     (DatetimeConfig::Duration { .. }, DatetimeConfig::Duration { .. }) => {
+                //         MigrationStrategy::Safe
+                //     }
+                //     // DATE <=> DURATION (destructive: logically incompatible)
                 _ => MigrationStrategy::Destructive,
             },
-
+            //
             // 6. RELATION LOGIC
             (FieldConfig::Relation(old), FieldConfig::Relation(new)) => match (old, new) {
                 // LINK => LINK (risky: changing One-to-Many to One-to-One might drop records)

@@ -130,8 +130,10 @@ DEFINE FIELD OVERWRITE is_deleted ON TABLE record TYPE bool
 DEFAULT false;
 DEFINE FIELD OVERWRITE cells ON TABLE record TYPE object FLEXIBLE
 ASSERT type::is_object($value);
+DEFINE FIELD OVERWRITE cell_metadata ON TABLE record TYPE object FLEXIBLE
+ASSERT type::is_object($value);
 DEFINE FIELD OVERWRITE table ON TABLE record TYPE record<table>;
-DEFINE INDEX table_status_idx ON TABLE record FIELDS table, is_deleted;
+DEFINE FIELD OVERWRITE version ON TABLE record TYPE int;
 
 -- USER |-relation-> BASE
 DEFINE TABLE OVERWRITE can_access_base TYPE RELATION 
@@ -159,20 +161,17 @@ DEFINE INDEX OVERWRITE user_field_idx ON TABLE can_access_field FIELDS in, out U
 
 -- for user -> user, we will base on the role, only an admin can do certain actions like deleting, updating, etc
 
--- Performance Indexes
+DEFINE INDEX table_status_idx ON TABLE record FIELDS table, is_deleted;
 DEFINE INDEX idx_field_table_created ON TABLE field FIELDS table, is_deleted, created_at;
 DEFINE INDEX idx_record_table_created ON TABLE record FIELDS table, is_deleted, created_at;
 DEFINE INDEX idx_field_name_table ON TABLE field FIELDS name, table;
 DEFINE INDEX idx_record_table_id ON TABLE record FIELDS table, id;
 DEFINE INDEX idx_user_email ON TABLE user FIELDS email;
--- DEFINE INDEX idx_session_user ON TABLE session FIELDS user;
 DEFINE INDEX idx_identity_user ON TABLE identity FIELDS user;
 DEFINE INDEX idx_base_owner ON TABLE base FIELDS owner;
 DEFINE INDEX idx_table_base_created ON TABLE table FIELDS base, is_deleted, created_at;
 DEFINE INDEX idx_can_access_base_user ON TABLE can_access_base FIELDS in;
 DEFINE INDEX idx_can_access_table_user ON TABLE can_access_table FIELDS in;
-
--- Optimized Indexes for Random Access & Cursor-Based Pagination
 DEFINE INDEX idx_record_created_id ON TABLE record FIELDS created_at, id;
 DEFINE INDEX idx_record_random_access ON TABLE record FIELDS id, table, is_deleted;
 DEFINE INDEX idx_field_created_id ON TABLE field FIELDS created_at, id;

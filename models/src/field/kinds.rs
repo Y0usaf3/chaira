@@ -1,3 +1,6 @@
+use chrono::{NaiveDate, NaiveDateTime, ParseError};
+use iso_currency::Currency;
+
 use crate::prelude::*;
 
 #[derive(SurrealValue, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -39,7 +42,7 @@ pub enum NumberConfig {
         precision: u8,
     },
     Currency {
-        currency: String,
+        currency: String, // code e.g 'USD' 'XXX'
         precision: usize, /* 0 - 8*/
     },
     Percent {
@@ -79,6 +82,32 @@ pub enum DateFormat {
     EU,
 }
 
+impl DateFormat {
+    pub fn parse_date(&self, date_str: &str) -> Result<NaiveDate, ParseError> {
+        match self {
+            DateFormat::ISO => NaiveDate::parse_from_str(date_str, "%Y-%m-%d"),
+
+            DateFormat::US => NaiveDate::parse_from_str(date_str, "%m/%d/%Y")
+                .or_else(|_| NaiveDate::parse_from_str(date_str, "%m-%d-%Y")),
+
+            DateFormat::EU => NaiveDate::parse_from_str(date_str, "%d/%m/%Y")
+                .or_else(|_| NaiveDate::parse_from_str(date_str, "%d-%m-%Y")),
+        }
+    }
+    pub fn parse_datetime(&self, datetime_str: &str) -> Result<NaiveDateTime, ParseError> {
+        match self {
+            DateFormat::ISO => NaiveDateTime::parse_from_str(datetime_str, "%Y-%m-%dT%H:%M:%S")
+                .or_else(|_| NaiveDateTime::parse_from_str(datetime_str, "%Y-%m-%d %H:%M:%S")),
+
+            DateFormat::US => NaiveDateTime::parse_from_str(datetime_str, "%m/%d/%Y %H:%M:%S")
+                .or_else(|_| NaiveDateTime::parse_from_str(datetime_str, "%m-%d-%Y %H:%M:%S")),
+
+            DateFormat::EU => NaiveDateTime::parse_from_str(datetime_str, "%d/%m/%Y %H:%M:%S")
+                .or_else(|_| NaiveDateTime::parse_from_str(datetime_str, "%d-%m-%Y %H:%M:%S")),
+        }
+    }
+}
+
 #[derive(SurrealValue, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum TimeUnits {
     Sec,
@@ -96,10 +125,10 @@ pub enum DatetimeConfig {
         format: DateFormat,
         include_time: bool,
     },
-    Duration {
-        unit: TimeUnits,
-        format: DateFormat,
-    },
+    // Duration {
+    //     unit: TimeUnits,
+    //     format: DateFormat,
+    // },
 }
 
 #[derive(SurrealValue, Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]

@@ -13,7 +13,7 @@ pub struct BaseService {
     pub base: Base,
     pub user: UserId,
     base_record_id: BaseId,
-    pub current_table: Option<TableService>,
+    //  pub current_table: Option<TableService>,
     cache: Option<StateCache>,
     cache_instant: Option<Instant>,
 }
@@ -44,7 +44,7 @@ impl BaseService {
             base,
             base_record_id: base_id,
             user,
-            current_table: None,
+            //  current_table: None,
             cache: None,
             cache_instant: None,
         })

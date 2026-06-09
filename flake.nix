@@ -85,6 +85,7 @@
         bacon
         opencode
         llvmPackages.libclang
+        tailwindcss_4
         wasmBindgenBin
         cargo-leptos
         leptosfmt
@@ -92,7 +93,6 @@
         stdenv.cc.cc.lib
         surrealist # used for debugging ig
         redis
-        dart-sass
         surrealdb-bin.packages.${system}.latest
       ];
 

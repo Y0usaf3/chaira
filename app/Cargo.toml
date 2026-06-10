@@ -15,8 +15,10 @@ http.workspace = true
 cfg-if.workspace = true
 thiserror.workspace = true
 
+service = { path = "../service/", optional = true }
+
 [features]
 default = []
 hydrate = ["leptos/hydrate"]
-ssr = ["leptos/ssr", "leptos_meta/ssr", "leptos_router/ssr", "dep:leptos_axum"]
+ssr = ["leptos/ssr", "leptos_meta/ssr", "leptos_router/ssr", "dep:leptos_axum", "service"]
 

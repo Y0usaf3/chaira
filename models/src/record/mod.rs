@@ -2,6 +2,9 @@ use crate::prelude::*;
 use std::collections::HashMap;
 use surrealdb::types::ToSql;
 
+// after reading "https://floooh.github.io/2018/06/17/handles-vs-pointers.html" and watched www.youtube.com/watch?v=IroPQ150F6c
+// i think we should optimize the memory even further for fewer cache misses
+
 const VERSION: u8 = 1;
 
 pub mod cell;

@@ -9,7 +9,7 @@
   binaryen,
   tailwindcss_4,
 }:
-rustPlatform.buildRustPackage rec {
+rustPlatform.buildRustPackage {
   pname = "chaira";
   version = "0.0.1";
 

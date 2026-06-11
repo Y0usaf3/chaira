@@ -73,8 +73,7 @@
       buildInputs = [pkgs.glib];
       nativeBuildInputs = [pkgs.pkg-config];
     };
-    nixosModules.chaira = import ./chaira.nix;
-    nixosModules.default = self.nixosModules.chaira;
+    nixosModules.default = import ./chaira.nix;
     devShells.${system}.default = pkgs.mkShell {
       buildInputs = with pkgs; [
         (rust-bin.stable.latest.default.override

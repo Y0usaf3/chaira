@@ -16,8 +16,8 @@ jobs:
 
       - name: Install libclang for Rust bindings
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libclang-dev
+          apt-get update
+          apt-get install -y libclang-dev
 
       - name: Setup Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1

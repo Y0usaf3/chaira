@@ -10,6 +10,7 @@
   tailwindcss_4,
   stdenv,
   libclang,
+  ldd,
 }:
 rustPlatform.buildRustPackage {
   pname = "chaira";
@@ -26,6 +27,7 @@ rustPlatform.buildRustPackage {
     binaryen
     tailwindcss_4
     libclang
+    ldd
   ];
 
   buildInputs = [

@@ -65,10 +65,13 @@
       extensions = ["rust-src" "rust-analyzer" "clippy"];
       targets = ["wasm32-unknown-unknown"];
     };
+    SurrealDbBin =
+      surrealdb-bin.packages.${system}.latest;
   in {
     packages.${system} = {
       wasm-bindgen = wasmBindgenBin;
       rust-toolchain = rustToolchain;
+      surrealdb = SurrealDbBin;
     };
     nixosModules.default = import ./chaira.nix self;
     devShells.${system}.default = pkgs.mkShell {
@@ -87,7 +90,7 @@
         stdenv.cc.cc.lib
         surrealist # used for debugging ig
         redis
-        surrealdb-bin.packages.${system}.latest
+        SurrealDbBin
       ];
 
       RUST_LOG = "info";

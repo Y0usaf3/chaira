@@ -7,6 +7,7 @@ self: {
   cfg = config.services.chaira;
   wasmBindgenBin = self.packages.${pkgs.system}.wasm-bindgen;
   rustToolchain = self.packages.${pkgs.system}.rust-toolchain;
+  SurrealDbBin = self.packages.${pkgs.system}.surrealdb;
 in {
   options.services.chaira = {
     enable = lib.mkEnableOption "Chaira Live Dev Service";
@@ -21,7 +22,7 @@ in {
     db = {
       package = lib.mkOption {
         type = lib.types.package;
-        default = pkgs.surrealdb;
+        default = SurrealDbBin;
       };
       host = lib.mkOption {
         type = lib.types.str;

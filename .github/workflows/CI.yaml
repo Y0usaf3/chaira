@@ -1,6 +1,4 @@
-name: Formating and Checking 
-
-# TODO: fix the libclang errors bc apparently it needs it to compile stuff 
+name: Formatting and Checking
 
 on: [push, pull_request]
 
@@ -14,10 +12,15 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: https://github.com/actions/checkout@v6
+        uses: actions/checkout@v4
+
+      - name: Install libclang for Rust bindings
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libclang-dev
 
       - name: Setup Rust toolchain
-        uses: https://github.com/actions-rust-lang/setup-rust-toolchain@v1
+        uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           cache: false 
 

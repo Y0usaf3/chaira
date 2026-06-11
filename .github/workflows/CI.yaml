@@ -19,9 +19,6 @@ jobs:
         with:
           cache: false 
 
-      - name: Rust Cache
-        uses: https://github.com/Swatinem/rust-cache@v2
-
       - name: Run cargo check
         run: cargo check --all-features
 

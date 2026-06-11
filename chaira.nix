@@ -32,6 +32,7 @@ in {
 
     src = lib.mkOption {
       type = lib.types.path;
+      default = ./.;
       example = "/purrjects/chara";
       description = "Path to your local Chaira repository.";
     };

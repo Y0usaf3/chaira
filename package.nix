@@ -45,6 +45,10 @@ rustPlatform.buildRustPackage {
   '';
 
   installPhase = ''
+    echo "=== SHOWING TARGET CONTENTS ==="
+    find target -type f
+    echo "==============================="
+
     mkdir -p $out/bin $out/share/chaira
 
     cp target/release/chaira $out/bin/

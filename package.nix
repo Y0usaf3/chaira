@@ -15,7 +15,7 @@ rustPlatform.buildRustPackage rec {
 
   src = lib.cleanSource ./.;
 
-  cargoHash = lib.fakeCargoHash;
+  cargoLock.lockFile = ./Cargo.lock;
 
   nativeBuildInputs = [
     pkg-config

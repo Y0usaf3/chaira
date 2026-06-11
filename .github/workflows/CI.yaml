@@ -1,5 +1,7 @@
 name: Formating and Checking 
 
+on: [push, pull_request]
+
 env:
   CARGO_TERM_COLOR: always
 

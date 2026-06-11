@@ -23,10 +23,6 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
-    naersk = {
-      url = "github:nix-community/naersk";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     surrealdb-bin.url = "github:dmitriiStepanidenko/surrealdb-nixos";
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
@@ -37,7 +33,6 @@
   outputs = {
     self,
     nixpkgs,
-    naersk,
     surrealdb-bin,
     rust-overlay,
   }: let
@@ -66,13 +61,7 @@
         cp wasm-bindgen-test-runner $out/bin/
       '';
     };
-    naerskLib = pkgs.callPackage naersk {};
   in {
-    packages.${system}.default = naerskLib.buildPackage {
-      src = ./.;
-      buildInputs = [pkgs.glib];
-      nativeBuildInputs = [pkgs.pkg-config];
-    };
     nixosModules.default = import ./chaira.nix;
     devShells.${system}.default = pkgs.mkShell {
       buildInputs = with pkgs; [

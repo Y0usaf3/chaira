@@ -8,6 +8,8 @@
   wasm-bindgen-cli,
   binaryen,
   tailwindcss_4,
+  stdenv,
+  libclang,
 }:
 rustPlatform.buildRustPackage {
   pname = "chaira";
@@ -23,12 +25,17 @@ rustPlatform.buildRustPackage {
     wasm-bindgen-cli
     binaryen
     tailwindcss_4
+    libclang
   ];
 
   buildInputs = [
     openssl
     glib
+    stdenv.cc
   ];
+
+  LIBCLANG_PATH = "${libclang.lib}/lib";
+  BINDGEN_EXTRA_CLANG_ARGS = "-I${stdenv.cc.libc.dev}/include";
 
   buildPhase = ''
     export HOME=$(mktemp -d)

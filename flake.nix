@@ -61,15 +61,19 @@
         cp wasm-bindgen-test-runner $out/bin/
       '';
     };
+    rustToolchain = pkgs.rust-bin.stable.latest.default.override {
+      extensions = ["rust-src" "rust-analyzer" "clippy"];
+      targets = ["wasm32-unknown-unknown"];
+    };
   in {
-    nixosModules.default = import ./chaira.nix;
+    packages.${system} = {
+      wasm-bindgen = wasmBindgenBin;
+      rust-toolchain = rustToolchain;
+    };
+    nixosModules.default = import ./chaira.nix self;
     devShells.${system}.default = pkgs.mkShell {
       buildInputs = with pkgs; [
-        (rust-bin.stable.latest.default.override
-          {
-            extensions = ["rust-src" "rust-analyzer" "clippy"];
-            targets = ["wasm32-unknown-unknown"];
-          })
+        rustToolchain
         openssl
         glib
         bacon

@@ -1,31 +1,12 @@
-{
+self: {
   config,
   lib,
   pkgs,
   ...
 }: let
   cfg = config.services.chaira;
-
-  wasmBindgenBin = pkgs.stdenv.mkDerivation rec {
-    pname = "wasm-bindgen";
-    version = "0.2.123";
-    src = pkgs.fetchurl {
-      url = "https://github.com/wasm-bindgen/wasm-bindgen/releases/download/${version}/wasm-bindgen-${version}-x86_64-unknown-linux-musl.tar.gz";
-      hash = "sha256-gPxcHVwSj9Z+mbFDGO6r9537rfRZ7OLTi6k6guVXMMY=";
-    };
-    nativeBuildInputs = [pkgs.autoPatchelfHook];
-    buildInputs = [pkgs.stdenv.cc.cc.lib];
-    installPhase = ''
-      mkdir -p $out/bin
-      cp wasm-bindgen $out/bin/
-      cp wasm-bindgen-test-runner $out/bin/
-    '';
-  };
-
-  rustToolchain = pkgs.rust-bin.stable.latest.default.override {
-    extensions = ["rust-src" "rust-analyzer" "clippy"];
-    targets = ["wasm32-unknown-unknown"];
-  };
+  wasmBindgenBin = self.packages.${pkgs.system}.wasm-bindgen;
+  rustToolchain = self.packages.${pkgs.system}.rust-toolchain;
 in {
   options.services.chaira = {
     enable = lib.mkEnableOption "Chaira Live Dev Service";

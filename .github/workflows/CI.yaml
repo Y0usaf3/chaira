@@ -1,5 +1,7 @@
 name: Formating and Checking 
 
+# TODO: fix the libclang errors bc apparently it needs it to compile stuff 
+
 on: [push, pull_request]
 
 env:

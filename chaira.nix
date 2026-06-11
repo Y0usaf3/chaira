@@ -5,9 +5,8 @@ self: {
   ...
 }: let
   cfg = config.services.chaira;
-  wasmBindgenBin = self.packages.${pkgs.system}.wasm-bindgen;
-  rustToolchain = self.packages.${pkgs.system}.rust-toolchain;
   SurrealDbBin = self.packages.${pkgs.system}.surrealdb;
+  chairaPkg = self.packages.${pkgs.system}.chaira;
 in {
   options.services.chaira = {
     enable = lib.mkEnableOption "Chaira Live Dev Service";
@@ -92,19 +91,6 @@ in {
       requires = ["chaira-surrealdb.service" "chaira-redis.service"];
       wantedBy = ["multi-user.target"];
 
-      path = with pkgs; [
-        rustToolchain
-        cargo-leptos
-        wasmBindgenBin
-        binaryen # provides wasm-opt
-        tailwindcss_4
-        pkg-config
-        glib
-        openssl
-        stdenv.cc
-        coreutils # for rm, mkdir, etc.
-      ];
-
       environment = {
         B_URL = "${cfg.db.host}:${toString cfg.db.port}";
         DB_USERNAME = cfg.db.user;
@@ -121,11 +107,15 @@ in {
 
       serviceConfig = {
         Type = "simple";
-        WorkingDirectory = toString cfg.src;
 
-        ExecStart = "${pkgs.cargo-leptos}/bin/cargo-leptos serve";
+        ExecStart = "${chairaPkg}/bin/chaira";
+
+        WorkingDirectory = "/var/empty";
 
         Restart = "on-failure";
+
+        ProtectSystem = "strict";
+        ProtectHome = true;
       };
     };
   };

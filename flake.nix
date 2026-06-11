@@ -67,11 +67,13 @@
     };
     SurrealDbBin =
       surrealdb-bin.packages.${system}.latest;
+    chairaPkg = pkgs.callPackage ./package.nix {
+      wasm-bindgen-cli = wasmBindgenBin;
+    };
   in {
     packages.${system} = {
-      wasm-bindgen = wasmBindgenBin;
-      rust-toolchain = rustToolchain;
       surrealdb = SurrealDbBin;
+      chaira = chairaPkg;
     };
     nixosModules.default = import ./chaira.nix self;
     devShells.${system}.default = pkgs.mkShell {

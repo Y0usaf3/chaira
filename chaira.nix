@@ -108,7 +108,7 @@ in {
       serviceConfig = {
         Type = "simple";
 
-        ExecStart = "${chairaPkg}/bin/chaira";
+        ExecStart = "${chairaPkg}/bin/server";
 
         WorkingDirectory = "/var/empty";
 

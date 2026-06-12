@@ -51,7 +51,7 @@ rustPlatform.buildRustPackage {
 
     mkdir -p $out/bin $out/share/chaira
 
-    cp target/release/chaira $out/bin/
+    cp target/release/server $out/bin/
 
     cp -r target/site $out/share/chaira/site
   '';

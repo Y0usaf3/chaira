@@ -10,6 +10,7 @@ leptos.workspace = true
 leptos_meta.workspace = true
 leptos_router.workspace = true
 leptos_axum = { workspace = true, optional = true }
+leptos_ui = "0.3.22"
 
 http.workspace = true
 cfg-if.workspace = true

@@ -14,6 +14,8 @@
   llvmPackages,
 }: let
   commonArgs = {
+    pname = "chaira";
+    version = "0.0.1";
     strictDeps = true;
 
     nativeBuildInputs = [
@@ -36,7 +38,11 @@
     BINDGEN_EXTRA_CLANG_ARGS = "-I${stdenv.cc.libc.dev}/include";
   };
 
-  cargoArtifacts = craneLib.buildDepsOnly commonArgs;
+  # 1. Cache only dependencies: filters down to just Cargo.toml/lock and .rs files
+  cargoArtifacts = craneLib.buildDepsOnly (commonArgs
+    // {
+      src = craneLib.cleanCargoSource ./.;
+    });
 in
   craneLib.buildPackage (commonArgs
     // {

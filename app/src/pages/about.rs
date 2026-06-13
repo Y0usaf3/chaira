@@ -5,7 +5,7 @@ use crate::components::Footer;
 #[component]
 pub fn AboutPage() -> impl IntoView {
     view! {
-        <div class="w-screen flex flex-col min-h-screen items-center bg-slate-50 h-full">
+        <div class="w-screen flex flex-col min-h-screen items-center bg-slate-100 h-full">
 
             <img src="/chaira.png" class="w-[480px] h-auto object-contain pixelated m-[20px]" />
 

@@ -9,7 +9,7 @@ pub fn HomePage() -> impl IntoView {
         naviguate("/about", NavigateOptions::default());
     };
     view! {
-        <div class="min-h-screen w-screen relative flex flex-col bg-slate-50">
+        <div class="min-h-screen w-screen relative flex flex-col bg-slate-100">
 
             <div class="absolute top-5 right-5 flex gap-[5px]">
                 <Button on:click=naviguate_to_about>About</Button>

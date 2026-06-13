@@ -1,6 +1,7 @@
 {
   lib,
-  rustPlatform,
+  pkgs,
+  crane,
   pkg-config,
   openssl,
   glib,
@@ -11,53 +12,47 @@
   stdenv,
   libclang,
   llvmPackages,
-}:
-rustPlatform.buildRustPackage {
-  pname = "chaira";
-  version = "0.0.1";
+}: let
+  craneLib = crane.mkLib pkgs;
 
-  src = lib.cleanSource ./.;
+  commonArgs = {
+    src = craneLib.cleanSource ./.;
+    strictDeps = true;
 
-  cargoLock.lockFile = ./Cargo.lock;
+    nativeBuildInputs = [
+      pkg-config
+      cargo-leptos
+      wasm-bindgen-cli
+      binaryen
+      tailwindcss_4
+      libclang
+      llvmPackages.bintools
+    ];
 
-  nativeBuildInputs = [
-    pkg-config
-    cargo-leptos
-    wasm-bindgen-cli
-    binaryen
-    tailwindcss_4
-    libclang
-    llvmPackages.bintools
-  ];
+    buildInputs = [
+      openssl
+      glib
+      stdenv.cc
+    ];
 
-  buildInputs = [
-    openssl
-    glib
-    stdenv.cc
-  ];
-
-  LIBCLANG_PATH = "${libclang.lib}/lib";
-  BINDGEN_EXTRA_CLANG_ARGS = "-I${stdenv.cc.libc.dev}/include";
-
-  buildPhase = ''
-    export HOME=$(mktemp -d)
-    cargo-leptos build --release
-  '';
-
-  installPhase = ''
-    echo "=== SHOWING TARGET CONTENTS ==="
-    find target -type f
-    echo "==============================="
-
-    mkdir -p $out/bin $out/share/chaira
-
-    cp target/release/server $out/bin/
-
-    cp -r target/site $out/share/chaira/site
-  '';
-
-  meta = with lib; {
-    description = "Chaira Leptos Application";
-    license = licenses.mit;
+    LIBCLANG_PATH = "${libclang.lib}/lib";
+    BINDGEN_EXTRA_CLANG_ARGS = "-I${stdenv.cc.libc.dev}/include";
   };
-}
+
+  cargoArtifacts = craneLib.buildDepsOnly commonArgs;
+in
+  craneLib.buildPackage (commonArgs
+    // {
+      inherit cargoArtifacts;
+
+      buildPhase = ''
+        export HOME=$(mktemp -d)
+        cargo-leptos build --release
+      '';
+
+      installPhase = ''
+        mkdir -p $out/bin $out/share/chaira
+        cp target/release/server $out/bin/chaira
+        cp -r target/site $out/share/chaira/site
+      '';
+    })

@@ -12,6 +12,9 @@ body {
         font-family: 'Pixel';
 }
 
+*{        overscroll-behavior: none !important;
+}
+
 .small-font {
         font-family: 'smol_pixel';
 }

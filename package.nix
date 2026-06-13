@@ -14,7 +14,6 @@
   llvmPackages,
 }: let
   commonArgs = {
-    src = craneLib.cleanSource ./.;
     strictDeps = true;
 
     nativeBuildInputs = [
@@ -42,6 +41,8 @@ in
   craneLib.buildPackage (commonArgs
     // {
       inherit cargoArtifacts;
+
+      src = lib.cleanSource ./.;
 
       buildPhase = ''
         export HOME=$(mktemp -d)

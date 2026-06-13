@@ -25,7 +25,7 @@ in {
       };
       host = lib.mkOption {
         type = lib.types.str;
-        default = "127.0.0.1";
+        default = "0.0.0.0";
       };
       port = lib.mkOption {
         type = lib.types.port;
@@ -115,8 +115,9 @@ in {
 
         Restart = "on-failure";
 
-        ProtectSystem = "full";
-        ProtectHome = true;
+        ProtectSystem = "false";
+        ProtectHome = "false";
+        PrivateTmp = "false";
       };
     };
   };

@@ -103,6 +103,7 @@ in {
         LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
         BINDGEN_EXTRA_CLANG_ARGS = "-I${pkgs.stdenv.cc.libc.dev}/include";
         RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
+        LEPTOS_SITE_ROOT = "${cfg.src}/target/site";
       };
 
       serviceConfig = {
@@ -110,11 +111,11 @@ in {
 
         ExecStart = "${chairaPkg}/bin/chaira";
 
-        WorkingDirectory = "/var/empty";
+        WorkingDirectory = "${cfg.src}";
 
         Restart = "on-failure";
 
-        ProtectSystem = "strict";
+        ProtectSystem = "full";
         ProtectHome = true;
       };
     };

@@ -38,7 +38,6 @@
     BINDGEN_EXTRA_CLANG_ARGS = "-I${stdenv.cc.libc.dev}/include";
   };
 
-  # 1. Cache only dependencies: filters down to just Cargo.toml/lock and .rs files
   cargoArtifacts = craneLib.buildDepsOnly (commonArgs
     // {
       src = craneLib.cleanCargoSource ./.;

@@ -71,6 +71,7 @@
       surrealdb-bin.packages.${system}.latest;
     chairaPkg = pkgs.callPackage ./package.nix {
       wasm-bindgen-cli = wasmBindgenBin;
+      craneLib = craneLib;
     };
     craneLib = crane.mkLib pkgs;
   in {

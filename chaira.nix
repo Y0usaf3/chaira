@@ -93,7 +93,7 @@ in {
 
       environment = {
         B_URL = "${cfg.db.host}:${toString cfg.db.port}";
-        DB_USERNAME = cfg.db.user;
+        DB_USERNAME = cfg.rb.user;
         DB_PASSWORD = cfg.db.password;
         MASTER_KEY = cfg.masterKey;
         REDIS_URL = "${cfg.redis.host}:${toString cfg.redis.port}";

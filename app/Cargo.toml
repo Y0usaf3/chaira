@@ -15,6 +15,7 @@ leptos_ui = "0.3.22"
 http.workspace = true
 cfg-if.workspace = true
 thiserror.workspace = true
+chrono.workspace = true
 
 service = { path = "../service/", optional = true }
 

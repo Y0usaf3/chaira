@@ -3,8 +3,28 @@
         src: url("/pixel.ttf");
 }
 
+@font-face {
+        font-family: 'smol_pixel';
+        src: url("/fs-pixel-sans-unicode-regular.ttf")
+}
+
 body {
         font-family: 'Pixel';
+}
+
+.small-font {
+        font-family: 'smol_pixel';
+}
+
+.pixelated {
+        image-rendering: pixelated;
+           image-rendering: crisp-edges;
+}
+
+.pride_gradient {
+    background-image: linear-gradient(to right, #ffffff, #ffafC7, #73D7EE, #613915, #000000, #E50000, #FFD800, #FFEE00, #028121, #004CFF, #760088);
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
 }
 
 .pixel-corners,

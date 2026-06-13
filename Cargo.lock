@@ -143,6 +143,7 @@ name = "app"
 version = "0.1.0"
 dependencies = [
  "cfg-if",
+ "chrono",
  "http",
  "leptos",
  "leptos_axum",

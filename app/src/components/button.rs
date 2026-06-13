@@ -6,10 +6,10 @@ variants! {
        base: "pixel-corners--wrapper inline-flex items-center justify-center gap-2 text-lg font-medium shrink-0 outline-none",
         variants: {
             variant: {
-                Default: "bg-primary text-primary-foreground hover:bg-primary/90",
+                Default: "bg-black text-white",
             },
             size: {
-                Default: "h-12 px-4 py-2 pb-1",
+                Default: "h-12 px-6 py-3 pb-2",
             }
         },
         component: {

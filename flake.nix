@@ -24,6 +24,7 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
     surrealdb-bin.url = "github:dmitriiStepanidenko/surrealdb-nixos";
+    crane.url = "github:ipetkov/crane";
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -35,6 +36,7 @@
     nixpkgs,
     surrealdb-bin,
     rust-overlay,
+    crane,
   }: let
     system = "x86_64-linux";
     overlays = [(import rust-overlay)];
@@ -70,10 +72,12 @@
     chairaPkg = pkgs.callPackage ./package.nix {
       wasm-bindgen-cli = wasmBindgenBin;
     };
+    craneLib = crane.mkLib pkgs;
   in {
     packages.${system} = {
       surrealdb = SurrealDbBin;
       chaira = chairaPkg;
+      crane = craneLib;
     };
     nixosModules.default = import ./chaira.nix self;
     devShells.${system}.default = pkgs.mkShell {

@@ -1,7 +1,7 @@
 {
   lib,
   pkgs,
-  crane,
+  craneLib,
   pkg-config,
   openssl,
   glib,
@@ -13,8 +13,6 @@
   libclang,
   llvmPackages,
 }: let
-  craneLib = crane.mkLib pkgs;
-
   commonArgs = {
     src = craneLib.cleanSource ./.;
     strictDeps = true;

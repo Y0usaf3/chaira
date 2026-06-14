@@ -41,6 +41,11 @@
   cargoArtifacts = craneLib.buildDepsOnly (commonArgs
     // {
       src = craneLib.cleanCargoSource ./.;
+
+      buildPhaseCargoCommand = ''
+        cargo build --release --no-default-features --features ssr
+        cargo build --release --target wasm32-unknown-unknown --no-default-features --features hydrate
+      '';
     });
 in
   craneLib.buildPackage (commonArgs
@@ -49,13 +54,12 @@ in
 
       src = lib.cleanSource ./.;
 
-      buildPhase = ''
+      buildPhaseCargoCommand = ''
         export HOME=$(mktemp -d)
         cargo-leptos build --release
       '';
 
       installPhase = ''
-        mkdir -p $out/app
         mkdir -p $out/app/release/
         mkdir -p $out/app/site/
         cp target/release/server $out/app/release/server

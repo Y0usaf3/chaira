@@ -68,6 +68,6 @@ in
         mkdir -p $out/target/site/
 
         cp target/release/server $out/target/release/server
-        cp -r target/site $out/target/site
+        cp -r target/site $out/target/
       '';
     })

@@ -109,7 +109,7 @@ in {
       serviceConfig = {
         Type = "simple";
 
-        ExecStart = "${chairaPkg}/app/release/server";
+        ExecStart = "${chairaPkg}/target/release/server";
 
         WorkingDirectory = "${chairaPkg}";
 

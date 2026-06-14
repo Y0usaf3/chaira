@@ -56,6 +56,8 @@ in
 
       installPhase = ''
         mkdir -p $out/app
+        mkdir -p $out/app/release/
+        mkdir -p $out/app/site/
         cp target/release/server $out/app/release/server
         cp -r target/site $out/app/site
       '';

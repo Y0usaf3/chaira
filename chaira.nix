@@ -25,7 +25,7 @@ in {
       };
       host = lib.mkOption {
         type = lib.types.str;
-        default = "0.0.0.0";
+        default = "127.0.0.1";
       };
       port = lib.mkOption {
         type = lib.types.port;
@@ -103,21 +103,17 @@ in {
         LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
         BINDGEN_EXTRA_CLANG_ARGS = "-I${pkgs.stdenv.cc.libc.dev}/include";
         RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
-        LEPTOS_SITE_ROOT = "${cfg.src}/target/site";
+        LEPTOS_SITE_ROOT = "${chairaPkg}";
       };
 
       serviceConfig = {
         Type = "simple";
 
-        ExecStart = "${chairaPkg}/bin/chaira";
+        ExecStart = "${chairaPkg}/app/release/server";
 
-        WorkingDirectory = "${cfg.src}";
+        WorkingDirectory = "${chairaPkg}";
 
         Restart = "on-failure";
-
-        ProtectSystem = "false";
-        ProtectHome = "false";
-        PrivateTmp = "false";
       };
     };
   };

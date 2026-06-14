@@ -109,10 +109,9 @@ in {
       serviceConfig = {
         Type = "simple";
 
-        ExecStart = "${chairaPkg}/target/release/server";
+        ExecStart = "${chairaPkg}/bin/chaira";
 
         WorkingDirectory = "${chairaPkg}";
-
         Restart = "on-failure";
       };
     };

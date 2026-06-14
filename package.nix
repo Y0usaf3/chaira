@@ -22,6 +22,7 @@
     strictDeps = true;
 
     nativeBuildInputs = [
+      pkgs.makeWrapper
       pkg-config
       cargo-leptos
       wasm-bindgen-cli
@@ -64,10 +65,14 @@ in
       '';
 
       installPhase = ''
-        mkdir -p $out/target/release/
-        mkdir -p $out/target/site/
+        mkdir -p $out/bin
+        mkdir -p $out/app/site/
 
-        cp target/release/server $out/target/release/server
-        cp -r target/site $out/target/
+        cp -r target/site $out/app/site
+
+        cp target/release/server $out/bin/.chaira-unwrapped
+
+        makeWrapper $out/bin/.chaira-unwrapped $out/bin/chaira \
+          --set LEPTOS_SITE_ROOT $out/app/site
       '';
     })

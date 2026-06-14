@@ -64,10 +64,10 @@ in
       '';
 
       installPhase = ''
-        mkdir -p $out/app/release/
-        mkdir -p $out/app/site/
+        mkdir -p $out/target/release/
+        mkdir -p $out/target/site/
 
-        cp target/release/server $out/app/release/server
-        cp -r target/site $out/app/site
+        cp target/release/server $out/target/release/server
+        cp -r target/site $out/target/site
       '';
     })

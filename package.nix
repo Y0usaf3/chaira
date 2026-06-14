@@ -55,8 +55,8 @@ in
       '';
 
       installPhase = ''
-        mkdir -p $out/bin $out/share/chaira
+        mkdir -p $out/bin $out/site
         cp target/release/server $out/bin/chaira
-        cp -r target/site $out/share/chaira/site
+        cp -r target/site $out/site
       '';
     })

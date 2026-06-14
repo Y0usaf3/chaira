@@ -1,5 +1,6 @@
 {
   lib,
+  stdenv,
   pkgs,
   craneLib,
   pkg-config,
@@ -9,10 +10,12 @@
   wasm-bindgen-cli,
   binaryen,
   tailwindcss_4,
-  stdenv,
   libclang,
   llvmPackages,
 }: let
+  rustSrcOnly = craneLib.cleanCargoSource ./.;
+  fullAppSrc = lib.cleanSource ./.;
+
   commonArgs = {
     pname = "chaira";
     version = "0.0.1";
@@ -40,10 +43,10 @@
 
   cargoArtifacts = craneLib.buildDepsOnly (commonArgs
     // {
-      src = craneLib.cleanCargoSource ./.;
+      src = rustSrcOnly;
 
       buildPhaseCargoCommand = ''
-        cargo build --release --bin chaira --no-default-features --features ssr
+        cargo build --release --bin server --no-default-features --features ssr
         cargo build --release --lib --target wasm32-unknown-unknown --no-default-features --features hydrate
       '';
     });
@@ -52,7 +55,7 @@ in
     // {
       inherit cargoArtifacts;
 
-      src = lib.cleanSource ./.;
+      src = fullAppSrc;
 
       buildPhaseCargoCommand = ''
         export HOME=$(mktemp -d)
@@ -62,6 +65,7 @@ in
       installPhase = ''
         mkdir -p $out/app/release/
         mkdir -p $out/app/site/
+
         cp target/release/server $out/app/release/server
         cp -r target/site $out/app/site
       '';

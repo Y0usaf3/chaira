@@ -47,7 +47,7 @@
       src = rustSrcOnly;
 
       buildPhaseCargoCommand = ''
-        cargo build --release --bin server --no-default-features --features ssr
+        cargo build --release
       '';
     });
 in
@@ -59,6 +59,10 @@ in
 
       doNotPostBuildInstallCargoBinaries = true;
 
+      postPatch = ''
+        sed -i "s|site-root[[:space:]]*=[[:space:]]*\"target/site\"|site-root = \"$out/app/site\"|" Cargo.toml
+      '';
+
       buildPhaseCargoCommand = ''
         export HOME=$(mktemp -d)
         cargo-leptos build --release
@@ -66,13 +70,14 @@ in
 
       installPhase = ''
         mkdir -p $out/bin
-        mkdir -p $out/app/site/
+        mkdir -p $out/app/site
 
-        cp -r target/site $out/app/site
+        cp target/release/server $out/bin/chaira
 
-        cp target/release/server $out/bin/.chaira-unwrapped
+        cp -r $out/app/site/* $out/app/site/ || true
 
-        makeWrapper $out/bin/.chaira-unwrapped $out/bin/chaira \
-          --set LEPTOS_SITE_ROOT $out/app/site
+        if [ -d "target/site" ]; then
+          cp -r target/site/* $out/app/site/
+        fi
       '';
     })

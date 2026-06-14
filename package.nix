@@ -56,6 +56,8 @@ in
 
       src = fullAppSrc;
 
+      doNotPostBuildInstallCargoBinaries = true;
+
       buildPhaseCargoCommand = ''
         export HOME=$(mktemp -d)
         cargo-leptos build --release

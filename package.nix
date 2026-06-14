@@ -47,7 +47,6 @@
 
       buildPhaseCargoCommand = ''
         cargo build --release --bin server --no-default-features --features ssr
-        cargo build --release --lib --target wasm32-unknown-unknown --no-default-features --features hydrate
       '';
     });
 in

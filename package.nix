@@ -43,8 +43,8 @@
       src = craneLib.cleanCargoSource ./.;
 
       buildPhaseCargoCommand = ''
-        cargo build --release --no-default-features --features ssr
-        cargo build --release --target wasm32-unknown-unknown --no-default-features --features hydrate
+        cargo build --release --bin chaira --no-default-features --features ssr
+        cargo build --release --lib --target wasm32-unknown-unknown --no-default-features --features hydrate
       '';
     });
 in

@@ -14,8 +14,8 @@ pub fn DashboardPage() -> impl IntoView {
                 </div>
 
                 <div class="w-full flex justify-center mt-auto py-[4.5]">
-                    <button class="pixel-corners-pfp bg-black w-[40px] h-[40px] flex items-center justify-center">
-                        <img src="/svg/plus.svg" class="w-[22px] h-[22px] pixelated fill-white" />
+                    <button class="pixel-corners-pfp bg-black w-[32px] h-[32px] flex items-center justify-center">
+                        <img src="/svg/plus.svg" class="w-[16px] h-[16px] pixelated fill-white" />
                     </button>
                 </div>
             </div>

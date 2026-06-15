@@ -130,13 +130,13 @@ in {
       wantedBy = ["multi-user.target"];
 
       environment = {
-        DB_URL = "http://${cfg.db.host}:${toString cfg.db.port}";
+        DB_URL = "${cfg.db.host}:${toString cfg.db.port}";
         DB_USERNAME = cfg.db.user;
         DB_PASSWORD = cfg.db.password;
         MASTER_KEY = cfg.masterKey;
         REDIS_URL = "redis://:${cfg.redis.password}@${cfg.redis.host}:${toString cfg.redis.port}";
         RUST_LOG = "info";
-        LEPTOS_SITE_ROOT = "${chairaPkg}";
+        LEPTOS_SITE_ROOT = "${chairaPkg}/target/site";
       };
 
       serviceConfig = {

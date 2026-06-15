@@ -1,7 +1,7 @@
 [package]
 name = "server"
-version = "0.1.0"
-edition = "2021"
+version = "0.0.1"
+edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -16,3 +16,8 @@ tokio.workspace = true
 tower.workspace = true
 tower-http.workspace = true
 log.workspace = true
+axum-extra.workspace = true
+serde.workspace = true
+service.path = "../service"
+headers.workspace = true
+time = "0.3.49"

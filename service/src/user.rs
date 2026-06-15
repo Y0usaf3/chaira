@@ -77,35 +77,94 @@ impl UserService {
     }
 
     pub async fn login(method: AuthMethod) -> Result<Self, Irror> {
-        let user: User = match method.clone() {
+        let (user, authentified_by_hca) = match method {
             AuthMethod::Hca(code) => {
-                // NOTE: are we sure hackclub auth is really a secure source, what could go wrong
-                // ????
-                // [insert what could go wrong here]
-
                 let token = HCAUTH
                     .exchange_code(code)
                     .await
                     .ok()
                     .ok_or(AuthError::VerificationFailed)?;
 
+                let access_token = token
+                    .access_token
+                    .as_ref()
+                    .ok_or(AuthError::VerificationFailed)?;
+
                 let auth_identity = HCAUTH
-                    .get_identity(token.access_token.ok_or(AuthError::VerificationFailed)?)
+                    .get_identity(access_token.to_string())
+                    .await
+                    .map_err(|_| AuthError::VerificationFailed)?;
+
+                let encrypted_token = encrypt_token(access_token)
                     .await
                     .map_err(|_| AuthError::InvalidToken)?;
 
-                let mut res = DB
-                    .query("SELECT VALUE user.* FROM identity WHERE external_id = $external_id AND is_deleted = false")
-                    .bind(("external_id", auth_identity.identity.id))
-                    .await?;
+                let encrypted_refresh_token = encrypt_token(
+                    token
+                        .refresh_token
+                        .ok_or(AuthError::VerificationFailed)?
+                        .as_str(),
+                )
+                .await
+                .map_err(|_| AuthError::InvalidToken)?;
 
-                let ident: Option<User> = res.take(0)?;
-                ident.ok_or(AuthError::VerificationFailed)?
+                let now = SystemTime::now();
+                let expiration_system_time = now
+                    + Duration::from_secs(
+                        token.expires_in.ok_or(AuthError::VerificationFailed)? as u64
+                    );
+                let expires_at = DateTime::<Utc>::from(expiration_system_time);
+
+                let mut res = DB
+                .query(
+                    "
+                    BEGIN TRANSACTION;
+                    LET $existing = (SELECT user FROM identity WHERE external_id = $ext_id AND is_deleted = false LIMIT 1);
+                    
+                    IF $existing[0] != NONE {
+                        // User exists -> Return their profile data
+                        RETURN SELECT * FROM ONLY $existing[0].user;
+                    } ELSE {
+                        // User doesn't exist -> Register them on the fly!
+                        LET $u = (CREATE user CONTENT {
+                            first_name: $first_name,
+                            last_name: $last_name,
+                            email: $email
+                        });
+                        CREATE identity CONTENT {
+                            user: $u[0].id,
+                            external_id: $ext_id,
+                            access_token: $access_token,
+                            refresh_token: $refresh_token,
+                            expires_at: $expires_at,
+                            is_deleted: false
+                        };
+                        RETURN $u[0];
+                    };
+                    COMMIT TRANSACTION;
+                    ",
+                )
+                .bind(("ext_id", auth_identity.identity.id))
+                .bind(("first_name", auth_identity.identity.first_name))
+                .bind(("last_name", auth_identity.identity.last_name))
+                .bind(("email", auth_identity.identity.primary_email))
+                .bind(("access_token", encrypted_token))
+                .bind(("refresh_token", encrypted_refresh_token))
+                .bind(("expires_at", expires_at))
+                .await?;
+
+                let user_record: Option<User> = res.take(2)?;
+                let user = user_record.ok_or(AuthError::VerificationFailed)?;
+
+                (user, true)
             }
             AuthMethod::Session(session) => {
-                SessionService::authentify(&session.token, &session.ip, &session.agent).await?
+                let user =
+                    SessionService::authentify(&session.token, &session.ip, &session.agent).await?;
+                (user, false) 
             }
         };
+
         let record_id = user
             .id
             .as_ref()
@@ -119,95 +178,7 @@ impl UserService {
             current_base: None,
             is_admin_cache: None,
             cache_instant: None,
-            authentified_by_hca: match method {
-                AuthMethod::Hca(_) => true,
-                AuthMethod::Session(_) => true, // just for testing ig
-            },
-        })
-    }
-
-    // TODO: omg look at this spagethi code, u gotta find a nicer way uh ;-;
-
-    pub async fn register(code: String) -> Result<UserService, Irror> {
-        let tmp = HCAUTH.exchange_code(code).await;
-
-        // TODO: we rly should make sure we see if the token already exists before registering
-        // another user
-        //
-        // ima ask gemini duh
-        //
-        // wait did i end up asking gemini ?? its been like 3 weeks
-
-        let token = tmp.ok().ok_or(AuthError::VerificationFailed)?;
-        let access_token = token
-            .access_token
-            .as_ref()
-            .ok_or(AuthError::VerificationFailed)?;
-        let auth_identity = HCAUTH
-            .get_identity(access_token.to_string())
-            .await
-            .map_err(|_| AuthError::VerificationFailed)?;
-        let encrypted_token = encrypt_token(access_token)
-            .await
-            .map_err(|_| AuthError::InvalidToken)?;
-        let encrypted_refresh_token = encrypt_token(
-            token
-                .refresh_token
-                .ok_or(AuthError::VerificationFailed)?
-                .as_str(),
-        )
-        .await
-        .map_err(|_| AuthError::InvalidToken)?;
-        let now = SystemTime::now();
-        let expiration_system_time = now
-            + Duration::from_secs(token.expires_in.ok_or(AuthError::VerificationFailed)? as u64);
-
-        let expires_at = DateTime::<Utc>::from(expiration_system_time);
-
-        let mut res = DB
-            .query(
-                "
-               BEGIN TRANSACTION;
-                LET $existing = (SELECT id FROM identity WHERE external_id = $ext_id LIMIT 1);
-                IF $existing[0].id != NONE {
-                    RETURN NONE;
-                } ELSE {
-                    LET $u = (CREATE user CONTENT {
-                        first_name: $first_name,
-                        last_name: $last_name,
-                        email: $email
-                    });
-                    CREATE identity CONTENT {
-                        user: $u[0].id,
-                        external_id: $ext_id,
-                        access_token: $access_token,
-                        refresh_token: $refresh_token,
-                        expires_at: $expires_at
-                    };
-                    RETURN $u[0]; 
-                };
-                COMMIT TRANSACTION;
-            ",
-            )
-            .bind(("ext_id", auth_identity.identity.id))
-            .bind(("first_name", auth_identity.identity.first_name))
-            .bind(("last_name", auth_identity.identity.last_name))
-            .bind(("email", auth_identity.identity.primary_email))
-            .bind(("access_token", encrypted_token))
-            .bind(("refresh_token", encrypted_refresh_token))
-            .bind(("expires_at", expires_at))
-            .await?;
-        let user: Option<User> = res.take(2)?;
-        let user = user.ok_or(UserError::NotFound)?;
-        let record_id = UserId(user.id.as_ref().ok_or(UserError::NotFound)?.0.clone());
-
-        Ok(UserService {
-            user_cache: Some((Instant::now(), user)),
-            user_record_id: record_id,
-            current_base: None,
-            is_admin_cache: None,
-            cache_instant: None,
-            authentified_by_hca: false,
+            authentified_by_hca,
         })
     }
 

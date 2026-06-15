@@ -42,7 +42,6 @@ impl SessionService {
             let random_token = general_purpose::STANDARD.encode(bytes);
             let session = Session::from_insert(insert, random_token.clone());
             let mut con = get_cache().await.get().await?;
-            println!("just got cache");
             let user_session = UserSession {
                 session: session.clone(),
                 user,
@@ -55,7 +54,6 @@ impl SessionService {
                 .ignore()
                 .query_async::<()>(&mut *con)
                 .await?;
-            println!("i suppose its redis doing its thing");
             Ok((random_token, session))
         } else {
             Err(Irror::Session(SessionError::NotAuthentifiedByHca))

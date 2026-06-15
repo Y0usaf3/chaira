@@ -23,7 +23,6 @@ pub async fn oauth(
     jar: PrivateCookieJar,
     user_agent: Option<TypedHeader<UserAgent>>,
 ) -> Result<(PrivateCookieJar, Redirect), StatusCode> {
-    log!("authentificating user");
     let user_agent = user_agent
         .map(|ua| ua.to_string())
         .unwrap_or_else(|| "Unknown".to_string());
@@ -31,7 +30,6 @@ pub async fn oauth(
     let ip = addr.ip().to_string();
 
     if let Some(session_cookie) = jar.get("session") {
-        log!("session already found!");
         let session_payload = service::user::Session {
             token: session_cookie.value().to_string(),
             ip: ip.clone(),
@@ -43,11 +41,9 @@ pub async fn oauth(
         {
             return Ok((jar, Redirect::to("/dashboard")));
         }
-        log!("was illegal..")
     }
 
     let hca_auth = service::user::AuthMethod::Hca(params.code.clone());
-    log!("doing hca now! {hca_auth:?}");
 
     let mut service = match UserService::login(hca_auth).await {
         Ok(existing_service) => existing_service,
@@ -63,7 +59,6 @@ pub async fn oauth(
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    log!("session go brrr");
 
     let cookie = Cookie::build(("session", session_token))
         .path("/")

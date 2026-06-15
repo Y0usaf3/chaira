@@ -8,8 +8,6 @@ pub fn DashboardPage() -> impl IntoView {
 
             <p>"Dashboard rahh"</p>
 
-            <Footer />
-
         </div>
     }
 }

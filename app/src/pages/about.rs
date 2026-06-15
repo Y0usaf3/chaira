@@ -17,7 +17,7 @@ pub fn AboutPage() -> impl IntoView {
             <div class="w-screen flex flex-col min-h-screen items-center h-full">
 
                 <img
-                    src="/chaira.png"
+                    src="/image/chaira.png"
                     class="w-[480px] h-auto object-contain pixelated mb-[20px]"
                 />
 

@@ -1,6 +1,6 @@
 use crate::components::{Button, Footer};
 use leptos::prelude::*;
-use leptos_router::{NavigateOptions, hooks::use_navigate};
+use leptos_router::{hooks::use_navigate, NavigateOptions};
 
 #[component]
 pub fn HomePage() -> impl IntoView {
@@ -22,7 +22,7 @@ pub fn HomePage() -> impl IntoView {
 
             <main class="flex-grow flex flex-col justify-center items-center">
                 <img
-                    src="/chaira.png"
+                    src="/image/chaira.png"
                     class="w-[512px] h-auto object-contain pixelated"
                     alt="Chaira"
                 />

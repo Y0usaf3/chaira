@@ -1,6 +1,6 @@
 use crate::components::{Button, Footer};
 use leptos::prelude::*;
-use leptos_router::{NavigateOptions, hooks::use_navigate};
+use leptos_router::{hooks::use_navigate, NavigateOptions};
 
 #[component]
 pub fn AboutPage() -> impl IntoView {
@@ -10,7 +10,7 @@ pub fn AboutPage() -> impl IntoView {
     };
     view! {
         <div class="bg-slate-100">
-            <Button class="absolute top-1 left-1 m-5 px-5 text-xl" on:click=naviguate_to_home>
+            <Button class="absolute top-1 left-1 m-5 mb-0 px-5 text-xl" on:click=naviguate_to_home>
                 "<"
             </Button>
 

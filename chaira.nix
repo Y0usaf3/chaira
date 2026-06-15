@@ -1,7 +1,8 @@
-self: {
+{
   config,
   lib,
   pkgs,
+  self, # Ensure self is passed in the arguments to map your flake packages
   ...
 }: let
   cfg = config.services.chaira;
@@ -41,7 +42,7 @@ in {
       };
       storage = lib.mkOption {
         type = lib.types.str;
-        default = "file:///var/lib/chaira-surrealdb/proto.db";
+        default = "rocksdb://proto.db";
       };
     };
 
@@ -66,15 +67,9 @@ in {
     };
 
     hackclub-auth = {
-      client_id = lib.mkOption {
-        type = lib.types.str;
-      };
-      client_secret = lib.mkOption {
-        type = lib.types.str;
-      };
-      redirect_uri = lib.mkOption {
-        type = lib.types.str;
-      };
+      client_id = lib.mkOption {type = lib.types.str;};
+      client_secret = lib.mkOption {type = lib.types.str;};
+      redirect_uri = lib.mkOption {type = lib.types.str;};
     };
   };
 
@@ -82,18 +77,50 @@ in {
     systemd.services.chaira-surrealdb = {
       description = "Chaira Dev - SurrealDB Instance";
       after = ["network.target"];
+      wantedBy = ["multi-user.target"];
+
       serviceConfig = {
-        ExecStart = "${cfg.db.package}/bin/surreal start --allow-scripting --allow-experimental files,surrealism --bind ${cfg.db.host}:${toString cfg.db.port} --user ${cfg.db.user} --pass ${cfg.db.password} ${cfg.db.storage}";
+        ExecStart = toString [
+          "${cfg.db.package}/bin/surreal"
+          "start"
+          "--allow-scripting"
+          "--allow-experimental"
+          "files,surrealism"
+          "--bind"
+          "${cfg.db.host}:${toString cfg.db.port}"
+          "--user"
+          cfg.db.user
+          "--pass"
+          cfg.db.password
+          cfg.db.storage
+        ];
         Restart = "always";
+
+        DynamicUser = true;
+        StateDirectory = "chaira-surrealdb";
+        WorkingDirectory = "/var/lib/chaira-surrealdb";
       };
     };
 
+    # --- REDIS SERVICE ---
     systemd.services.chaira-redis = {
       description = "Chaira Dev - Redis Instance";
       after = ["network.target"];
+      wantedBy = ["multi-user.target"];
       serviceConfig = {
-        ExecStart = "${pkgs.redis}/bin/redis-server --bind ${cfg.redis.host} --port ${toString cfg.redis.port} --loglevel notice --requirepass ${cfg.redis.password}";
+        ExecStart = toString [
+          "${pkgs.redis}/bin/redis-server"
+          "--bind"
+          cfg.redis.host
+          "--port"
+          (toString cfg.redis.port)
+          "--loglevel"
+          "notice"
+          "--requirepass"
+          cfg.redis.password
+        ];
         Restart = "always";
+        DynamicUser = true;
       };
     };
 
@@ -104,7 +131,7 @@ in {
       wantedBy = ["multi-user.target"];
 
       environment = {
-        DB_URL = "${cfg.db.host}:${toString cfg.db.port}";
+        DB_URL = "http://${cfg.db.host}:${toString cfg.db.port}";
         DB_USERNAME = cfg.db.user;
         DB_PASSWORD = cfg.db.password;
         MASTER_KEY = cfg.masterKey;
@@ -115,10 +142,7 @@ in {
 
       serviceConfig = {
         Type = "simple";
-
-        ExecStart = "${chairaPkg}/target/release/server";
-
-        WorkingDirectory = "${chairaPkg}";
+        ExecStart = "${chairaPkg}/bin/server";
         Restart = "on-failure";
       };
     };

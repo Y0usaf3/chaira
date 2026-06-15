@@ -141,7 +141,7 @@ in {
 
       serviceConfig = {
         Type = "simple";
-        ExecStart = "${chairaPkg}/bin/server";
+        ExecStart = "${chairaPkg}/target/release/server";
         Restart = "on-failure";
       };
     };

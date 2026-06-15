@@ -59,25 +59,22 @@ in
 
       doNotPostBuildInstallCargoBinaries = true;
 
-      postPatch = ''
-        sed -i "s|site-root[[:space:]]*=[[:space:]]*\"target/site\"|site-root = \"$out/app/site\"|" Cargo.toml
-      '';
-
       buildPhaseCargoCommand = ''
         export HOME=$(mktemp -d)
         cargo-leptos build --release
       '';
 
       installPhase = ''
-        mkdir -p $out/bin
-        mkdir -p $out/app/site
+                mkdir -p $out/bin
 
-        cp target/release/server $out/bin/chaira
+                cp -r target $out/
 
-        cp -r $out/app/site/* $out/app/site/ || true
+                cat <<EOF > $out/bin/chaira
+        #!/usr/bin/env sh
+        cd $out
+        exec ./target/release/server
+        EOF
 
-        if [ -d "target/site" ]; then
-          cp -r target/site/* $out/app/site/
-        fi
+                chmod +x $out/bin/chaira
       '';
     })

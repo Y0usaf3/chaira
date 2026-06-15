@@ -4,7 +4,7 @@ use leptos::prelude::*;
 pub fn DashboardPage() -> impl IntoView {
     view! {
         <div class="flex h-screen w-full overflow-hidden bg-slate-100">
-            <div class="order-first w-14 flex-shrink-0">
+            <div class="order-first w-14 flex-shrink-0 flex flex-col h-full">
                 <div class="flex h-14 w-full">
                     <img
                         src="/image/small_chaira.png"
@@ -12,7 +12,12 @@ pub fn DashboardPage() -> impl IntoView {
                         alt="Chaira"
                     />
                 </div>
-                <div class="h-full w-full flex items-center justify-end py-[4.5]"></div>
+
+                <div class="w-full flex justify-center mt-auto py-[4.5]">
+                    <button class="pixel-corners-pfp bg-black w-[40px] h-[40px] flex items-center justify-center">
+                        <img src="/svg/plus.svg" class="w-[22px] h-[22px] pixelated fill-white" />
+                    </button>
+                </div>
             </div>
 
             <div class="flex flex-1 flex-col overflow-hidden">
@@ -20,7 +25,7 @@ pub fn DashboardPage() -> impl IntoView {
                     <div class="flex h-full w-full items-center justify-end px-[4.5]">
                         <img
                             src="https://i.pinimg.com/736x/7c/41/86/7c41866499a79bca61ecf049973f5d76.jpg"
-                            class="h-[40px] w-[40px] object-cover pixelated my-auto pixel-corners-pfp grayscale-50"
+                            class="h-[40px] w-[40px] object-cover pixelated my-auto pixel-corners-pfp grayscale-75"
                         />
                     </div>
                 </div>

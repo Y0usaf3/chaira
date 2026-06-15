@@ -1,8 +1,7 @@
-{
+self: {
   config,
   lib,
   pkgs,
-  self, # Ensure self is passed in the arguments to map your flake packages
   ...
 }: let
   cfg = config.services.chaira;

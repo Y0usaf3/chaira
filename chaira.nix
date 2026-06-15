@@ -41,7 +41,7 @@ in {
       };
       storage = lib.mkOption {
         type = lib.types.str;
-        default = "memory";
+        default = "file:///var/lib/chaira-surrealdb/proto.db";
       };
     };
 
@@ -63,6 +63,18 @@ in {
     masterKey = lib.mkOption {
       type = lib.types.str;
       default = "c60fae6c84d0d037c331076747c782a18804c433088a5c72a58180e3b3b32f09";
+    };
+
+    hackclub-auth = {
+      client_id = lib.mkOption {
+        type = lib.types.str;
+      };
+      client_secret = lib.mkOption {
+        type = lib.types.str;
+      };
+      redirect_uri = lib.mkOption {
+        type = lib.types.str;
+      };
     };
   };
 
@@ -92,24 +104,19 @@ in {
       wantedBy = ["multi-user.target"];
 
       environment = {
-        B_URL = "${cfg.db.host}:${toString cfg.db.port}";
+        DB_URL = "${cfg.db.host}:${toString cfg.db.port}";
         DB_USERNAME = cfg.db.user;
         DB_PASSWORD = cfg.db.password;
         MASTER_KEY = cfg.masterKey;
-        REDIS_URL = "${cfg.redis.host}:${toString cfg.redis.port}";
-        REDIS_PWD = cfg.redis.password;
+        REDIS_URL = "redis://:${cfg.redis.password}@${cfg.redis.host}:${toString cfg.redis.port}";
         RUST_LOG = "info";
-        SURREAL_BUCKET_FOLDER_ALLOWLIST = "${toString cfg.src}/charli/";
-        LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
-        BINDGEN_EXTRA_CLANG_ARGS = "-I${pkgs.stdenv.cc.libc.dev}/include";
-        RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
         LEPTOS_SITE_ROOT = "${chairaPkg}";
       };
 
       serviceConfig = {
         Type = "simple";
 
-        ExecStart = "${chairaPkg}/bin/chaira";
+        ExecStart = "${chairaPkg}/target/release/server";
 
         WorkingDirectory = "${chairaPkg}";
         Restart = "on-failure";

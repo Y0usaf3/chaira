@@ -13,7 +13,11 @@ mod auth;
 async fn main() {
     let conf = get_configuration(None).unwrap();
     let addr = conf.leptos_options.site_addr;
-    let leptos_options = conf.leptos_options;
+    let mut leptos_options = conf.leptos_options;
+    if let Ok(env_site_root) = std::env::var("LEPTOS_SITE_ROOT") {
+        leptos_options.site_root = env_site_root.into();
+    }
+    log!("site root : {} ||| {}", leptos_options.site_root, leptos_options.site_pkg_dir);
     let state = AppState {
         leptos_options,
         // NOTE: we only generate new keys for testing, soon we will have to store the key

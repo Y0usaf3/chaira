@@ -65,16 +65,10 @@ in
       '';
 
       installPhase = ''
-                mkdir -p $out/bin
+        mkdir -p $out/target/release
+        mkdir -p $out/target/site
 
-                cp -r target $out/
-
-                cat <<EOF > $out/bin/chaira
-        #!/usr/bin/env sh
-        cd $out
-        exec ./target/release/server
-        EOF
-
-                chmod +x $out/bin/chaira
+        cp -r target/release/server $out/target/release/
+        cp -r target/site/* $out/target/site
       '';
     })

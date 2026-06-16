@@ -6,12 +6,14 @@ use crate::prelude::*;
 // Only Administators can apply patches to Users.
 
 #[derive(Debug, Clone, PartialEq, SurrealValue, serde::Serialize, serde::Deserialize)]
+#[surreal(crate = "::surrealdb_types")]
 pub enum UserRole {
     User,
     Admin,
 }
 
 #[derive(Debug, Clone, PartialEq, SurrealValue, serde::Serialize, serde::Deserialize)]
+#[surreal(crate = "::surrealdb_types")]
 pub struct User {
     pub id: Option<UserId>,
     pub created_at: Option<Datetime>,

@@ -1,6 +1,7 @@
 use crate::prelude::*;
 
 #[derive(SurrealValue)]
+#[surreal(crate = "::surrealdb_types")]
 pub struct Identity {
     pub id: Option<IdentityId>,
     pub user: UserId,

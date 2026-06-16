@@ -2,6 +2,7 @@ use super::meme::Meme;
 use crate::prelude::*;
 
 #[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[surreal(crate = "::surrealdb_types")]
 pub struct AttachmentItem {
     pub(crate) file_id: Uuid,
     pub(crate) name: String,

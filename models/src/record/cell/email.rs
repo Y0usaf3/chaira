@@ -10,6 +10,7 @@ use super::long_text_value::LongTextValue;
 use super::single_line_value::SingleLineValue;
 
 #[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[surreal(crate = "::surrealdb_types")]
 pub struct Email {
     pub(super) value: String,
 }

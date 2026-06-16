@@ -4,6 +4,7 @@ use crate::{
 use ordered_float::OrderedFloat;
 
 #[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[surreal(crate = "::surrealdb_types")]
 pub struct CurrencyValue {
     pub value: OrderedFloatIThink,
 }

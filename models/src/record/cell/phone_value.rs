@@ -11,6 +11,7 @@ use std::str::FromStr;
 use super::single_line_value::SingleLineValue;
 
 #[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[surreal(crate = "::surrealdb_types")]
 pub struct PhoneValue {
     pub(super) value: String,
 }

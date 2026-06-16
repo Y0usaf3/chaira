@@ -6,6 +6,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[surreal(crate = "::surrealdb_types")]
 pub struct RatingValue {
     pub value: u8,
 }

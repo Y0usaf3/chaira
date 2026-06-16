@@ -59,6 +59,7 @@ can!(FieldPermissions, FieldPermission);
 macro_rules! relation {
     ( $( $x:ident ,$y:ident), * ) => {
         #[derive(Deserialize, Serialize, PartialEq, Eq, SurrealValue)]
+        #[surreal(crate = "::surrealdb_types")]
         $(pub struct $x {
             pub perm: $y,
         })*

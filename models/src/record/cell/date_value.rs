@@ -5,6 +5,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[surreal(crate = "::surrealdb_types")]
 pub struct DateValue {
     pub value: Datetime,
 }

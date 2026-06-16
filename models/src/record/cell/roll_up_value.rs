@@ -2,6 +2,7 @@ use crate::kinds::AggregateFunction;
 use crate::prelude::*;
 
 #[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[surreal(crate = "::surrealdb_types")]
 pub struct RollUpValue {
     link_field_id: FieldId,
     target_field_id: FieldId,

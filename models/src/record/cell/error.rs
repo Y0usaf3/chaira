@@ -4,6 +4,7 @@ use thiserror::Error;
 #[derive(
     Error, Debug, Clone, PartialEq, Eq, SurrealValue, serde::Serialize, serde::Deserialize,
 )]
+#[surreal(crate = "::surrealdb_types")]
 pub enum ValueError {
     #[error("Invalid email format: {0}")]
     InvalidEmail(String),

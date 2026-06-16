@@ -8,6 +8,7 @@ use surrealdb_types::SurrealValue;
 // are allowed to modify or soft-delete a Base.
 
 #[derive(SurrealValue, Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[surreal(crate = "::surrealdb_types")]
 pub struct Base {
     pub id: Option<BaseId>,
     pub created_at: Option<Datetime>,

@@ -11,6 +11,7 @@ pub mod cell;
 pub use self::cell::*;
 
 #[derive(Debug, Clone, SurrealValue, Deserialize, Serialize)]
+#[surreal(crate = "::surrealdb_types")]
 pub struct Record {
     pub id: Option<RecordId>,
     pub created_at: Option<Datetime>,
@@ -23,6 +24,7 @@ pub struct Record {
 }
 
 #[derive(Debug, Clone, SurrealValue, Deserialize, Serialize)]
+#[surreal(crate = "::surrealdb_types")]
 pub struct CellMetadata {
     pub created_at: Datetime,
     pub updated_at: Datetime,
@@ -39,6 +41,7 @@ impl Default for CellMetadata {
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, SurrealValue)]
+#[surreal(crate = "::surrealdb_types")]
 pub struct InsertRecord {
     pub table: TableId,
     pub cells: HashMap<String, Value>,

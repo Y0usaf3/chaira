@@ -2,6 +2,7 @@ use crate::kinds::LinkType;
 use crate::prelude::*;
 
 #[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[surreal(crate = "::surrealdb_types")]
 pub struct LinkValue {
     pub target_table_id: TableId,
     pub record_ids: Vec<RecordId>,

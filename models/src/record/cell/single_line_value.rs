@@ -27,6 +27,7 @@ use super::phone_value::PhoneValue;
 use super::url_value::UrlValue;
 
 #[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[surreal(crate = "::surrealdb_types")]
 pub struct SingleLineValue {
     pub(super) value: String,
 }

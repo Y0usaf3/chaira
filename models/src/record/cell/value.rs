@@ -24,6 +24,7 @@ use crate::kinds::FieldConfig;
 use crate::{ValueType, prelude::*};
 
 #[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[surreal(crate = "::surrealdb_types")]
 pub enum Value {
     SingleLine(SingleLineValue),
     LongText(Box<LongTextValue>),

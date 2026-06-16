@@ -7,6 +7,7 @@ use crate::prelude::*;
 // may modify or soft-delete a Table.
 
 #[derive(Debug, Clone, PartialEq, SurrealValue, serde::Serialize, serde::Deserialize)]
+#[surreal(crate = "::surrealdb_types")]
 pub struct Table {
     pub id: Option<TableId>,
     pub created_at: Datetime,

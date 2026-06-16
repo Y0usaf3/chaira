@@ -1,9 +1,9 @@
 use leptos::prelude::*;
+use models::Base;
 use serde::{Deserialize, Serialize};
 
 #[server]
-pub async fn get_user_bases() -> Result<Vec<UserBase>, ServerFnError> {
-    use surrealdb::types::ToSql;
+pub async fn get_user_bases() -> Result<Vec<Base>, ServerFnError> {
     let service = crate::get_authenticated_service().await?;
 
     let bases = service
@@ -11,32 +11,17 @@ pub async fn get_user_bases() -> Result<Vec<UserBase>, ServerFnError> {
         .await
         .map_err(|e| ServerFnError::new(format!("Listing Bases failed: {e:?}")))?;
 
-    let user_bases = bases
-        .into_iter()
-        .map(|b| UserBase {
-            name: b.name,
-            owner_name: b.owner.0.key.to_sql(),
-            id: b.id.unwrap().0.key.to_sql(),
-        })
-        .collect();
-    Ok(user_bases)
+    Ok(bases)
 }
 
 #[server]
-pub async fn create_base(name: String) -> Result<UserBase, ServerFnError> {
+pub async fn create_base(name: String) -> Result<Base, ServerFnError> {
     let service = crate::get_authenticated_service().await?;
     let base = service
         .create_base(name)
         .await
         .map_err(|e| ServerFnError::new(format!("{e}")))?;
-    Ok(UserBase {
-        name: base.name,
-        owner_name: format!("{:?}", base.owner.0.key),
-        id: base
-            .id
-            .map(|id| format!("{:?}", id.0.key))
-            .unwrap_or_default(),
-    })
+    Ok(base)
 }
 
 #[component]
@@ -52,6 +37,7 @@ pub fn DashboardPage() -> impl IntoView {
             window().location().assign("/").unwrap();
         }
     });
+
     view! {
         <div class="flex h-screen w-full overflow-hidden bg-slate-100">
             <div class="order-first w-14 flex-shrink-0 flex flex-col h-full">

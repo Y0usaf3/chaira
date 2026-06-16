@@ -137,6 +137,9 @@ in {
         REDIS_URL = "redis://:${cfg.redis.password}@${cfg.redis.host}:${toString cfg.redis.port}";
         RUST_LOG = "info";
         LEPTOS_SITE_ROOT = "${chairaPkg}/target/site";
+        CLIENT_ID = cfg.hackclub-auth.client_id;
+        CLIENT_SECRET = cfg.hackclub-auth.client_secret;
+        REDIRECT_URI = cfg.hackclub-auth.redirect_uri;
       };
 
       serviceConfig = {

@@ -18,7 +18,7 @@ async fn main() {
         leptos_options.site_root = env_site_root.into();
     }
     log!(
-        "site root : {} ||| {}",
+        "site root : {} ||| site pkg dir {}",
         leptos_options.site_root,
         leptos_options.site_pkg_dir
     );
@@ -28,10 +28,11 @@ async fn main() {
         // somewhere else
         // omg and i was wondering why it was not authentificating the user even after restarting
         // the server, bruh
+        //
+        // TODO: bruh we should put this inside a env var ;-;
         key: Key::from("zgj1s9526J0/ZYEhg1AaWhy1lcM6m9XDuxNM1weGFMpiljBRRnZ5JoQGvB21EXavRniJ+HuSew7rx0gDjXQKA==".as_bytes()),
     };
 
-    // Generate the list of routes in your Leptos App
     let routes = generate_route_list(App);
 
     service::db::init().await;

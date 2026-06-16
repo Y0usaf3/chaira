@@ -12,7 +12,7 @@ impl SurrealValue for OrderedFloatIThink {
 
     fn into_value(self) -> XValue {
         use surrealdb_types::Number;
-        XValue::Number(Number::Float(self.0 .0))
+        XValue::Number(Number::Float(self.0.0))
     }
 
     fn from_value(value: XValue) -> Result<Self, surrealdb_types::Error> {

@@ -64,6 +64,7 @@ pub fn App() -> impl IntoView {
                     <Route path=StaticSegment("") view=HomePage />
                     <Route path=path!("/about") view=AboutPage />
                     <Route path=path!("/dashboard") view=DashboardPage />
+                    <Route path=path!("/create") view=CreatePage />
                 </Routes>
             </main>
         </Router>
@@ -71,15 +72,14 @@ pub fn App() -> impl IntoView {
 }
 
 #[cfg(feature = "ssr")]
-pub async fn get_authenticated_service() -> Result<service::user::UserService, ServerFnError>
-{
+pub async fn get_authenticated_service() -> Result<service::user::UserService, ServerFnError> {
     use axum::extract::ConnectInfo;
     use axum::http::HeaderMap;
     use axum_extra::extract::cookie::PrivateCookieJar;
-    use service::user::{AuthMethod, Session, UserService};
     use leptos::context::use_context;
     use leptos::prelude::ServerFnError;
     use leptos_axum::{extract, extract_with_state};
+    use service::user::{AuthMethod, Session, UserService};
     use std::net::SocketAddr;
     let ConnectInfo(addr): ConnectInfo<SocketAddr> = extract()
         .await

@@ -47,18 +47,16 @@ pub async fn oauth(
 
     let mut service = match UserService::login(hca_auth).await {
         Ok(existing_service) => existing_service,
-        Err(e) =>  {
+        Err(e) => {
             eprintln!("Registration error: {:?}", e);
-            return Err(StatusCode::INTERNAL_SERVER_ERROR)
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
         }
     };
-
 
     let session_token = service
         .create_session(ip, user_agent)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
 
     let cookie = Cookie::build(("session", session_token))
         .path("/")

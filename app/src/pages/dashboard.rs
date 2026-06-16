@@ -1,6 +1,6 @@
 use leptos::prelude::*;
+use leptos_router::{NavigateOptions, hooks::use_navigate};
 use models::Base;
-use serde::{Deserialize, Serialize};
 
 #[server]
 pub async fn get_user_bases() -> Result<Vec<Base>, ServerFnError> {
@@ -14,19 +14,14 @@ pub async fn get_user_bases() -> Result<Vec<Base>, ServerFnError> {
     Ok(bases)
 }
 
-#[server]
-pub async fn create_base(name: String) -> Result<Base, ServerFnError> {
-    let service = crate::get_authenticated_service().await?;
-    let base = service
-        .create_base(name)
-        .await
-        .map_err(|e| ServerFnError::new(format!("{e}")))?;
-    Ok(base)
-}
-
 #[component]
 pub fn DashboardPage() -> impl IntoView {
-     let (refresh_count, set_refresh_count) = signal(0);
+    let naviguate = use_navigate();
+    let naviguate_to_create_base = move |_| {
+        naviguate("/create", NavigateOptions::default());
+    };
+
+    let (refresh_count, set_refresh_count) = signal(0);
     let bases = Resource::new(
         move || refresh_count.get(),
         |_| async move { get_user_bases().await },
@@ -50,7 +45,10 @@ pub fn DashboardPage() -> impl IntoView {
                 </div>
 
                 <div class="w-full flex justify-center mt-auto py-[4.5]">
-                    <button class="pixel-corners-pfp bg-black w-[32px] h-[32px] flex items-center justify-center">
+                    <button
+                        on:click=naviguate_to_create_base
+                        class="pixel-corners-pfp bg-black w-[32px] h-[32px] flex items-center justify-center"
+                    >
                         <img src="/svg/plus.svg" class="w-[16px] h-[16px] pixelated fill-white" />
                     </button>
                 </div>
@@ -67,11 +65,32 @@ pub fn DashboardPage() -> impl IntoView {
                 </div>
                 <main class="pixel-corners-wrapper flex-1 overflow-hidden p-6 mb-[-3px] mr-[-3px]">
                     <div class="overflow-y-auto">
-                        <p>"imagine some bases here"</p>
-                        <p>"and other stuff here"</p>
-                        <p>"ooh look a notification"</p>
-                        <p>"its from who ??"</p>
-                        <p>"who tf is rael?!"</p>
+                        <Suspense>
+                            {move || {
+                                Suspend::new(async move {
+                                    match bases.get() {
+                                        Some(Ok(list)) if list.is_empty() => {
+                                            view! { <p>"EMPTY"</p> }.into_any()
+                                        }
+                                        Some(Ok(list)) => {
+                                            view! { <p>{format!("{list:?}")}</p> }.into_any()
+                                        }
+                                        Some(Err(_)) => {
+                                            view! {
+                                                <p class="text-red-500">
+                                                    "Unauthentified ! you silly goober"
+                                                </p>
+                                            }
+                                                .into_any()
+                                        }
+                                        _ => {
+                                            view! { <p class="text-red-500">"Unknown error"</p> }
+                                                .into_any()
+                                        }
+                                    }
+                                })
+                            }}
+                        </Suspense>
                     </div>
                 </main>
             </div>

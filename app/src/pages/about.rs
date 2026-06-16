@@ -1,6 +1,6 @@
 use crate::components::{Button, Footer};
 use leptos::prelude::*;
-use leptos_router::{hooks::use_navigate, NavigateOptions};
+use leptos_router::{NavigateOptions, hooks::use_navigate};
 
 #[component]
 pub fn AboutPage() -> impl IntoView {

@@ -1,3 +1,3 @@
 pub use crate::ids::*;
 pub use serde::{Deserialize, Serialize};
-pub use surrealdb_types::{uuid::Uuid, Datetime, Duration, Kind, Number, SurrealValue};
+pub use surrealdb_types::{Datetime, Duration, Kind, Number, SurrealValue, uuid::Uuid};

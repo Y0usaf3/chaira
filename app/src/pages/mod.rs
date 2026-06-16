@@ -1,10 +1,13 @@
 mod about;
+mod create;
 mod dashboard;
 mod home;
 
 pub use about::AboutPage;
+pub use create::CreatePage;
 pub use dashboard::DashboardPage;
 pub use home::HomePage;
+
 use std::hash::{DefaultHasher, Hash, Hasher};
 
 pub fn name_to_hex_color(name: &str) -> String {

@@ -161,7 +161,7 @@ impl UserService {
             AuthMethod::Session(session) => {
                 let user =
                     SessionService::authentify(&session.token, &session.ip, &session.agent).await?;
-                (user, false) 
+                (user, false)
             }
         };
 

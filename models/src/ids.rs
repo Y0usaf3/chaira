@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use surrealdb::types::{record_id::RecordId as Thing, uuid};
+use surrealdb_types::{record_id::RecordId as Thing, uuid};
 
 macro_rules! define_ids {
     ($($name:ident),*) => {

@@ -177,7 +177,10 @@ dependencies = [
  "leptos_meta",
  "leptos_router",
  "leptos_ui",
+ "models",
+ "serde",
  "service",
+ "surrealdb",
  "thiserror 2.0.18",
 ]
 
@@ -3415,7 +3418,7 @@ dependencies = [
  "phonenumber",
  "serde",
  "serde_json",
- "surrealdb",
+ "surrealdb-types",
  "thiserror 2.0.18",
  "validator",
 ]

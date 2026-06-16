@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use surrealdb::types::Value as XValue;
+use surrealdb_types::Value as XValue;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct Meme(pub String);
@@ -13,10 +13,10 @@ impl SurrealValue for Meme {
         XValue::String(self.0)
     }
 
-    fn from_value(value: XValue) -> Result<Self, surrealdb::types::Error> {
+    fn from_value(value: XValue) -> Result<Self, surrealdb_types::Error> {
         match value {
             XValue::String(s) => Ok(Meme(s)),
-            _ => Err(surrealdb::types::Error::thrown(
+            _ => Err(surrealdb_types::Error::thrown(
                 "Expected a string (Strand) for MimeWrapper".to_string(),
             )),
         }

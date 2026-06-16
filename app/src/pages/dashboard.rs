@@ -1,7 +1,57 @@
 use leptos::prelude::*;
+use serde::{Deserialize, Serialize};
+
+#[server]
+pub async fn get_user_bases() -> Result<Vec<UserBase>, ServerFnError> {
+    use surrealdb::types::ToSql;
+    let service = crate::get_authenticated_service().await?;
+
+    let bases = service
+        .list_bases()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Listing Bases failed: {e:?}")))?;
+
+    let user_bases = bases
+        .into_iter()
+        .map(|b| UserBase {
+            name: b.name,
+            owner_name: b.owner.0.key.to_sql(),
+            id: b.id.unwrap().0.key.to_sql(),
+        })
+        .collect();
+    Ok(user_bases)
+}
+
+#[server]
+pub async fn create_base(name: String) -> Result<UserBase, ServerFnError> {
+    let service = crate::get_authenticated_service().await?;
+    let base = service
+        .create_base(name)
+        .await
+        .map_err(|e| ServerFnError::new(format!("{e}")))?;
+    Ok(UserBase {
+        name: base.name,
+        owner_name: format!("{:?}", base.owner.0.key),
+        id: base
+            .id
+            .map(|id| format!("{:?}", id.0.key))
+            .unwrap_or_default(),
+    })
+}
 
 #[component]
 pub fn DashboardPage() -> impl IntoView {
+     let (refresh_count, set_refresh_count) = signal(0);
+    let bases = Resource::new(
+        move || refresh_count.get(),
+        |_| async move { get_user_bases().await },
+    );
+
+    Effect::new(move || {
+        if let Some(Err(_)) = bases.get() {
+            window().location().assign("/").unwrap();
+        }
+    });
     view! {
         <div class="flex h-screen w-full overflow-hidden bg-slate-100">
             <div class="order-first w-14 flex-shrink-0 flex flex-col h-full">

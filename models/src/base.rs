@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use surrealdb_types::SurrealValue;
 
 // A Base represents a sub-entity within a Workspace.
 //

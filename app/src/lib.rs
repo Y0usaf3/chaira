@@ -2,7 +2,7 @@ use leptos::prelude::*;
 use leptos_meta::{MetaTags, Stylesheet, Title, provide_meta_context};
 use leptos_router::{
     StaticSegment,
-    components::{Route, Router, Routes},
+    components::{Route, Router, Routes, ProtectedRoute},
     path,
 };
 
@@ -51,8 +51,22 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
     }
 }
 
+#[server]
+pub async fn is_athenticated() -> Result<bool, ServerFnError> {
+   match crate::get_authenticated_service().await {
+        Ok(_) => Ok(true),
+        Err(_) => Err(ServerFnError::Registration("whatever".to_string()))
+    }
+}
+
 #[component]
 pub fn App() -> impl IntoView {
+    let auth_status = Resource::new(
+        || (), 
+        |_| async move {
+            is_athenticated().await.is_ok()
+        }
+    );
     provide_meta_context();
 
     view! {
@@ -63,8 +77,18 @@ pub fn App() -> impl IntoView {
                 <Routes fallback=|| "Page not found.".into_view()>
                     <Route path=StaticSegment("") view=HomePage />
                     <Route path=path!("/about") view=AboutPage />
-                    <Route path=path!("/dashboard") view=DashboardPage />
-                    <Route path=path!("/create") view=CreatePage />
+                    <ProtectedRoute
+                        path=path!("/dashboard")
+                        view=DashboardPage
+                        condition=move || auth_status.get()
+                        redirect_path=|| "/"
+                    />
+                    <ProtectedRoute
+                        path=path!("/create")
+                        view=CreatePage
+                        condition=move || auth_status.get()
+                        redirect_path=|| "/"
+                    />
                 </Routes>
             </main>
         </Router>

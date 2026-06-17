@@ -1,6 +1,7 @@
 use leptos::prelude::*;
 use leptos_router::{NavigateOptions, hooks::use_navigate};
 use models::Base;
+use crate::components::BaseCard;
 
 #[server]
 pub async fn get_user_bases() -> Result<Vec<Base>, ServerFnError> {
@@ -73,7 +74,17 @@ pub fn DashboardPage() -> impl IntoView {
                                             view! { <p>"EMPTY"</p> }.into_any()
                                         }
                                         Some(Ok(list)) => {
-                                            view! { <p>{format!("{list:?}")}</p> }.into_any()
+                                            view! {
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                    {list
+                                                        .into_iter()
+                                                        .map(|base| {
+                                                            view! { <BaseCard base=base.clone() /> }
+                                                        })
+                                                        .collect_view()}
+                                                </div>
+                                            }
+                                                .into_any()
                                         }
                                         Some(Err(_)) => {
                                             view! {

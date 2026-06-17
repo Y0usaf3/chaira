@@ -75,10 +75,17 @@ pub fn App() -> impl IntoView {
         <Router>
             <main>
                 <Routes fallback=|| "Page not found.".into_view()>
-                    <Route path=StaticSegment("") view=HomePage />
+                    <Route path=path!("/") view=HomePage />
                     <Route path=path!("/about") view=AboutPage />
+                    <ProtectedParentRoute
+                        path=path!("/")
+                        view=|| view! { <Outlet /> }
+                        condition=move || auth_status.get()
+                        redirect_path=|| "/"
+                    >
                         <Route path=path!("/dashboard") view=DashboardPage />
                         <Route path=path!("/create") view=CreatePage />
+                    </ProtectedParentRoute>
                 </Routes>
             </main>
         </Router>

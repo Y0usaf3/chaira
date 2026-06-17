@@ -1,4 +1,4 @@
-use crate::components::Footer;
+use crate::components::{Footer, FilteredInput};
 use leptos::{prelude::*, reactive::spawn_local};
 use leptos_router::{NavigateOptions, hooks::use_navigate};
 use models::Base;
@@ -18,8 +18,9 @@ pub fn CreatePage() -> impl IntoView {
     let (name, set_name) = signal("".to_string());
     let (description, set_description) = signal("".to_string());
     let naviguate = use_navigate();
+    
     let naviguate_and_create_base = move |_| {
-        spawn_local(async move{
+        spawn_local(async move {
             create_base(name.get()).await;
         });
         naviguate("/dashboard", NavigateOptions::default());
@@ -37,26 +38,15 @@ pub fn CreatePage() -> impl IntoView {
 
                     <form class="flex flex-col gap-5" on:submit=|ev| ev.prevent_default()>
 
-                        <div class="flex flex-col gap-1">
-                            <label class="text-sm font-semibold text-slate-700">"Base Name"</label>
-                            <div class="pixel-input--wrapper p-4">
-                                <input
-                                    type="text"
-                                    class="placeholder:text-slate-400 focus:outline-none bg-transparent w-full"
-                                    placeholder="e.g. OrpheusTasks"
-                                    on:input:target=move |ev| {
-                                        let filtered_val: String = ev
-                                            .target()
-                                            .value()
-                                            .chars()
-                                            .filter(|c| c.is_ascii_alphabetic())
-                                            .collect();
-                                        set_name.set(filtered_val);
-                                    }
-                                    prop:value=name
-                                />
-                            </div>
-                        </div>
+                        <FilteredInput
+                            label="Base Name"
+                            placeholder="e.g. OrpheusTasks"
+                            value=name
+                            set_value=set_name
+                            filter=Callback::new(|val: String| {
+                                val.chars().filter(|c| c.is_ascii_alphabetic()).collect()
+                            })
+                        />
 
                         <div class="flex flex-col gap-1">
                             <label class="text-sm font-semibold text-slate-700">

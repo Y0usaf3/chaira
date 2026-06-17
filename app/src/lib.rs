@@ -2,7 +2,7 @@ use leptos::prelude::*;
 use leptos_meta::{MetaTags, Stylesheet, Title, provide_meta_context};
 use leptos_router::{
     StaticSegment,
-    components::{Route, Router, Routes, ProtectedRoute},
+    components::{Route, Router, Routes, ProtectedParentRoute, Outlet},
     path,
 };
 
@@ -77,18 +77,15 @@ pub fn App() -> impl IntoView {
                 <Routes fallback=|| "Page not found.".into_view()>
                     <Route path=StaticSegment("") view=HomePage />
                     <Route path=path!("/about") view=AboutPage />
-                    <ProtectedRoute
-                        path=path!("/dashboard")
-                        view=DashboardPage
+                    <ProtectedParentRoute
+                        path=path!("")
+                        view=|| view! { <Outlet /> }
                         condition=move || auth_status.get()
                         redirect_path=|| "/"
-                    />
-                    <ProtectedRoute
-                        path=path!("/create")
-                        view=CreatePage
-                        condition=move || auth_status.get()
-                        redirect_path=|| "/"
-                    />
+                    >
+                        <Route path=path!("/dashboard") view=DashboardPage />
+                        <Route path=path!("/create") view=CreatePage />
+                    </ProtectedParentRoute>
                 </Routes>
             </main>
         </Router>

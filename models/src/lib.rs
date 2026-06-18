@@ -20,4 +20,5 @@ pub use crate::record::*;
 pub use crate::session::*;
 pub use crate::table::*;
 pub use crate::user::*;
+pub use surrealdb_types;
 pub use surrealdb_types::ToSql;

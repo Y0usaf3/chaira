@@ -84,7 +84,7 @@ pub fn App() -> impl IntoView {
                     >
                         <Route path=path!("/dashboard") view=DashboardPage />
                         <Route path=path!("/create") view=CreatePage />
-                        <Rout path=path!("/base/:id") view=BasePage />
+                        <Route path=path!("/base/:id") view=BasePage />
                     </ProtectedParentRoute>
                 </Routes>
             </main>

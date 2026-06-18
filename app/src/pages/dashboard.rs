@@ -64,8 +64,8 @@ pub fn DashboardPage() -> impl IntoView {
                         />
                     </div>
                 </div>
-                <main class="pixel-corners-wrapper flex-1 overflow-hidden p-6 mb-[-3px] mr-[-3px]">
-                    <div class="overflow-y-auto">
+                <main class="pixel-corners-wrapper flex-1 overflow-hidden mb-[-3px] mr-[-3px] bg-slate-50">
+                    <div class="overflow-y-auto w-full h-full p-6">
                         <Suspense>
                             {move || {
                                 Suspend::new(async move {
@@ -75,7 +75,7 @@ pub fn DashboardPage() -> impl IntoView {
                                         }
                                         Some(Ok(list)) => {
                                             view! {
-                                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full justify-items-stretch">
                                                     {list
                                                         .into_iter()
                                                         .map(|base| {

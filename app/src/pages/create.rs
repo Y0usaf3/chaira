@@ -47,6 +47,7 @@ pub fn CreatePage() -> impl IntoView {
                             filter=Callback::new(|val: String| {
                                 val.chars().filter(|c| c.is_ascii_alphabetic()).collect()
                             })
+                            autofocus=true
                         />
 
                         <div class="flex flex-col gap-1">

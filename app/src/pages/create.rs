@@ -21,7 +21,8 @@ pub fn CreatePage() -> impl IntoView {
 
     let naviguate_and_create_base = move |_| {
         spawn_local(async move {
-            create_base(name.get()).await;
+            let name = name.get();
+            let _ = create_base(name).await;
         });
         naviguate("/dashboard", NavigateOptions::default());
     };

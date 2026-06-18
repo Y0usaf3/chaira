@@ -1,4 +1,4 @@
-use crate::components::{Footer, FilteredInput};
+use crate::components::{Footer, FilteredInput, Chira};
 use leptos::{prelude::*, reactive::spawn_local};
 use leptos_router::{NavigateOptions, hooks::use_navigate};
 use models::Base;
@@ -27,6 +27,7 @@ pub fn CreatePage() -> impl IntoView {
     };
 
     view! {
+        <Chira />
         <div class="min-h-screen w-screen relative flex flex-col bg-slate-100">
             <main class="flex-grow flex flex-col justify-center items-center">
 

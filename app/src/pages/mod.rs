@@ -1,9 +1,11 @@
 mod about;
+mod base;
 mod create;
 mod dashboard;
 mod home;
 
 pub use about::AboutPage;
+pub use base::BasePage;
 pub use create::CreatePage;
 pub use dashboard::DashboardPage;
 pub use home::HomePage;

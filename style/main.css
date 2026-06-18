@@ -12,6 +12,37 @@ body {
         font-family: 'Pixel';
 }
 
+::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+}
+
+::-webkit-scrollbar-track {
+        background: #cbd5e1;
+        border-left: 2px solid #000;
+}
+
+::-webkit-scrollbar-thumb {
+        background: #000;
+        border: 2px solid #cbd5e1;
+        image-rendering: pixelated;
+}
+
+::-webkit-scrollbar-thumb:hover {
+        background: #333;
+}
+
+::-webkit-scrollbar-corner {
+        background: #cbd5e1;
+        border-top: 2px solid #000;
+        border-left: 2px solid #000;
+}
+
+html {
+        scrollbar-color: #000 #cbd5e1;
+        scrollbar-width: thin;
+}
+
 *{        overscroll-behavior: none !important;
 }
 

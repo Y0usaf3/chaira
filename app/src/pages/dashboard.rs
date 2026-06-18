@@ -1,9 +1,10 @@
 use std::time::Instant;
 
-use crate::components::BaseCard;
+use crate::components::{BaseCard, FilteredInput, Popup};
 use leptos::prelude::*;
+use leptos::reactive::spawn_local;
 use leptos_router::{NavigateOptions, hooks::use_navigate};
-use models::Base;
+use models::{Base, ToSql};
 
 #[server]
 pub async fn get_user_bases() -> Result<Vec<Base>, ServerFnError> {
@@ -18,14 +19,45 @@ pub async fn get_user_bases() -> Result<Vec<Base>, ServerFnError> {
     Ok(bases)
 }
 
+#[server]
+pub async fn create_base_dash(name: String) -> Result<Base, ServerFnError> {
+    let service = crate::get_authenticated_service().await?;
+    let base = service
+        .create_base(name)
+        .await
+        .map_err(|e| ServerFnError::new(format!("{e}")))?;
+    Ok(base)
+}
+
 #[component]
 pub fn DashboardPage() -> impl IntoView {
     let naviguate = use_navigate();
-    let naviguate_to_create_base = move |_| {
-        naviguate("/create", NavigateOptions::default());
-    };
+    let (show_create_popup, set_show_create_popup) = signal(false);
+    let (name, set_name) = signal(String::new());
 
     let (refresh_count, set_refresh_count) = signal(0);
+
+    let handle_create_base = {
+        let set_show = set_show_create_popup.clone();
+        let set_name = set_name.clone();
+        let set_refresh = set_refresh_count.clone();
+        move |_: leptos::ev::MouseEvent| {
+            let base_name = name.get_untracked();
+            if base_name.is_empty() {
+                return;
+            }
+            let show = set_show.clone();
+            let set_name = set_name.clone();
+            let set_refresh = set_refresh.clone();
+            spawn_local(async move {
+                if let Ok(_) = create_base_dash(base_name).await {
+                    show.set(false);
+                    set_name.set(String::new());
+                    set_refresh.update(|v| *v += 1);
+                }
+            });
+        }
+    };
     let bases = Resource::new(
         move || refresh_count.get(),
         |_| async move { get_user_bases().await },
@@ -50,7 +82,7 @@ pub fn DashboardPage() -> impl IntoView {
 
                 <div class="w-full flex justify-center mt-auto py-[4.5]">
                     <button
-                        on:click=naviguate_to_create_base
+                        on:click=move |_| set_show_create_popup.set(true)
                         class="pixel-corners-pfp bg-black w-[32px] h-[32px] flex items-center justify-center"
                     >
                         <img src="/svg/plus.svg" class="w-[16px] h-[16px] pixelated fill-white" />
@@ -109,5 +141,36 @@ pub fn DashboardPage() -> impl IntoView {
                 </main>
             </div>
         </div>
+
+        <Popup show=show_create_popup.into() set_show=set_show_create_popup>
+            <div class="mb-6 border-b-2 border-slate-200 pb-2 border-dashed">
+                <h2 class="text-2xl font-bold text-slate-800">"Create New Base"</h2>
+                <p class="text-sm text-slate-500">"Set up your new workspace."</p>
+            </div>
+
+            <form class="flex flex-col gap-5" on:submit=|ev| ev.prevent_default()>
+                <FilteredInput
+                    label="Base Name"
+                    placeholder="e.g. OrpheusTasks"
+                    value=name
+                    set_value=set_name
+                    filter=Callback::new(|val: String| {
+                        val.chars().filter(|c| c.is_ascii_alphabetic()).collect()
+                    })
+                    autofocus=true
+                />
+
+                <button
+                    type="submit"
+                    class="pixel-corners--wrapper mt-2 p-3 bg-slate-800 text-white font-bold hover:bg-slate-700 transition-colors cursor-pointer w-full"
+                    on:click={
+                        let handle = handle_create_base.clone();
+                        move |ev| handle(ev)
+                    }
+                >
+                    "Create Base"
+                </button>
+            </form>
+        </Popup>
     }
 }

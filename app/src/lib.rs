@@ -78,7 +78,6 @@ pub fn App() -> impl IntoView {
                         redirect_path=|| "/"
                     >
                         <Route path=path!("/dashboard") view=DashboardPage />
-                        <Route path=path!("/create") view=CreatePage />
                         <Route path=path!("/base/:id") view=BasePage />
                         <Route path=path!("/base/:id/:table_id") view=BasePage />
                     </ProtectedParentRoute>

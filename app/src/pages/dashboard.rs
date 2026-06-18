@@ -1,17 +1,20 @@
+use std::time::Instant;
+
+use crate::components::BaseCard;
 use leptos::prelude::*;
 use leptos_router::{NavigateOptions, hooks::use_navigate};
 use models::Base;
-use crate::components::BaseCard;
 
 #[server]
 pub async fn get_user_bases() -> Result<Vec<Base>, ServerFnError> {
+    let instant = Instant::now();
     let service = crate::get_authenticated_service().await?;
 
     let bases = service
         .list_bases()
         .await
         .map_err(|e| ServerFnError::new(format!("Listing Bases failed: {e:?}")))?;
-
+    println!("{:?}", instant.elapsed());
     Ok(bases)
 }
 

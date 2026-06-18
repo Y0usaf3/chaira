@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 use leptos_meta::{MetaTags, Stylesheet, Title, provide_meta_context};
 use leptos_router::{
-    components::{Route, Router, Routes, ProtectedParentRoute, Outlet},
+    components::{Outlet, ProtectedParentRoute, Route, Router, Routes},
     path,
 };
 
@@ -52,20 +52,15 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
 
 #[server]
 pub async fn is_athenticated() -> Result<bool, ServerFnError> {
-   match crate::get_authenticated_service().await {
+    match crate::get_authenticated_service().await {
         Ok(_) => Ok(true),
-        Err(_) => Err(ServerFnError::Registration("whatever".to_string()))
+        Err(_) => Err(ServerFnError::Registration("whatever".to_string())),
     }
 }
 
 #[component]
 pub fn App() -> impl IntoView {
-    let auth_status = Resource::new(
-        || (), 
-        |_| async move {
-            is_athenticated().await.is_ok()
-        }
-    );
+    let auth_status = Resource::new(|| (), |_| async move { is_athenticated().await.is_ok() });
     provide_meta_context();
 
     view! {

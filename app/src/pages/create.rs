@@ -1,4 +1,4 @@
-use crate::components::{Footer, FilteredInput, Chira};
+use crate::components::{Chira, FilteredInput, Footer};
 use leptos::{prelude::*, reactive::spawn_local};
 use leptos_router::{NavigateOptions, hooks::use_navigate};
 use models::Base;
@@ -18,7 +18,7 @@ pub fn CreatePage() -> impl IntoView {
     let (name, set_name) = signal("".to_string());
     let (description, set_description) = signal("".to_string());
     let naviguate = use_navigate();
-    
+
     let naviguate_and_create_base = move |_| {
         spawn_local(async move {
             create_base(name.get()).await;

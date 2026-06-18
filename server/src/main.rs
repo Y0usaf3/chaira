@@ -1,3 +1,5 @@
+#![recursion_limit = "512"]
+
 use app::*;
 use axum::Router;
 use axum::routing::get;

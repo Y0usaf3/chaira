@@ -6,11 +6,11 @@ use axum_extra::extract::PrivateCookieJar;
 use axum_extra::extract::cookie::Cookie;
 use axum_extra::extract::cookie::SameSite;
 use headers::UserAgent;
-use std::time::Instant;
 use serde::Deserialize;
 use service::HCAUTH;
 use service::user::UserService;
 use std::net::SocketAddr;
+use std::time::Instant;
 
 #[derive(Deserialize)]
 pub struct Code {
@@ -47,7 +47,10 @@ pub async fn oauth(
                     "[OAuth] Existing session validated successfully. Time taken: {:?}",
                     session_start.elapsed()
                 );
-                println!("[OAuth] Total execution time (short-circuit): {:?}", start_time.elapsed());
+                println!(
+                    "[OAuth] Total execution time (short-circuit): {:?}",
+                    start_time.elapsed()
+                );
                 return Ok((jar, Redirect::to("/dashboard")));
             }
             Err(e) => {
@@ -59,7 +62,9 @@ pub async fn oauth(
             }
         }
     } else {
-        println!("[OAuth] No active session cookie found. Proceeding with standard OAuth exchange.");
+        println!(
+            "[OAuth] No active session cookie found. Proceeding with standard OAuth exchange."
+        );
     }
 
     println!("[OAuth] Exchanging authorization code for user login...");
@@ -114,7 +119,10 @@ pub async fn oauth(
 
     let updated_jar = jar.add(cookie);
 
-    println!("[OAuth] Process completed successfully. Total handling time: {:?}", start_time.elapsed());
+    println!(
+        "[OAuth] Process completed successfully. Total handling time: {:?}",
+        start_time.elapsed()
+    );
     Ok((updated_jar, Redirect::to("/dashboard")))
 }
 

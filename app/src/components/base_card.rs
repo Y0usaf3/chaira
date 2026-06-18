@@ -1,8 +1,8 @@
 use crate::components::Button;
 use crate::name_to_hex_color;
 use leptos::prelude::*;
-use leptos_router::hooks::use_navigate;
 use leptos_router::NavigateOptions;
+use leptos_router::hooks::use_navigate;
 use models::Base;
 use models::ToSql;
 

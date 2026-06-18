@@ -50,7 +50,7 @@ pub async fn create_table(base_key: String, name: String) -> Result<Table, Serve
 }
 
 #[component]
-fn TableButton<F>(table: Table, base_id: String, naviguate: F) -> impl IntoView
+fn TableButton<F>(table: Table, base_id: String, naviguate: F, is_selected: bool) -> impl IntoView
 where
     F: Fn(&str, NavigateOptions) + Clone + 'static,
 {
@@ -58,9 +58,15 @@ where
     let name = table.name;
     let path = format!("/base/{}/{}", base_id, key);
 
+    let classes = if is_selected {
+        "px-4 py-4 bg-black text-white border-r-3 border-black font-medium shrink-0"
+    } else {
+        "px-4 py-4 bg-slate-20 border-r-3 border-black font-medium shrink-0"
+    };
+
     view! {
         <button
-            class="px-4 py-4 bg-slate-20 border-r-3 border-black font-medium shrink-0"
+            class=classes
             on:click=move |_| { naviguate(&path, NavigateOptions::default()) }
         >
             {name}
@@ -130,56 +136,58 @@ pub fn BasePage() -> impl IntoView {
         let naviguate = naviguate.clone();
         let set_show = set_show_create_popup.clone();
         move || {
-            table_id().is_empty().then(|| {
-                let base_id = id();
-                let naviguate = naviguate.clone();
-                view! {
-                    <Suspense fallback=|| {
-                        view! {
-                            <div class="h-14 flex-shrink-0 border-b-[3px] border-black flex items-center"></div>
-                        }
-                    }>
-                        {move || {
-                            let base_id = base_id.clone();
-                            let naviguate = naviguate.clone();
-                            let base_data = base_data.clone();
-                            Suspend::new(async move {
-                                match base_data.get() {
-                                    Some(Ok(tables)) => {
-                                        view! {
-                                            <div class="h-14 flex-shrink-0 border-b-[3px] border-black flex items-center overflow-x-auto overflow-y-hidden">
-                                                {tables
-                                                    .into_iter()
-                                                    .map(move |table| {
-                                                        view! {
-                                                            <TableButton
-                                                                table=table
-                                                                base_id=base_id.clone()
-                                                                naviguate=naviguate.clone()
-                                                            />
-                                                        }
-                                                    })
-                                                    .collect_view()}
-                                                <button
-                                                    class="size-[28px] bg-black flex items-center justify-center shrink-0 pixel-corners-pfp ml-4"
-                                                    on:click=move |_| set_show.set(true)
-                                                >
-                                                    <img
-                                                        src="/svg/plus.svg"
-                                                        class="size-[14px] pixelated margin-auto"
-                                                    />
-                                                </button>
-                                            </div>
-                                        }
-                                            .into_any()
+            let base_id = id();
+            let naviguate = naviguate.clone();
+            view! {
+                <Suspense fallback=|| {
+                    view! {
+                        <div class="h-14 flex-shrink-0 border-b-[3px] border-black flex items-center"></div>
+                    }
+                }>
+                    {move || {
+                        let base_id = base_id.clone();
+                        let naviguate = naviguate.clone();
+                        let base_data = base_data.clone();
+                        let current_table_id = table_id();
+                        Suspend::new(async move {
+                            match base_data.get() {
+                                Some(Ok(tables)) => {
+                                    view! {
+                                        <div class="h-14 flex-shrink-0 border-b-[3px] border-black flex items-center overflow-x-auto overflow-y-hidden">
+                                            {tables
+                                                .into_iter()
+                                                .map(move |table| {
+                                                    let key = table.id.as_ref().map(|id| id.0.key.to_sql()).unwrap_or_default();
+                                                    let is_selected = key == current_table_id;
+                                                    view! {
+                                                        <TableButton
+                                                            table=table
+                                                            base_id=base_id.clone()
+                                                            naviguate=naviguate.clone()
+                                                            is_selected=is_selected
+                                                        />
+                                                    }
+                                                })
+                                                .collect_view()}
+                                            <button
+                                                class="size-[28px] bg-black flex items-center justify-center shrink-0 pixel-corners-pfp ml-4"
+                                                on:click=move |_| set_show.set(true)
+                                            >
+                                                <img
+                                                    src="/svg/plus.svg"
+                                                    class="size-[14px] pixelated margin-auto"
+                                                />
+                                            </button>
+                                        </div>
                                     }
-                                    _ => view! {}.into_any(),
+                                        .into_any()
                                 }
-                            })
-                        }}
-                    </Suspense>
-                }
-            })
+                                _ => view! {}.into_any(),
+                            }
+                        })
+                    }}
+                </Suspense>
+            }
         }
     };
 

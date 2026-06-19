@@ -46,11 +46,11 @@
     };
     wasmBindgenBin = pkgs.stdenv.mkDerivation rec {
       pname = "wasm-bindgen";
-      version = "0.2.123";
+      version = "0.2.125";
 
       src = pkgs.fetchurl {
         url = "https://github.com/wasm-bindgen/wasm-bindgen/releases/download/${version}/wasm-bindgen-${version}-x86_64-unknown-linux-musl.tar.gz";
-        hash = "sha256-gPxcHVwSj9Z+mbFDGO6r9537rfRZ7OLTi6k6guVXMMY=";
+        hash = "sha256-Idge90FKClhYYaYOpK4reXDsyu0J1KTgX4vEsVmCfeo=";
       };
 
       nativeBuildInputs = [pkgs.autoPatchelfHook];

@@ -61,7 +61,7 @@ in
 
       buildPhaseCargoCommand = ''
         export HOME=$(mktemp -d)
-        CARGO_LEPTOS_WASM_BINDGEN=$(command -v wasm-bindgen) cargo-leptos build --release
+        cargo-leptos build --release
       '';
 
       installPhase = ''

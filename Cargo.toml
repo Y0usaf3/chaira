@@ -25,7 +25,7 @@ thiserror = "2.0.12"
 tokio = { version = "1.45.0", features = ["full"] }
 tower = { version = "0.5.2", features = ["full"] }
 tower-http = { version = "0.6.4", features = ["full"] }
-wasm-bindgen = "0.2.121"
+wasm-bindgen = "0.2.125"
 axum-extra = { version = "0.12.6", features = ['cookie', 'cookie-private', "typed-header"] }
 headers = "0.4.1"
 

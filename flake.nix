@@ -53,9 +53,8 @@
         hash = "sha256-Idge90FKClhYYaYOpK4reXDsyu0J1KTgX4vEsVmCfeo=";
       };
 
-      nativeBuildInputs = [pkgs.autoPatchelfHook];
-
-      buildInputs = [pkgs.stdenv.cc.cc.lib];
+      dontAutoPatchelf = true;
+      phases = ["unpackPhase" "installPhase"];
 
       installPhase = ''
         mkdir -p $out/bin
@@ -69,11 +68,11 @@
     };
     SurrealDbBin =
       surrealdb-bin.packages.${system}.latest;
+    craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchain;
     chairaPkg = pkgs.callPackage ./package.nix {
       wasm-bindgen-cli = wasmBindgenBin;
       craneLib = craneLib;
     };
-    craneLib = crane.mkLib pkgs;
   in {
     packages.${system} = {
       surrealdb = SurrealDbBin;

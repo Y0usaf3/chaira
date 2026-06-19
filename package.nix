@@ -30,12 +30,13 @@
       tailwindcss_4
       libclang
       llvmPackages.bintools
+      stdenv.cc
     ];
 
     buildInputs = [
       openssl
       glib
-      stdenv.cc
+      stdenv.cc.cc.lib
     ];
 
     LIBCLANG_PATH = "${libclang.lib}/lib";

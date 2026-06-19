@@ -117,9 +117,15 @@ in {
           "notice"
           "--requirepass"
           cfg.redis.password
+          "--save"
+          ""
+          "--appendonly"
+          "no"
         ];
         Restart = "always";
         DynamicUser = true;
+        StateDirectory = "chaira-redis";
+        WorkingDirectory = "/var/lib/chaira-redis";
       };
     };
 

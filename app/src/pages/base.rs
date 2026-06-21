@@ -1,4 +1,4 @@
-use crate::components::{FilteredInput, Popup};
+use crate::components::{FilteredInput, Popup, PlusIcon};
 use leptos::prelude::*;
 use leptos::reactive::spawn_local;
 use leptos_router::NavigateOptions;
@@ -174,10 +174,7 @@ pub fn BasePage() -> impl IntoView {
                                                 class="size-[28px] bg-black flex items-center justify-center shrink-0 pixel-corners-pfp ml-4"
                                                 on:click=move |_| set_show.set(true)
                                             >
-                                                <img
-                                                    src="/svg/plus.svg"
-                                                    class="size-[14px] pixelated margin-auto"
-                                                />
+                                                <PlusIcon class="size-[14px] pixelated margin-auto text-white" />
                                             </button>
                                         </div>
                                     }
@@ -200,7 +197,14 @@ pub fn BasePage() -> impl IntoView {
                 </p>
             }.into_any()
         } else {
-            view! { <p class="text-lg text-slate-500">"Select a table :3"</p> }.into_any()
+            view! {
+                <div class="flex flex-col justify-end items-center w-full h-full gap-4">
+                    <p class="pixelated text-xl font-bold">
+                        "SELECT/CREATE A TAAAAABBBBLLLLEEEEEEE!"
+                    </p>
+                    <img src="/image/orpheus-derp.png" class="w-[400px] h-auto pixelated" />
+                </div>
+            }.into_any()
         }
     };
 

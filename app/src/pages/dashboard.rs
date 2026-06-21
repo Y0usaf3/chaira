@@ -1,9 +1,7 @@
 use std::time::Instant;
-
 use crate::components::{BaseCard, FilteredInput, Popup, PlusIcon};
 use leptos::prelude::*;
 use leptos::reactive::spawn_local;
-use leptos_router::{hooks::use_navigate};
 use models::{Base};
 
 #[server]
@@ -31,7 +29,6 @@ pub async fn create_base_dash(name: String) -> Result<Base, ServerFnError> {
 
 #[component]
 pub fn DashboardPage() -> impl IntoView {
-    let naviguate = use_navigate();
     let (show_create_popup, set_show_create_popup) = signal(false);
     let (name, set_name) = signal(String::new());
 
@@ -85,7 +82,7 @@ pub fn DashboardPage() -> impl IntoView {
                         on:click=move |_| set_show_create_popup.set(true)
                         class="pixel-corners-pfp bg-black w-[32px] h-[32px] flex items-center justify-center"
                     >
-                        <PlusIcon class="w-[16px] h-[16px] pixelated fill-white" />
+                        <PlusIcon class="w-[16px] h-[16px] pixelated text-white" />
                     </button>
                 </div>
             </div>
@@ -106,7 +103,18 @@ pub fn DashboardPage() -> impl IntoView {
                                 Suspend::new(async move {
                                     match bases.get() {
                                         Some(Ok(list)) if list.is_empty() => {
-                                            view! { <p>"EMPTY"</p> }.into_any()
+                                            view! {
+                                                <div class="flex flex-col items-center justify-center w-full h-full gap-4">
+                                                    <img
+                                                        src="/image/orpheus-angy.png"
+                                                        class="pixelated w-[500px] h-auto"
+                                                    />
+                                                    <p class="font-bold pixelated text-xl">
+                                                        "WHAT!! NOTHING !?"
+                                                    </p>
+                                                </div>
+                                            }
+                                                .into_any()
                                         }
                                         Some(Ok(list)) => {
                                             view! {

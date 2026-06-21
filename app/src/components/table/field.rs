@@ -54,14 +54,14 @@ pub fn Field(
 
     view! {
         <div
-            class="flex items-center border-r border-b border-black bg-slate-50 shrink-0 select-none min-h-[32px] w-full"
+            class="flex items-center border-r-2 border-b-2 border-black bg-white shrink-0 select-none min-h-[32px] w-full"
         >
-            <span class="text-xs font-semibold text-slate-700 truncate px-1 py-1">{name}</span>
+            <span class="text-xs font-semibold text-black truncate px-1 py-1">{name}</span>
             <div
                 node_ref=handle_ref
-                class="ml-auto w-[4px] h-full cursor-col-resize hover:bg-blue-400 active:bg-blue-600 shrink-0 touch-none self-stretch"
+                class="ml-auto w-[4px] h-full cursor-col-resize hover:bg-black active:bg-black shrink-0 touch-none self-stretch"
                 style:background-color=move || {
-                    if is_resizing.get() { "#3b82f6" } else { "transparent" }
+                    if is_resizing.get() { "#000000" } else { "transparent" }
                 }
                 on:pointerdown=on_pointerdown
                 on:pointermove=on_pointermove

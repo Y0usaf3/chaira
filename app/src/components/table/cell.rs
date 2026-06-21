@@ -114,10 +114,10 @@ pub fn Cell(
             }
         };
         view! {
-            <div class="border-b border-r border-slate-200 min-h-[32px] flex items-center px-1">
+            <div class="border-b-2 border-r-2 border-black min-h-[32px] flex items-center px-1">
                 <input
                     type="text"
-                    class="w-full bg-transparent outline-none text-sm px-1"
+                    class="w-full bg-transparent outline-none text-sm text-black px-1"
                     prop:value=Signal::derive(move || val.get())
                     on:input=input_cb
                     on:keydown=keydown_cb
@@ -170,10 +170,10 @@ pub fn Cell(
             }
         };
         view! {
-            <div class="relative border-b border-r border-slate-200 min-h-[32px] flex items-center px-1">
+            <div class="relative border-b-2 border-r-2 border-black min-h-[32px] flex items-center px-1">
                 <input
                     type="text"
-                    class="w-full bg-transparent outline-none text-sm px-1"
+                    class="w-full bg-transparent outline-none text-sm text-black px-1"
                     prop:value=Signal::derive(move || val.get())
                     on:input=input_cb
                     on:keydown=keydown_cb

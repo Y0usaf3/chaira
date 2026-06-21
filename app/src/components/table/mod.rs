@@ -378,7 +378,7 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
             <div class="flex-1 overflow-auto">
                 <Suspense fallback=|| {
                     view! {
-                        <div class="flex items-center justify-center h-full text-slate-400">
+                        <div class="flex items-center justify-center h-full text-black">
                             "Loading..."
                         </div>
                     }
@@ -414,7 +414,7 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
 
                                     view! {
                                         <div
-                                            class="grid border-t border-l border-black"
+                                            class="grid border-t-2 border-l-2 border-black"
                                             style=move || {
                                                 format!(
                                                     "grid-template-columns: {} 1fr",
@@ -471,7 +471,7 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                                                 .collect_view()}
                                             <div class="flex flex-col shrink-0 w-[32px]">
                                                 <button
-                                                    class="h-full px-1 border-r border-b border-black bg-slate-50 flex items-center justify-center "
+                                                    class="h-full px-1 border-r-2 border-b-2 border-black bg-white flex items-center justify-center "
                                                     on:click=handle_open_field_popup
                                                 >
                                                     <PlusIcon class="w-[16px] h-[16px] pixelated text-black mb-auto mx-auto mt-[8px]" />
@@ -483,12 +483,12 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                                 }
                                 Some(Err(_)) => {
                                     view! {
-                                        <p class="text-red-500 p-4">"Failed to load table data"</p>
+                                        <p class="text-black p-4">"Failed to load table data"</p>
                                     }
                                         .into_any()
                                 }
                                 _ => {
-                                    view! { <p class="text-slate-400 p-4">"Loading..."</p> }
+                                    view! {                                     <p class="text-black p-4">"Loading..."</p> }
                                         .into_any()
                                 }
                             }
@@ -503,7 +503,7 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                 set_show=set_show_field_popup
                 on_created=handle_field_created
             />
-            <div class="border-t-[3px] border-black flex-shrink-0">
+            <div class="border-t-2 border-black flex-shrink-0">
                 <button
                     class="w-full px-4 py-2 text-sm font-medium text-black flex items-center gap-1 "
                     on:click=handle_create_record

@@ -14,3 +14,4 @@ pub use footer::Footer;
 pub use input::FilteredInput;
 pub use plus::PlusIcon;
 pub use popup::Popup;
+pub use table::Table;

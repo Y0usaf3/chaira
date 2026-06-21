@@ -41,3 +41,48 @@ pub fn FilteredInput(
         </div>
     }
 }
+
+#[component]
+pub fn ValidatedInput(
+    #[prop(into)] value: Signal<String>,
+    set_value: WriteSignal<String>,
+    #[prop(into)] validate: Callback<String, Result<(), String>>,
+    #[prop(into)] placeholder: String,
+) -> impl IntoView {
+    let (has_error, set_has_error) = signal(false);
+    let input_ref = NodeRef::<Input>::new();
+
+    view! {
+        <div class="relative w-full">
+            <input
+                type="text"
+                node_ref=input_ref
+                class="w-full bg-transparent outline-none placeholder:text-slate-400"
+                placeholder=placeholder
+                prop:value=value
+                on:input=move |ev| {
+                    set_value.set(event_target_value(&ev));
+                    set_has_error.set(false);
+                }
+                on:keydown=move |ev| {
+                    if ev.key() == "Enter" {
+                        let val = value.get();
+                        set_has_error.set(validate.run(val).is_err());
+                    }
+                }
+                on:blur=move |_| {
+                    let val = value.get();
+                    if !val.is_empty() {
+                        set_has_error.set(validate.run(val).is_err());
+                    }
+                }
+            />
+            <div
+                class="absolute bottom-0 right-0 w-1.5 h-1.5 rounded-full transition-opacity"
+                class:opacity-100=move || has_error.get()
+                class:opacity-0=move || !has_error.get()
+                style="background-color: #ef4444"
+            ></div>
+        </div>
+    }
+}

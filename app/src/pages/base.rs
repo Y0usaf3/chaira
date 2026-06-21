@@ -1,4 +1,4 @@
-use crate::components::{FilteredInput, Popup, PlusIcon};
+use crate::components::{FilteredInput, Popup, PlusIcon, Table};
 use leptos::prelude::*;
 use leptos::reactive::spawn_local;
 use leptos_router::NavigateOptions;
@@ -191,11 +191,9 @@ pub fn BasePage() -> impl IntoView {
 
     let main_content = move || {
         if !table_id().is_empty() {
-            view! {
-                <p class="text-lg text-slate-500">
-                    <img src="/svg/single_line.svg" class="bg-black" />
-                </p>
-            }.into_any()
+            let base_key = id();
+            let t_key = table_id();
+            view! { <Table base_key=base_key table_key=t_key /> }.into_any()
         } else {
             view! {
                 <div class="flex flex-col justify-end items-center w-full h-full gap-4">

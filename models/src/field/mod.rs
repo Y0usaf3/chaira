@@ -1,7 +1,7 @@
-use crate::kinds::FieldConfig;
 use crate::prelude::*;
 pub mod kinds;
 pub mod migration;
+pub use self::kinds::*;
 
 /// ['src/core/models/field.md']
 #[derive(SurrealValue, Debug, Clone, PartialEq, Serialize, Deserialize)]

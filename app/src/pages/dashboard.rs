@@ -1,10 +1,10 @@
 use std::time::Instant;
 
-use crate::components::{BaseCard, FilteredInput, Popup};
+use crate::components::{BaseCard, FilteredInput, Popup, PlusIcon};
 use leptos::prelude::*;
 use leptos::reactive::spawn_local;
-use leptos_router::{NavigateOptions, hooks::use_navigate};
-use models::{Base, ToSql};
+use leptos_router::{hooks::use_navigate};
+use models::{Base};
 
 #[server]
 pub async fn get_user_bases() -> Result<Vec<Base>, ServerFnError> {
@@ -85,7 +85,7 @@ pub fn DashboardPage() -> impl IntoView {
                         on:click=move |_| set_show_create_popup.set(true)
                         class="pixel-corners-pfp bg-black w-[32px] h-[32px] flex items-center justify-center"
                     >
-                        <img src="/svg/plus.svg" class="w-[16px] h-[16px] pixelated fill-white" />
+                        <PlusIcon class="w-[16px] h-[16px] pixelated fill-white" />
                     </button>
                 </div>
             </div>

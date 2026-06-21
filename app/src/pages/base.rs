@@ -194,7 +194,11 @@ pub fn BasePage() -> impl IntoView {
 
     let main_content = move || {
         if !table_id().is_empty() {
-            view! { <p class="text-lg text-slate-500">"Table: " {table_id}</p> }.into_any()
+            view! {
+                <p class="text-lg text-slate-500">
+                    <img src="/svg/single_line.svg" class="bg-black" />
+                </p>
+            }.into_any()
         } else {
             view! { <p class="text-lg text-slate-500">"Select a table :3"</p> }.into_any()
         }

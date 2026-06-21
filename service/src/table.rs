@@ -506,34 +506,73 @@ impl TableService {
                 keys.push(key.clone());
                 c_map.insert(key, value);
             }
-            (Some(c_map), keys)
+            (c_map, keys)
         } else {
-            (None, vec![])
+            (HashMap::new(), vec![])
         };
 
-        let mut set_clauses = vec!["updated_at = time::now()".to_string()];
+        if changed_keys.is_empty() && cells_map.is_empty() {
+            let mut res = DB
+                .query("UPDATE $record_id SET updated_at = time::now()")
+                .bind(("record_id", record_id))
+                .await?;
+            let updated: Option<Record> = res.take(0)?;
+            return match updated {
+                Some(r) => Ok(r),
+                None => Err(Irror::Table(TableError::NotFound)),
+            };
+        }
 
-        if cells_map.is_some() {
-            set_clauses.push("cells = object::extend(cells, $cells)".to_string());
-            for key in changed_keys {
-                set_clauses.push(format!("cell_metadata.`{}`.updated_at = time::now()", key));
+        let mut meta: Option<std::collections::HashMap<String, CellMetadata>> = None;
+        for key in &changed_keys {
+            if let Some(ref m) = meta {
+                if m.contains_key(key) {
+                    continue;
+                }
+            }
+            let mut res = DB
+                .query("SELECT * FROM $record_id")
+                .bind(("record_id", record_id.clone()))
+                .await?;
+            let existing: Option<Record> = res.take(0)?;
+            if let Some(r) = existing {
+                if !r.cell_metadata.contains_key(key) {
+                    let mut m = r.cell_metadata.clone();
+                    m.insert(key.clone(), CellMetadata::default());
+                    meta = Some(m);
+                } else {
+                    let mut m = r.cell_metadata.clone();
+                    if let Some(cm) = m.get_mut(key) {
+                        cm.updated_at = Datetime::now();
+                    }
+                    meta = Some(m);
+                }
             }
         }
 
-        let query_str = format!("UPDATE $record_id SET {}", set_clauses.join(", "));
-
-        let mut query = DB.query(&query_str).bind(("record_id", record_id));
-
-        if let Some(cells) = cells_map {
-            query = query.bind(("cells", cells));
-        }
-
-        let mut res = query.await?;
-        let updated: Option<Record> = res.take(0)?;
-
-        match updated {
-            Some(r) => Ok(r),
-            None => Err(Irror::Table(TableError::NotFound)),
+        if let Some(m) = meta {
+            let mut res = DB
+                .query("UPDATE $record_id SET updated_at = time::now(), cell_metadata = $meta, cells = object::extend(cells, $cells)")
+                .bind(("record_id", record_id))
+                .bind(("meta", m))
+                .bind(("cells", cells_map))
+                .await?;
+            let updated: Option<Record> = res.take(0)?;
+            match updated {
+                Some(r) => Ok(r),
+                None => Err(Irror::Table(TableError::NotFound)),
+            }
+        } else {
+            let mut res = DB
+                .query("UPDATE $record_id SET updated_at = time::now(), cells = object::extend(cells, $cells)")
+                .bind(("record_id", record_id))
+                .bind(("cells", cells_map))
+                .await?;
+            let updated: Option<Record> = res.take(0)?;
+            match updated {
+                Some(r) => Ok(r),
+                None => Err(Irror::Table(TableError::NotFound)),
+            }
         }
     }
 

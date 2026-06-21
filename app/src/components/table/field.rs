@@ -1,5 +1,21 @@
+use crate::components::{Icon, IconType};
 use leptos::prelude::*;
 use models::Field as Fild;
+use models::{FieldConfig, TextConfig};
+
+fn field_icon(config: &FieldConfig) -> Option<IconType> {
+    match config {
+        FieldConfig::Text(text_config) => match text_config {
+            TextConfig::SingleLine { .. } => Some(IconType::SingleLine),
+            TextConfig::LongText { .. } => Some(IconType::LongText),
+            TextConfig::Email => Some(IconType::Email),
+            TextConfig::URL => Some(IconType::Url),
+            TextConfig::Phone => Some(IconType::Phone),
+        },
+        FieldConfig::Number(_) => Some(IconType::Number),
+        _ => None,
+    }
+}
 
 #[component]
 pub fn Field(
@@ -8,6 +24,7 @@ pub fn Field(
     on_resize: Option<Callback<f64>>,
 ) -> impl IntoView {
     let name = field.name.clone();
+    let icon_type = field_icon(&field.config);
 
     let handle_ref = NodeRef::<leptos::html::Div>::new();
     let (is_resizing, set_is_resizing) = signal(false);
@@ -53,10 +70,12 @@ pub fn Field(
     };
 
     view! {
-        <div
-            class="flex items-center border-r-2 border-b-2 border-black bg-white shrink-0 select-none min-h-[32px] w-full"
-        >
-            <span class="text-xs font-semibold text-black truncate px-1 py-1">{name}</span>
+        <div class="flex items-center border-r-2 border-b-2 border-black bg-white shrink-0 select-none min-h-[32px] w-full">
+            {if let Some(icon_type) = icon_type {
+                view! { <Icon icon_type class="w-[14px] h-[14px] shrink-0 ml-1 mr-2" /> }.into_any()
+            } else {
+                view! { <span></span> }.into_any()
+            }} <span class="text-base font-semibold text-black truncate px-1 py-1">{name}</span>
             <div
                 node_ref=handle_ref
                 class="ml-auto w-[4px] h-full cursor-col-resize hover:bg-black active:bg-black shrink-0 touch-none self-stretch"

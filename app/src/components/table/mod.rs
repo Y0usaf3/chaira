@@ -348,7 +348,16 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
         move |(record_id, field_name, value): (RId, String, String)| {
             let bk = bk.clone();
             let tk = tk.clone();
-            let rid_str = record_id.0.key.to_sql();
+            let key_raw = match &record_id.0.key {
+                models::surrealdb_types::RecordIdKey::String(s) => s.clone(),
+                models::surrealdb_types::RecordIdKey::Number(n) => n.to_string(),
+                models::surrealdb_types::RecordIdKey::Uuid(u) => u.to_string(),
+                _ => {
+                    log!("update_cell_value: unsupported record key type");
+                    return;
+                }
+            };
+            let rid_str = format!("{}:{}", record_id.0.table.as_str(), key_raw);
             spawn_local(async move {
                 let _ = update_cell_value(bk, tk, rid_str, field_name, value).await;
             });
@@ -414,7 +423,7 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
 
                                     view! {
                                         <div
-                                            class="grid border-t-2 border-l-2 border-black"
+                                            class="grid border-t-2 border-black"
                                             style=move || {
                                                 format!(
                                                     "grid-template-columns: {} 1fr",
@@ -487,10 +496,7 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                                     }
                                         .into_any()
                                 }
-                                _ => {
-                                    view! {                                     <p class="text-black p-4">"Loading..."</p> }
-                                        .into_any()
-                                }
+                                _ => view! { <p class="text-black p-4">"Loading..."</p> }.into_any(),
                             }
                         })
                     }}

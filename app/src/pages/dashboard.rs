@@ -155,7 +155,9 @@ pub fn DashboardPage() -> impl IntoView {
                     value=name
                     set_value=set_name
                     filter=Callback::new(|val: String| {
-                        val.chars().filter(|c| c.is_ascii_alphabetic()).collect()
+                        val.chars()
+                            .filter(|c| c.is_ascii_alphanumeric() || *c == '_' || *c == '-')
+                            .collect()
                     })
                     autofocus=true
                 />

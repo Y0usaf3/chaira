@@ -65,10 +65,7 @@ where
     };
 
     view! {
-        <button
-            class=classes
-            on:click=move |_| { naviguate(&path, NavigateOptions::default()) }
-        >
+        <button class=classes on:click=move |_| { naviguate(&path, NavigateOptions::default()) }>
             {name}
         </button>
     }
@@ -157,7 +154,11 @@ pub fn BasePage() -> impl IntoView {
                                             {tables
                                                 .into_iter()
                                                 .map(move |table| {
-                                                    let key = table.id.as_ref().map(|id| id.0.key.to_sql()).unwrap_or_default();
+                                                    let key = table
+                                                        .id
+                                                        .as_ref()
+                                                        .map(|id| id.0.key.to_sql())
+                                                        .unwrap_or_default();
                                                     let is_selected = key == current_table_id;
                                                     view! {
                                                         <TableButton
@@ -237,7 +238,7 @@ pub fn BasePage() -> impl IntoView {
 
                 {show_table_selector}
 
-                <div class="flex-1 overflow-hidden p-6">{main_content}</div>
+                <div class="flex-1 overflow-hidden">{main_content}</div>
 
                 <Popup show=show_create_popup.into() set_show=set_show_create_popup>
                     <div class="mb-6 border-b-2 border-slate-200 pb-2 border-dashed">

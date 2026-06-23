@@ -16,6 +16,20 @@ define_ids!(
     BaseId, TableId, UserId, CellId, RowId, RecordId, FieldId, RelationId, IdentityId, ViewId
 );
 
+impl BaseId {
+    pub fn parse(key: &str) -> Result<Self, String> {
+        let rid = Thing::parse_simple(&format!("base:{key}")).map_err(|e| format!("{e:?}"))?;
+        Ok(BaseId(rid))
+    }
+}
+
+impl TableId {
+    pub fn parse(key: &str) -> Result<Self, String> {
+        let rid = Thing::parse_simple(&format!("table:{key}")).map_err(|e| format!("{e:?}"))?;
+        Ok(TableId(rid))
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SessionId(pub String);
 

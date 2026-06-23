@@ -4,7 +4,7 @@ use column::Column;
 use leptos::logging::log;
 use leptos::prelude::*;
 use leptos::reactive::spawn_local;
-use models::{Field, FieldConfig, Record, RecordId as RId, TextConfig, ToSql, Value};
+use models::{Field, FieldConfig, Record, RecordId as RId, TextConfig, Value};
 
 mod cell;
 mod column;
@@ -16,17 +16,10 @@ pub async fn get_table_data(
     table_key: String,
 ) -> Result<(Vec<Field>, Vec<Record>), ServerFnError> {
     log!("get_table_data: base={base_key}, table={table_key}");
-    use models::surrealdb_types::RecordId;
     let service = crate::get_authenticated_service().await?;
-    let base_id = models::BaseId(
-        RecordId::parse_simple(&format!("base:{base_key}"))
-            .map_err(|e| ServerFnError::new(format!("Invalid base id: {e:?}")))?,
-    );
+    let base_id = crate::parse_base_id(&base_key)?;
     let uid = service.id().clone();
-    let table_id = models::TableId(
-        RecordId::parse_simple(&format!("table:{table_key}"))
-            .map_err(|e| ServerFnError::new(format!("Invalid table id: {e:?}")))?,
-    );
+    let table_id = crate::parse_table_id(&table_key)?;
     let mut ts = service::table::TableService::new(table_id, base_id, uid)
         .await
         .map_err(|e| ServerFnError::new(format!("Failed to create table service: {e:?}")))?;
@@ -45,19 +38,15 @@ pub async fn get_table_data(
 }
 
 #[server]
-pub async fn create_table_record(base_key: String, table_key: String) -> Result<Record, ServerFnError> {
+pub async fn create_table_record(
+    base_key: String,
+    table_key: String,
+) -> Result<Record, ServerFnError> {
     log!("create_table_record: base={base_key}, table={table_key}");
-    use models::surrealdb_types::RecordId;
     let service = crate::get_authenticated_service().await?;
-    let base_id = models::BaseId(
-        RecordId::parse_simple(&format!("base:{base_key}"))
-            .map_err(|e| ServerFnError::new(format!("Invalid base id: {e:?}")))?,
-    );
+    let base_id = crate::parse_base_id(&base_key)?;
     let uid = service.id().clone();
-    let table_id = models::TableId(
-        RecordId::parse_simple(&format!("table:{table_key}"))
-            .map_err(|e| ServerFnError::new(format!("Invalid table id: {e:?}")))?,
-    );
+    let table_id = crate::parse_table_id(&table_key)?;
     let mut ts = service::table::TableService::new(table_id.clone(), base_id, uid)
         .await
         .map_err(|e| ServerFnError::new(format!("Failed to create table service: {e:?}")))?;
@@ -80,17 +69,10 @@ pub async fn create_table_field(
     config: FieldConfig,
 ) -> Result<Field, ServerFnError> {
     log!("create_table_field: base={base_key}, table={table_key}, name={name}, config={config:?}");
-    use models::surrealdb_types::RecordId;
     let service = crate::get_authenticated_service().await?;
-    let base_id = models::BaseId(
-        RecordId::parse_simple(&format!("base:{base_key}"))
-            .map_err(|e| ServerFnError::new(format!("Invalid base id: {e:?}")))?,
-    );
+    let base_id = crate::parse_base_id(&base_key)?;
     let uid = service.id().clone();
-    let table_id = models::TableId(
-        RecordId::parse_simple(&format!("table:{table_key}"))
-            .map_err(|e| ServerFnError::new(format!("Invalid table id: {e:?}")))?,
-    );
+    let table_id = crate::parse_table_id(&table_key)?;
     let mut ts = service::table::TableService::new(table_id.clone(), base_id, uid)
         .await
         .map_err(|e| ServerFnError::new(format!("Failed to create table service: {e:?}")))?;
@@ -121,18 +103,14 @@ pub async fn update_cell_value(
     field_name: String,
     value_str: String,
 ) -> Result<Record, ServerFnError> {
-    log!("update_cell_value: base={base_key}, table={table_key}, record={record_id}, field={field_name}, value={value_str:?}");
+    log!(
+        "update_cell_value: base={base_key}, table={table_key}, record={record_id}, field={field_name}, value={value_str:?}"
+    );
     use models::surrealdb_types::RecordId;
     let service = crate::get_authenticated_service().await?;
-    let base_id = models::BaseId(
-        RecordId::parse_simple(&format!("base:{base_key}"))
-            .map_err(|e| ServerFnError::new(format!("Invalid base id: {e:?}")))?,
-    );
+    let base_id = crate::parse_base_id(&base_key)?;
     let uid = service.id().clone();
-    let table_id = models::TableId(
-        RecordId::parse_simple(&format!("table:{table_key}"))
-            .map_err(|e| ServerFnError::new(format!("Invalid table id: {e:?}")))?,
-    );
+    let table_id = crate::parse_table_id(&table_key)?;
     let mut ts = service::table::TableService::new(table_id.clone(), base_id, uid)
         .await
         .map_err(|e| ServerFnError::new(format!("Failed to create table service: {e:?}")))?;

@@ -1,8 +1,8 @@
-use std::time::Instant;
-use crate::components::{BaseCard, FilteredInput, Popup, PlusIcon};
+use crate::components::{BaseCard, FilteredInput, PlusIcon, Popup};
 use leptos::prelude::*;
 use leptos::reactive::spawn_local;
-use models::{Base};
+use models::Base;
+use std::time::Instant;
 
 #[server]
 pub async fn get_user_bases() -> Result<Vec<Base>, ServerFnError> {

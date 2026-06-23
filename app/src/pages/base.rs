@@ -1,17 +1,14 @@
-use crate::components::{FilteredInput, Popup, PlusIcon, Table};
+use crate::components::{FilteredInput, PlusIcon, Popup, Table};
 use leptos::prelude::*;
 use leptos::reactive::spawn_local;
 use leptos_router::NavigateOptions;
 use leptos_router::hooks::{use_navigate, use_params_map};
-use models::surrealdb_types::RecordId;
-use models::{BaseId, Table, ToSql};
+use models::{Table, ToSql};
 
 #[server]
 pub async fn get_base_tables(base_key: String) -> Result<Vec<Table>, ServerFnError> {
     let mut service = crate::get_authenticated_service().await?;
-    let rid = RecordId::parse_simple(&format!("base:{base_key}"))
-        .map_err(|e| ServerFnError::new(format!("Invalid base id: {e:?}")))?;
-    let base_id = BaseId(rid);
+    let base_id = crate::parse_base_id(&base_key)?;
 
     service
         .open_base(base_id)
@@ -32,9 +29,7 @@ pub async fn get_base_tables(base_key: String) -> Result<Vec<Table>, ServerFnErr
 #[server]
 pub async fn create_table(base_key: String, name: String) -> Result<Table, ServerFnError> {
     let mut service = crate::get_authenticated_service().await?;
-    let rid = RecordId::parse_simple(&format!("base:{base_key}"))
-        .map_err(|e| ServerFnError::new(format!("Invalid base id: {e:?}")))?;
-    let base_id = BaseId(rid);
+    let base_id = crate::parse_base_id(&base_key)?;
     service
         .open_base(base_id)
         .await
@@ -202,7 +197,8 @@ pub fn BasePage() -> impl IntoView {
                     </p>
                     <img src="/image/orpheus-derp.png" class="w-[400px] h-auto pixelated" />
                 </div>
-            }.into_any()
+            }
+            .into_any()
         }
     };
 

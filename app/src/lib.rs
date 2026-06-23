@@ -87,6 +87,14 @@ pub fn App() -> impl IntoView {
     }
 }
 
+pub(crate) fn parse_base_id(key: &str) -> Result<models::BaseId, ServerFnError> {
+    models::BaseId::parse(key).map_err(|e| ServerFnError::new(format!("Invalid base id: {e}")))
+}
+
+pub(crate) fn parse_table_id(key: &str) -> Result<models::TableId, ServerFnError> {
+    models::TableId::parse(key).map_err(|e| ServerFnError::new(format!("Invalid table id: {e}")))
+}
+
 #[cfg(feature = "ssr")]
 pub async fn get_authenticated_service() -> Result<service::user::UserService, ServerFnError> {
     use axum::extract::ConnectInfo;

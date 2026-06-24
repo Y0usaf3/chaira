@@ -13,6 +13,11 @@ pub fn Column(
     on_resize: Option<Callback<f64>>,
 ) -> impl IntoView {
     let fname = field.name.clone();
+    let fid = field
+        .id
+        .as_ref()
+        .map(|id| id.id_str())
+        .unwrap_or_default();
     let fconfig = field.config.clone();
     let on_change = on_cell_change.clone();
 
@@ -25,7 +30,7 @@ pub fn Column(
                     view! {
                         <Cell
                             field_config=fconfig.clone()
-                            field_name=fname.clone()
+                            field_name=fid.clone()
                             value=val
                             on_change=on_change.clone()
                             record_id=rid

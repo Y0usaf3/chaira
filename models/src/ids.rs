@@ -7,6 +7,23 @@ macro_rules! define_ids {
             #[derive(Debug, Clone, PartialEq, Eq, Hash, SurrealValue, Serialize, Deserialize)]
 #[surreal(crate = "::surrealdb_types")]
             pub struct $name(pub  Thing);
+
+            impl $name {
+                pub fn id_str(&self) -> String {
+                    match &self.0.key {
+                        surrealdb_types::RecordIdKey::String(s) => {
+                            format!("{}:{}", self.0.table.as_str(), s)
+                        }
+                        surrealdb_types::RecordIdKey::Number(n) => {
+                            format!("{}:{}", self.0.table.as_str(), n)
+                        }
+                        surrealdb_types::RecordIdKey::Uuid(u) => {
+                            format!("{}:{}", self.0.table.as_str(), u)
+                        }
+                        _ => format!("{}:{:?}", self.0.table.as_str(), self.0.key),
+                    }
+                }
+            }
         )*
     };
 }

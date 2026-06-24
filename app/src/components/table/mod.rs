@@ -100,11 +100,11 @@ pub async fn update_cell_value(
     base_key: String,
     table_key: String,
     record_id: String,
-    field_name: String,
+    field_id: String,
     value_str: String,
 ) -> Result<Record, ServerFnError> {
     log!(
-        "update_cell_value: base={base_key}, table={table_key}, record={record_id}, field={field_name}, value={value_str:?}"
+        "update_cell_value: base={base_key}, table={table_key}, record={record_id}, field={field_id}, value={value_str:?}"
     );
     use models::surrealdb_types::RecordId;
     let service = crate::get_authenticated_service().await?;
@@ -118,18 +118,25 @@ pub async fn update_cell_value(
         RecordId::parse_simple(&record_id)
             .map_err(|e| ServerFnError::new(format!("Invalid record id: {e:?}")))?,
     );
+    let field_rid = RecordId::parse_simple(&field_id)
+        .map_err(|e| ServerFnError::new(format!("Invalid field id: {e:?}")))?;
+    let field_cfg = ts
+        .get_field_config(models::FieldId(field_rid))
+        .await
+        .map_err(|e| ServerFnError::new(format!("Failed to get field config: {e:?}")))?;
     let value = if value_str.is_empty() {
         Value::SingleLine(
             models::SingleLineValue::new(None, Some(String::new()))
                 .map_err(|e| ServerFnError::new(format!("Value error: {e:?}")))?,
         )
     } else {
-        Value::SingleLine(
-            models::SingleLineValue::new(None, Some(value_str))
-                .map_err(|e| ServerFnError::new(format!("Value error: {e:?}")))?,
-        )
+        let sv = models::SingleLineValue::new(None, Some(value_str))
+            .map_err(|e| ServerFnError::new(format!("Value error: {e:?}")))?;
+        Value::SingleLine(sv)
+            .convert_to(&field_cfg.config)
+            .map_err(|e| ServerFnError::new(format!("Value conversion error: {e:?}")))?
     };
-    let patch = models::RecordPatch::new(Some(vec![(field_name, value)]));
+    let patch = models::RecordPatch::new(Some(vec![(field_cfg.name, value)]));
     let result = ts
         .update_record(rid, patch)
         .await
@@ -323,7 +330,7 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
     let bk = base_key.clone();
     let tk = table_key.clone();
     let on_cell_change = Callback::new(
-        move |(record_id, field_name, value): (RId, String, String)| {
+        move |(record_id, field_id, value): (RId, String, String)| {
             let bk = bk.clone();
             let tk = tk.clone();
             let key_raw = match &record_id.0.key {
@@ -337,7 +344,7 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
             };
             let rid_str = format!("{}:{}", record_id.0.table.as_str(), key_raw);
             spawn_local(async move {
-                let _ = update_cell_value(bk, tk, rid_str, field_name, value).await;
+                let _ = update_cell_value(bk, tk, rid_str, field_id, value).await;
             });
         },
     );
@@ -378,10 +385,6 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                         Suspend::new(async move {
                             match data.get() {
                                 Some(Ok((fields, records))) => {
-                                    let records_empty = records
-                                        .iter()
-                                        .map(|_| ())
-                                        .collect::<Vec<_>>();
                                     let fnames: Vec<String> = fields
                                         .iter()
                                         .map(|f| f.name.clone())

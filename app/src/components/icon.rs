@@ -1,4 +1,5 @@
 use leptos::prelude::*;
+use models::{FieldConfig, NumberConfig, TextConfig};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IconType {
@@ -8,6 +9,7 @@ pub enum IconType {
     Phone,
     SingleLine,
     Url,
+    Unknown,
 }
 
 #[component]
@@ -37,6 +39,10 @@ pub fn Icon(icon_type: IconType, class: &'static str) -> impl IntoView {
             env!("CARGO_MANIFEST_DIR"),
             "/../public/svg/url.svg"
         )),
+        IconType::Unknown => include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../public/svg/unknown.svg"
+        )),
     };
     let svg = raw
         .lines()
@@ -46,4 +52,18 @@ pub fn Icon(icon_type: IconType, class: &'static str) -> impl IntoView {
         .replace(r##"fill="#FFFFFF""##, r##"fill="currentColor""##)
         .replace(r##" width="32" height="32""##, r##" viewBox="0 0 32 32""##);
     view! { <div class=class inner_html=svg></div> }
+}
+
+pub fn field_icon(config: &FieldConfig) -> IconType {
+    match config {
+        FieldConfig::Text(text_config) => match text_config {
+            TextConfig::SingleLine { .. } => IconType::SingleLine,
+            TextConfig::LongText { .. } => IconType::LongText,
+            TextConfig::Email => IconType::Email,
+            TextConfig::URL => IconType::Url,
+            TextConfig::Phone => IconType::Phone,
+        },
+        FieldConfig::Number(_) => IconType::Number,
+        _ => IconType::Unknown,
+    }
 }

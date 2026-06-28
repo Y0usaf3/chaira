@@ -55,6 +55,7 @@ pub fn DashboardPage() -> impl IntoView {
             });
         }
     };
+
     let bases = Resource::new(
         move || refresh_count.get(),
         |_| async move { get_user_bases().await },

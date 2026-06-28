@@ -3,20 +3,6 @@ use leptos::prelude::*;
 use models::Field as Fild;
 use models::{FieldConfig, TextConfig};
 
-fn field_icon(config: &FieldConfig) -> Option<IconType> {
-    match config {
-        FieldConfig::Text(text_config) => match text_config {
-            TextConfig::SingleLine { .. } => Some(IconType::SingleLine),
-            TextConfig::LongText { .. } => Some(IconType::LongText),
-            TextConfig::Email => Some(IconType::Email),
-            TextConfig::URL => Some(IconType::Url),
-            TextConfig::Phone => Some(IconType::Phone),
-        },
-        FieldConfig::Number(_) => Some(IconType::Number),
-        _ => None,
-    }
-}
-
 #[component]
 pub fn Field(
     field: Fild,

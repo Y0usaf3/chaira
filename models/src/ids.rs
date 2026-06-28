@@ -5,7 +5,8 @@ macro_rules! define_ids {
     ($($name:ident),*) => {
         $(
             #[derive(Debug, Clone, PartialEq, Eq, Hash, SurrealValue, Serialize, Deserialize)]
-#[surreal(crate = "::surrealdb_types")]
+            #[surreal(crate = "::surrealdb_types")]
+            #[serde(transparent)]
             pub struct $name(pub  Thing);
 
             impl $name {

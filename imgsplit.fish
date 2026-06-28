@@ -1,4 +1,5 @@
 # goated script made by @Vimthusiast
+
 function imgsplit
     if test (count $argv) -lt 3
         echo "Usage: imgsplit <image> <cols> <rows> [output_dir]"

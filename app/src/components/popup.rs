@@ -9,11 +9,11 @@ pub fn Popup(
     view! {
         <Show when=move || show.get()>
             <div
-                class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+                class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 overflow-visible"
                 on:click=move |_| set_show.set(false)
             >
                 <div
-                    class="pixel-corners--wrapper p-7 w-[400px] bg-white shadow-sm"
+                    class="pixel-corners--wrapper p-7 w-[400px] bg-white shadow-sm overflow-visible"
                     on:click=|ev| ev.stop_propagation()
                 >
                     {children()}

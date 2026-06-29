@@ -1,6 +1,24 @@
-use crate::components::{FilteredInput, Popup, table::server::create_table_field};
+use crate::components::{
+    FilteredInput, Popup, Select, SelectOption, table::server::create_table_field,
+};
 use leptos::{prelude::*, reactive::spawn_local};
 use models::{BaseId, TableId};
+
+enum FieldType {
+    SingleLine {
+        default: Option<String>,
+        max_lenght: u16,
+    },
+    LongText {
+        rich_text: bool,
+    },
+    Email,
+    URL,
+    Phone,
+    Number {
+        default: Option<isize>,
+    },
+}
 
 #[component]
 pub fn CreateFieldPopup(
@@ -10,13 +28,51 @@ pub fn CreateFieldPopup(
     set_show: WriteSignal<bool>,
     on_created: Callback<()>,
 ) -> impl IntoView {
+    let options = vec![
+        SelectOption {
+            value: "singleline".to_string(),
+            label: "Single Line".to_string(),
+        },
+        SelectOption {
+            value: "longtext".to_string(),
+            label: "Long Text".to_string(),
+        },
+        SelectOption {
+            value: "email".to_string(),
+            label: "Email".to_string(),
+        },
+        SelectOption {
+            value: "url".to_string(),
+            label: "URL".to_string(),
+        },
+        SelectOption {
+            value: "phone".to_string(),
+            label: "Phone".to_string(),
+        },
+        SelectOption {
+            value: "number".to_string(),
+            label: "Number".to_string(),
+        },
+    ];
+
     let (name, set_name) = signal(String::new());
+    let (field_type, set_field_type) = signal(String::new());
     let handle_create_field = move |_: leptos::ev::MouseEvent| {
         let base_id = base_id.clone();
         let table_id = table_id.clone();
         let name = name.get_untracked();
         spawn_local(async move {
-            if let Ok(_) = create_table_field(base_id, table_id, name, models::FieldConfig::Text(models::TextConfig::SingleLine { default: None, max_length: 500 })).await {
+            if let Ok(_) = create_table_field(
+                base_id,
+                table_id,
+                name,
+                models::FieldConfig::Text(models::TextConfig::SingleLine {
+                    default: None,
+                    max_length: 500,
+                }),
+            )
+            .await
+            {
                 set_show.set(false);
                 set_name.set(String::new());
                 on_created.run(());
@@ -29,7 +85,7 @@ pub fn CreateFieldPopup(
                 <h2 class="text-xl font-bold text-slate-800">"Create Field"</h2>
                 <p class="text-sm text-slate-500">"Add a new column to this table."</p>
             </div>
-            <div class="flex flex-col gap-4">
+            <div class="flex flex-col gap-4 overflow-visible z-50">
                 <FilteredInput
                     label="Field Name"
                     placeholder="e.g. Name"
@@ -42,11 +98,17 @@ pub fn CreateFieldPopup(
                     })
                     autofocus=true
                 />
+                <div class="flex flex-col gap-1 overflow-visible">
+                    <label class="text-sm font-semibold text-slate-700">"Field type"</label>
+                    <Select getter=field_type setter=set_field_type options=options.clone() />
+                </div>
             </div>
             <button
-                class="pixel-corners--wrapper mt-2 p-3 bg-slate-800 text-white font-bold transition-colors cursor-pointer w-full text-sm"
+                class="pixel-corners--wrapper mt-2 p-3 bg-black text-white font-bold transition-colors cursor-pointer w-full text-sm"
                 on:click=handle_create_field.clone()
-            />
+            >
+                "Create field"
+            </button>
         </Popup>
     }
 }

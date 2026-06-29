@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 use models::Field;
 
-use crate::components::{icon::field_icon, Icon};
+use crate::components::{Icon, icon::field_icon};
 
 #[component]
 pub fn Field(field: Field) -> impl IntoView {

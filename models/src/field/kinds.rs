@@ -37,7 +37,7 @@ pub enum TextConfig {
 pub enum NumberConfig {
     Number {
         #[serde(skip_serializing_if = "Option::is_none")]
-        default: Option<usize>,
+        default: Option<isize>,
     },
     Decimal {
         #[serde(skip_serializing_if = "Option::is_none")]

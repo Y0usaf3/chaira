@@ -6,6 +6,7 @@ mod icon;
 mod input;
 mod plus;
 mod popup;
+mod select;
 mod table;
 
 pub use base_card::BaseCard;
@@ -16,4 +17,5 @@ pub use icon::{Icon, IconType};
 pub use input::FilteredInput;
 pub use plus::PlusIcon;
 pub use popup::Popup;
+pub use select::{Select, SelectOption};
 pub use table::Table;

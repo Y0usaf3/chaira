@@ -2,7 +2,7 @@ use crate::components::{
     FilteredInput, Popup, Select, SelectOption, table::server::create_table_field,
 };
 use leptos::{prelude::*, reactive::spawn_local};
-use models::{BaseId, TableId, FieldConfig, TextConfig}; 
+use models::{BaseId, TableId, FieldConfig, TextConfig, NumberConfig}; 
 
 #[derive(Clone, PartialEq, Debug, Default)]
 enum FieldType {
@@ -61,11 +61,26 @@ pub fn CreateFieldPopup(
             FieldType::SingleLine { default, max_length } => {
                 FieldConfig::Text(TextConfig::SingleLine { default, max_length })
             }
+            FieldType::LongText { rich_text } => {
+                FieldConfig::Text(TextConfig::LongText { rich_text })
+            }
+            FieldType::Email => {
+                FieldConfig::Text(TextConfig::Email)
+            }
+            FieldType::URL => {
+                FieldConfig::Text(TextConfig::URL)
+            }
+            FieldType::Phone => {
+                FieldConfig::Text(TextConfig::Phone)
+            }
+            FieldType::Number { default } => {
+                FieldConfig::Number(NumberConfig::Number { default })
+            }
             _ => FieldConfig::Text(TextConfig::SingleLine { default: None, max_length: 500 }), 
         };
 
         spawn_local(async move {
-            if let Ok(_) = create_table_field(base_id, table_id, name, config).await {
+            if create_table_field(base_id, table_id, name, config).await.is_ok() {
                 set_show.set(false);
                 set_name.set(String::new());
                 set_selected_key.set(String::new());

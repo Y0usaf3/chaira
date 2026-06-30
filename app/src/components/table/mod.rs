@@ -1,15 +1,18 @@
+use leptos::logging::log;
 use leptos::prelude::*;
+use leptos::reactive::spawn_local;
 use leptos_router::{NavigateOptions, hooks::use_navigate};
 
 mod column;
 mod field;
 mod field_popup;
 mod server;
+mod cell;
 
 use server::get_table_data;
 
 use crate::components::PlusIcon;
-use crate::components::table::{field::Field, field_popup::CreateFieldPopup};
+use crate::components::table::{field::Field, field_popup::CreateFieldPopup, server::update_cell_value};
 
 #[component]
 pub fn Table(base_key: String, table_key: String) -> impl IntoView {
@@ -45,6 +48,23 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
         )
     };
 
+    let (base_id, table_id) = if let Some(ids) = parsed_ids.clone() {
+        ids
+    } else {
+        navigate_to_dashboard();
+        return view! {}.into_any();
+    };
+
+    let on_cell_change = Callback::new(
+        move |(record_id, field_id, value): (models::RecordId, models::FieldId, models::Value)| {
+            let bk = base_id.clone(); // dont ask me i hate this
+            let tk = table_id.clone();
+            spawn_local(async move {
+                let _ = update_cell_value(bk, tk, record_id, field_id, value).await;
+            });
+        },
+    );
+
     view! {
         {move || match parsed_ids.clone() {
             None => {
@@ -74,6 +94,7 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                                             .into_any()
                                     }}
                                 </div>
+                                <div class="flex flex-row items-center w-fit border-black border-b-[2px]"></div>
                             </Suspense>
                             <button
                                 on:click=handle_open_field_popup
@@ -94,5 +115,5 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                     .into_any()
             }
         }}
-    }
+    }.into_any()
 }

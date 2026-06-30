@@ -7,7 +7,7 @@ use models::{BaseId, TableId};
 enum FieldType {
     SingleLine {
         default: Option<String>,
-        max_lenght: u16,
+        max_length: u16,
     },
     LongText {
         rich_text: bool,

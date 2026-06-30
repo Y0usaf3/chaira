@@ -77,9 +77,9 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                             </Suspense>
                             <button
                                 on:click=handle_open_field_popup
-                                class="flex items-center justify-center h-full px-3 border-black border-r-[2px] transition-colors"
+                                class="flex items-center justify-center h-full px-[7px] pt-[7px] border-black border-r-[2px] transition-colors"
                             >
-                                <PlusIcon class="w-[16px] h-[16px] pixelated text-black mb-auto mx-auto mt-[8px]" />
+                                <PlusIcon class="w-[16px] h-[16px] pixelated text-black mb-auto mx-auto" />
                             </button>
                         </div>
                         <CreateFieldPopup

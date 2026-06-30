@@ -78,7 +78,7 @@ pub fn ValidatedInput(
                 }
             />
             <div
-                class="absolute bottom-0 right-0 w-1.5 h-1.5 rounded-full transition-opacity"
+                class="absolute bottom-0 right-0 w-1.5 h-1.5"
                 class:opacity-100=move || has_error.get()
                 class:opacity-0=move || !has_error.get()
                 style="background-color: #ef4444"

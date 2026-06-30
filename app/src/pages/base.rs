@@ -188,7 +188,11 @@ pub fn BasePage() -> impl IntoView {
         if !table_id().is_empty() {
             let base_key = id();
             let t_key = table_id();
-            view! { <Table base_key=base_key table_key=t_key /> }.into_any()
+            view! {
+                <div class="bg-white w-full h-full">
+                    <Table base_key=base_key table_key=t_key />
+                </div>
+            }.into_any()
         } else {
             view! {
                 <div class="flex flex-col justify-end items-center w-full h-full gap-4">

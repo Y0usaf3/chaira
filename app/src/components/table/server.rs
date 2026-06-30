@@ -1,4 +1,5 @@
 use leptos::logging::log;
+use std::collections::HashMap;
 use leptos::prelude::*;
 use models::{BaseId, Field, FieldConfig, FieldId, Record, RecordId, TableId, Value};
 
@@ -89,3 +90,24 @@ pub async fn update_cell_value(
     result
 }
 
+#[server]
+pub async fn create_table_record(
+    base_id: BaseId,
+    table_id: TableId,
+) -> Result<Record, ServerFnError> {
+    log!("create_table_record: base={base_id:?}, table={table_id:?}");
+    let service = crate::get_authenticated_service().await?;
+    let uid = service.id().clone();
+    let mut ts = service::table::TableService::new(table_id.clone(), base_id, uid)
+        .await
+        .map_err(|e| ServerFnError::new(format!("Failed to create table service: {e:?}")))?;
+    let insert = models::InsertRecord::new(table_id, HashMap::new());
+    let result = ts
+        .create_record(insert)
+        .await
+        .map_err(|e| ServerFnError::new(format!("Failed to create record: {e:?}")));
+    if let Ok(ref rec) = result {
+        log!("create_table_record: created record {:?}", rec.id);
+    }
+    result
+}

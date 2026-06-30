@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 use models::Value;
 use models::ValueType;
-use models::{FieldConfig, FieldId, NumberConfig, RecordId, TextConfig};
+use models::{FieldConfig, FieldId, NumberConfig, RecordId, SingleLineValue, TextConfig};
 
 fn value_to_string(value: &Value) -> String {
     match value {
@@ -60,6 +60,12 @@ fn filter_string(field_config: &FieldConfig, val: &str) -> String {
     }
 }
 
+fn create_value(field_config: &FieldConfig, raw: &str) -> Value {
+    let sl = SingleLineValue::new(None, Some(raw.to_owned()))
+        .unwrap_or_else(|_| SingleLineValue::new(None, Some(String::new())).expect("empty string is always valid"));
+    sl.convert_to(field_config).unwrap_or(Value::SingleLine(sl))
+}
+
 fn needs_filtered(field_config: &FieldConfig) -> bool {
     match field_config {
         FieldConfig::Text(tc) => {
@@ -73,7 +79,7 @@ fn needs_filtered(field_config: &FieldConfig) -> bool {
 #[component]
 pub fn Cell(
     field_config: FieldConfig,
-    field_name: String,
+    field_name: FieldId,
     value: Value,
     on_change: Callback<(RecordId, FieldId, Value)>,
     record_id: RecordId,
@@ -97,10 +103,11 @@ pub fn Cell(
             let rc = record_id.clone();
             let fnm = field_name.clone();
             let oc = on_change.clone();
+            let fg = field_config.clone();
             move |ev: leptos::ev::KeyboardEvent| {
                 if ev.key() == "Enter" {
                     let v = val.get_untracked();
-                    oc.run((rc.clone(), fnm.clone(), v));
+                    oc.run((rc.clone(), fnm.clone(), create_value(&fg, &v)));
                 }
             }
         };
@@ -108,9 +115,10 @@ pub fn Cell(
             let rc = record_id.clone();
             let fnm = field_name.clone();
             let oc = on_change.clone();
+            let fg = field_config.clone();
             move |_| {
                 let v = val.get_untracked();
-                oc.run((rc.clone(), fnm.clone(), v));
+                oc.run((rc.clone(), fnm.clone(), create_value(&fg, &v)));
             }
         };
         view! {
@@ -147,7 +155,7 @@ pub fn Cell(
                     let valid = validate_string(&fg, &v);
                     he.set(!valid);
                     if valid {
-                        oc.run((rc.clone(), fnm.clone(), v));
+                        oc.run((rc.clone(), fnm.clone(), create_value(&fg, &v)));
                     }
                 }
             }
@@ -164,7 +172,7 @@ pub fn Cell(
                     let valid = validate_string(&fg, &v);
                     he.set(!valid);
                     if valid {
-                        oc.run((rc.clone(), fnm.clone(), v));
+                        oc.run((rc.clone(), fnm.clone(), create_value(&fg, &v)));
                     }
                 }
             }

@@ -61,14 +61,14 @@ impl ValueType<str> for SingleLineValue {
                 };
                 Email => {
                     let value = self.value.clone();
-                    if value.validate_email() {
+                    if !value.validate_email() {
                         return Err(ValueError::CantConvertTo("Email".to_string()))
                     };
                     Value::Email(Email { value })
                 };
                 URL => {
                     let value = self.value.clone();
-                    if value.validate_url() {
+                    if !value.validate_url() {
                         return Err(ValueError::CantConvertTo("Url".to_string()))
                     };
                     Value::URL(UrlValue { value })

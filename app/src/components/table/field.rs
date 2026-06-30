@@ -55,7 +55,10 @@ pub fn Field(
     };
 
     view! {
-        <div class="min-w-[100px] shrink-0 px-2 h-full flex items-center border-r-[2px] border-black select-none">
+        <div
+            class="min-w-[100px] pl-2 h-full flex items-center border-r-[2px] border-black select-none"
+            style:width=move || format!("{}px", local_width.get())
+        >
             <Icon
                 icon_type=icon_type
                 class="w-[16px] h-auto fill-black mr-2 shrink-0"
@@ -64,10 +67,7 @@ pub fn Field(
             <p>{field.name}</p>
             <div
                 node_ref=handle_ref
-                class="ml-auto w-[4px] h-full cursor-col-resize bg-black shrink-0 touch-none self-stretch"
-                style:background-color=move || {
-                    if is_resizing.get() { "#000000" } else { "transparent" }
-                }
+                class="ml-auto w-[4px] h-full cursor-col-resize bg-black hover:bg-neutral-600 shrink-0 touch-none self-stretch"
                 on:pointerdown=on_pointerdown
                 on:pointermove=on_pointermove
                 on:pointerup=on_pointerup

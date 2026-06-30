@@ -99,156 +99,143 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
 
                 view! {
                     <div class="flex flex-col w-fit h-full overflow-visible">
-                        <div class="flex flex-row items-center">
-                            <Suspense fallback=move || {
-                                view! { <p>"Loading..."</p> }
-                            }>
-                                {move || {
-                                    let data = data.get();
-                                    let (fields, records) = match data {
-                                        Some(Ok(v)) => v,
-                                        _ => (vec![], vec![]),
-                                    };
-                                    let field_keys: Vec<String> = fields
-                                        .iter()
-                                        .filter_map(|f| f.id.as_ref().map(|id| id.id_str()))
-                                        .collect();
-                                    let headers: Vec<_> = fields
-                                        .iter()
-                                        .enumerate()
-                                        .filter_map(|(i, field)| {
-                                            let key = field_keys.get(i)?.clone();
-                                            let k_for_w = key.clone();
-                                            let w = Signal::derive({
-                                                let cw = col_widths.clone();
-                                                move || cw.get().get(&k_for_w).copied().unwrap_or(200.0)
-                                            });
-                                            let or = {
-                                                let set_cw = set_col_widths.clone();
-                                                let k = key.clone();
-                                                Callback::new(move |new_w: f64| {
-                                                    set_cw
-                                                        .update(|map| {
-                                                            map.insert(k.clone(), new_w);
-                                                        });
-                                                })
-                                            };
-                                            Some(
+                        <Suspense fallback=move || {
+                            view! { <p>"Loading..."</p> }
+                        }>
+                            {move || {
+                                let data = data.get();
+                                let (fields, records) = match data {
+                                    Some(Ok(v)) => v,
+                                    _ => (vec![], vec![]),
+                                };
+                                let field_keys: Vec<String> = fields
+                                    .iter()
+                                    .filter_map(|f| f.id.as_ref().map(|id| id.id_str()))
+                                    .collect();
+                                let headers: Vec<_> = fields
+                                    .iter()
+                                    .enumerate()
+                                    .filter_map(|(i, field)| {
+                                        let key = field_keys.get(i)?.clone();
+                                        let k_for_w = key.clone();
+                                        let w = Signal::derive({
+                                            let cw = col_widths.clone();
+                                            move || cw.get().get(&k_for_w).copied().unwrap_or(200.0)
+                                        });
+                                        let or = {
+                                            let set_cw = set_col_widths.clone();
+                                            let k = key.clone();
+                                            Callback::new(move |new_w: f64| {
+                                                set_cw
+                                                    .update(|map| {
+                                                        map.insert(k.clone(), new_w);
+                                                    });
+                                            })
+                                        };
+                                        Some(
 
-                                                view! {
-                                                    <Field field=field.clone() width=w on_resize=Some(or) />
-                                                },
-                                            )
-                                        })
-                                        .collect();
-                                    let field_names = fields
-                                        .iter()
-                                        .map(|f| f.name.clone())
-                                        .collect::<Vec<_>>();
-                                    let field_ids: Vec<Option<FieldId>> = fields
-                                        .iter()
-                                        .map(|f| f.id.clone())
-                                        .collect();
-                                    let field_configs: Vec<FieldConfig> = fields
-                                        .iter()
-                                        .map(|f| f.config.clone())
-                                        .collect();
-                                    let cell_rows: Vec<_> = records
-                                        .into_iter()
-                                        .map({
-                                            let field_keys = field_keys.clone();
-                                            let field_names = field_names.clone();
-                                            let field_ids = field_ids.clone();
-                                            let field_configs = field_configs.clone();
-                                            move |record| {
-                                                let rid = record.id;
-                                                let rec_cells = record.cells;
-                                                let cw = col_widths.clone();
-                                                let scw = set_col_widths.clone();
-                                                let occ = on_cell_change.clone();
-                                                let cells: Vec<_> = field_keys
-                                                    .iter()
-                                                    .enumerate()
-                                                    .filter_map({
-                                                        let rid = rid.clone();
-                                                        let rec_cells = rec_cells.clone();
-                                                        let cw = cw.clone();
-                                                        let scw = scw.clone();
-                                                        let occ = occ.clone();
-                                                        let fids = field_ids.clone();
-                                                        let fnames = field_names.clone();
-                                                        let fconfigs = field_configs.clone();
-                                                        move |(i, key)| {
-                                                            let rid = rid.clone()?;
-                                                            let fid = fids[i].clone()?;
-                                                            let val = rec_cells
-                                                                .get(&fnames[i])
-                                                                .cloned()
-                                                                .unwrap_or_else(|| {
-                                                                    Value::SingleLine(
-                                                                        SingleLineValue::new(None, Some(String::new()))
-                                                                            .expect("empty string is always valid"),
-                                                                    )
-                                                                });
-                                                            let cfg = fconfigs[i].clone();
-                                                            let k_for_w = key.clone();
-                                                            let w = Signal::derive({
-                                                                let cw2 = cw.clone();
-                                                                move || cw2.get().get(&k_for_w).copied().unwrap_or(200.0)
+                                            view! {
+                                                <Field field=field.clone() width=w on_resize=Some(or) />
+                                            },
+                                        )
+                                    })
+                                    .collect();
+                                let field_names = fields
+                                    .iter()
+                                    .map(|f| f.name.clone())
+                                    .collect::<Vec<_>>();
+                                let field_ids: Vec<Option<FieldId>> = fields
+                                    .iter()
+                                    .map(|f| f.id.clone())
+                                    .collect();
+                                let field_configs: Vec<FieldConfig> = fields
+                                    .iter()
+                                    .map(|f| f.config.clone())
+                                    .collect();
+                                let cell_rows: Vec<_> = records
+                                    .into_iter()
+                                    .map({
+                                        let field_keys = field_keys.clone();
+                                        let field_names = field_names.clone();
+                                        let field_ids = field_ids.clone();
+                                        let field_configs = field_configs.clone();
+                                        move |record| {
+                                            let rid = record.id;
+                                            let rec_cells = record.cells;
+                                            let cw = col_widths.clone();
+                                            let occ = on_cell_change.clone();
+                                            let cells: Vec<_> = field_keys
+                                                .iter()
+                                                .enumerate()
+                                                .filter_map({
+                                                    let rid = rid.clone();
+                                                    let rec_cells = rec_cells.clone();
+                                                    let cw = cw.clone();
+                                                    let occ = occ.clone();
+                                                    let fids = field_ids.clone();
+                                                    let fnames = field_names.clone();
+                                                    let fconfigs = field_configs.clone();
+                                                    move |(i, key)| {
+                                                        let rid = rid.clone()?;
+                                                        let fid = fids[i].clone()?;
+                                                        let val = rec_cells
+                                                            .get(&fnames[i])
+                                                            .cloned()
+                                                            .unwrap_or_else(|| {
+                                                                Value::SingleLine(
+                                                                    SingleLineValue::new(None, Some(String::new()))
+                                                                        .expect("empty string is always valid"),
+                                                                )
                                                             });
-                                                            let or = {
-                                                                let scw2 = scw.clone();
-                                                                let k = key.clone();
-                                                                Callback::new(move |new_w: f64| {
-                                                                    scw2.update(|map| {
-                                                                        map.insert(k.clone(), new_w);
-                                                                    });
-                                                                })
-                                                            };
-                                                            Some(
+                                                        let cfg = fconfigs[i].clone();
+                                                        let k_for_w = key.clone();
+                                                        let w = Signal::derive({
+                                                            let cw2 = cw.clone();
+                                                            move || cw2.get().get(&k_for_w).copied().unwrap_or(200.0)
+                                                        });
+                                                        Some(
 
-                                                                view! {
-                                                                    <Column width=w on_resize=Some(or)>
-                                                                        <Cell
-                                                                            field_config=cfg
-                                                                            field_name=fid
-                                                                            value=val
-                                                                            on_change=occ
-                                                                            record_id=rid
-                                                                        />
-                                                                    </Column>
-                                                                },
-                                                            )
-                                                        }
-                                                    })
-                                                    .collect();
-                                                view! {
-                                                    <div class="flex flex-row items-center w-fit border-black border-b-[2px]">
-                                                        {cells.into_view()}
-                                                    </div>
-                                                }
+                                                            view! {
+                                                                <Column width=w>
+                                                                    <Cell
+                                                                        field_config=cfg
+                                                                        field_name=fid
+                                                                        value=val
+                                                                        on_change=occ
+                                                                        record_id=rid
+                                                                    />
+                                                                </Column>
+                                                            },
+                                                        )
+                                                    }
+                                                })
+                                                .collect();
+                                            view! {
+                                                <div class="flex flex-row items-center w-fit border-black border-b-[2px]">
+                                                    {cells.into_view()}
+                                                </div>
                                             }
-                                        })
-                                        .collect();
+                                        }
+                                    })
+                                    .collect();
 
-                                    view! {
-                                        <>
-                                            <div class="flex flex-row items-center h-14 w-fit border-black border-b-[2px] overflow-x-auto">
-                                                {headers.into_view()}
-                                            </div>
-                                            {cell_rows.into_view()}
-                                        </>
-                                    }
-                                        .into_any()
-                                }}
-                            </Suspense>
-                            <button
-                                on:click=handle_open_field_popup
-                                class="flex items-center justify-center h-full px-[7px] pt-[7px] border-black border-r-[2px] transition-colors"
-                            >
-                                <PlusIcon class="w-[16px] h-[16px] pixelated text-black mb-auto mx-auto" />
-                            </button>
-                        </div>
+                                view! {
+                                    <div class="flex flex-col">
+                                        <div class="flex flex-row items-center h-14 w-fit border-black border-b-[2px] overflow-x-auto">
+                                            {headers.into_view()}
+                                            <button
+                                                on:click=handle_open_field_popup
+                                                class="flex items-center justify-center h-full px-[7px] pt-[7px] border-black border-r-[2px] transition-colors shrink-0"
+                                            >
+                                                <PlusIcon class="w-[16px] h-[16px] pixelated text-black mb-auto mx-auto" />
+                                            </button>
+                                        </div>
+                                        {cell_rows.into_view()}
+                                    </div>
+                                }
+                                    .into_any()
+                            }}
+                        </Suspense>
                         <button
                             class="pl-[7px] py-[7px] border-black border-b-[2px] border-r-[2px]"
                             on:click=handle_create_record.clone()

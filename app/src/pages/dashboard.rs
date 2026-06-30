@@ -173,7 +173,7 @@ pub fn DashboardPage() -> impl IntoView {
 
                 <button
                     type="submit"
-                    class="pixel-corners--wrapper mt-2 p-3 bg-slate-800 text-white font-bold hover:bg-slate-700 transition-colors cursor-pointer w-full"
+                    class="pixel-corners--wrapper mt-2 p-3 bg-black text-white font-bold transition-colors cursor-pointer w-full"
                     on:click={
                         let handle = handle_create_base.clone();
                         move |ev| handle(ev)

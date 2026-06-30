@@ -10,10 +10,16 @@ pub enum IconType {
     SingleLine,
     Url,
     Unknown,
+    ChevronDown,
+    Check,
 }
 
 #[component]
-pub fn Icon(icon_type: IconType, class: &'static str) -> impl IntoView {
+pub fn Icon(
+    icon_type: IconType,
+    #[prop(into)] class: &'static str,
+    fill: &'static str,
+) -> impl IntoView {
     let raw = match icon_type {
         IconType::Email => include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -39,19 +45,37 @@ pub fn Icon(icon_type: IconType, class: &'static str) -> impl IntoView {
             env!("CARGO_MANIFEST_DIR"),
             "/../public/svg/url.svg"
         )),
-        IconType::Unknown => include_str!(concat!(
+        IconType::ChevronDown => include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../public/svg/chevron-down.svg"
+        )),
+        IconType::Check => include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../public/svg/check.svg"
+        )),
+        _ => include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/../public/svg/unknown.svg"
         )),
     };
+
+    let class_attr = format!(r#"class="{}" viewBox="0 0 16 16""#, class);
     let svg = raw
         .lines()
         .skip(1)
         .collect::<Vec<_>>()
         .join("\n")
-        .replace(r##"fill="#FFFFFF""##, r##"fill="currentColor""##)
-        .replace(r##" width="32" height="32""##, r##" viewBox="0 0 32 32""##);
-    view! { <div class=class inner_html=svg></div> }
+        .replace(
+            r##"fill="#FFFFFF""##,
+            format!(r##"fill="{fill}""##).as_str(),
+        )
+        .replace(
+            r##"fill="#1F1F1F""##,
+            format!(r##"fill="{fill}""##).as_str(),
+        )
+        .replace(r##" width="16" height="16""##, &class_attr);
+
+    view! { <span inner_html=svg style="display: contents;"></span> }
 }
 
 pub fn field_icon(config: &FieldConfig) -> IconType {

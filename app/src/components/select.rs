@@ -1,6 +1,8 @@
 use leptos::portal::Portal;
 use leptos::prelude::*;
 
+use crate::components::icon::{Icon, IconType};
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct SelectOption {
     pub value: String,
@@ -12,6 +14,7 @@ pub fn Select(
     #[prop(into)] options: Vec<SelectOption>,
     getter: ReadSignal<String>,
     setter: WriteSignal<String>,
+    #[prop(optional, into)] class: String,
 ) -> impl IntoView {
     let (is_open, set_is_open) = signal(false);
     let (top, set_top) = signal(0.0_f64);
@@ -19,17 +22,18 @@ pub fn Select(
     let (width, set_width) = signal(0.0_f64);
 
     let btn_ref = NodeRef::<leptos::html::Button>::new();
-    let btn_ref_for_toggle = btn_ref.clone();
 
-    let default_value = options.first().map(|o| o.value.clone()).unwrap_or_default();
-    if getter.get_untracked().is_empty() {
-        setter.set(default_value);
+    if getter.get_untracked().is_empty()
+        && let Some(first) = options.first()
+    {
+        setter.set(first.value.clone());
     }
 
-    let toggle = move |_| {
+    let toggle = move |ev: leptos::ev::MouseEvent| {
         if !is_open.get_untracked() {
             #[cfg(target_arch = "wasm32")]
-            if let Some(el) = btn_ref_for_toggle.get() {
+            {
+                let el = event_target::<web_sys::HtmlElement>(&ev);
                 let rect = el.get_bounding_client_rect();
                 set_top.set(rect.bottom());
                 set_left.set(rect.left());
@@ -39,48 +43,54 @@ pub fn Select(
         set_is_open.update(|open| *open = !*open);
     };
 
-    let options_closure = options.clone();
-    let for_fn = {
-        let options = options.clone();
-        move || options.clone()
-    };
-    let selected_label = move || {
+    let options_store = StoredValue::new(options);
+    let label = move || {
         let current = getter.get();
-        options_closure
+        options_store
+            .get_value()
             .iter()
             .find(|o| o.value == current)
             .map(|o| o.label.clone())
             .unwrap_or_else(|| "Select an option...".to_string())
     };
 
+    let merged_class = format!(
+        "pixel-corners--wrapper !w-full !h-[49px] p-4 inline-flex items-center justify-between text-sm {}",
+        class
+    );
+    let icon_class = if is_open.get() {
+        "text-muted-foreground w-[20px] h-auto pointer-events-none rotate-180"
+    } else {
+        "text-muted-foreground w-[20px] h-auto pointer-events-none"
+    };
+
     view! {
-        <div class="relative w-full font-['Pixel']">
-            <button
-                type="button"
-                node_ref=btn_ref
-                on:click=toggle
-                class="w-full p-4 bg-neutral-900 border-2 border-white text-white flex justify-between items-center cursor-pointer text-left focus:outline-none"
-            >
-                <span>{selected_label}</span>
-                <span class="ml-2">{move || if is_open.get() { "▲" } else { "▼" }}</span>
+        <div class="relative w-full">
+            <button type="button" node_ref=btn_ref on:click=toggle class=merged_class>
+                <span class="text-sm truncate flex items-center gap-2 pointer-events-none">
+                    {label}
+                </span>
+                <Icon icon_type=IconType::ChevronDown class=icon_class fill="#000000" />
             </button>
 
             <Portal>
                 <div
-                    class="bg-neutral-900 border-2 border-white z-[9999] overflow-visible"
+                    class="bg-white pixel-corners--wrapper z-[9999] overflow-visible !w-[173px]"
                     style:position="fixed"
-                    style:top=move || format!("{}px", top.get())
-                    style:left=move || format!("{}px", left.get())
+                    style:top=move || { format!("{}px", top.get() + 8.0) }
+                    style:left=move || { format!("{}px", left.get()) }
                     style:width=move || format!("{}px", width.get())
                     style:display=move || if is_open.get() { "block" } else { "none" }
                 >
                     <For
-                        each=for_fn.clone()
+                        each=move || options_store.get_value()
                         key=|opt| opt.value.clone()
                         children=move |opt| {
                             let val = opt.value.clone();
-                            let is_selected = move || getter.get() == opt.value;
-                            let why_the_fuck_do_we_need_that_many_clones = is_selected.clone();
+                            let val_clone_i_guess = val.clone();
+                            let is_selected = move || getter.get() == val_clone_i_guess;
+                            let is_not_fucking_selected = move || getter.get() != opt.value;
+                            let selected_for_class = is_selected.clone();
 
                             view! {
                                 <div
@@ -88,13 +98,23 @@ pub fn Select(
                                         setter.set(val.clone());
                                         set_is_open.set(false);
                                     }
-                                    class="px-4 py-3 text-white cursor-pointer transition-colors duration-150 hover:bg-white hover:text-black flex justify-between items-center"
-                                    class:bg-neutral-700=why_the_fuck_do_we_need_that_many_clones
+                                    class="px-4 py-3 text-black cursor-pointer flex justify-between items-center"
+                                    class:bg-black=selected_for_class.clone()
+                                    class:text-white=selected_for_class.clone()
+                                    class:hover:bg-slate-50=is_not_fucking_selected
                                 >
-                                    <span>{opt.label}</span>
+                                    <span>{opt.label.clone()}</span>
                                     {move || {
                                         is_selected()
-                                            .then(|| view! { <span class="text-xs">"✓"</span> })
+                                            .then(|| {
+                                                view! {
+                                                    <Icon
+                                                        icon_type=IconType::Check
+                                                        class="w-[18px] h-auto"
+                                                        fill="#FFFFFF"
+                                                    />
+                                                }
+                                            })
                                     }}
                                 </div>
                             }

@@ -64,7 +64,7 @@ pub fn Field(
             }} <span class="text-base font-semibold text-black truncate px-1 py-1">{name}</span>
             <div
                 node_ref=handle_ref
-                class="ml-auto w-[4px] h-full cursor-col-resize hover:bg-black active:bg-black shrink-0 touch-none self-stretch"
+                class="ml-auto w-[4px] h-full cursor-col-resize bg-black shrink-0 touch-none self-stretch"
                 style:background-color=move || {
                     if is_resizing.get() { "#000000" } else { "transparent" }
                 }

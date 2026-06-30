@@ -5,6 +5,7 @@ pub fn Popup(
     show: Signal<bool>,
     set_show: WriteSignal<bool>,
     children: ChildrenFn,
+    #[prop(optional)] overlay_children: Option<ChildrenFn>,
 ) -> impl IntoView {
     view! {
         <Show when=move || show.get()>
@@ -18,6 +19,7 @@ pub fn Popup(
                 >
                     {children()}
                 </div>
+                {overlay_children.clone().map(|f| f())}
             </div>
         </Show>
     }

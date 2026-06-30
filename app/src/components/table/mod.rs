@@ -8,8 +8,8 @@ mod server;
 
 use server::get_table_data;
 
+use crate::components::PlusIcon;
 use crate::components::table::{field::Field, field_popup::CreateFieldPopup};
-use crate::components::{PlusIcon};
 
 #[component]
 pub fn Table(base_key: String, table_key: String) -> impl IntoView {

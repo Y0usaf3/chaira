@@ -264,9 +264,9 @@ pub fn BasePage() -> impl IntoView {
 
                         <button
                             type="submit"
-                            class="pixel-corners--wrapper mt-2 ml-auto p-3 bg-slate-800 text-white font-bold transition-colors cursor-pointer w-full"
+                            class="pixel-corners--wrapper mt-2 ml-auto p-3 bg-black text-white font-bold cursor-pointer w-full"
                             on:click={
-                                let handle = handle_create_table.clone();
+                                let handle = handle_create_table;
                                 move |ev| handle(ev)
                             }
                         >

@@ -90,6 +90,7 @@
         llvmPackages.libclang
         tailwindcss_4
         wasmBindgenBin
+        google-chrome
         cargo-leptos
         leptosfmt
         binaryen

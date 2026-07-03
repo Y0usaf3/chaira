@@ -61,8 +61,9 @@ fn filter_string(field_config: &FieldConfig, val: &str) -> String {
 }
 
 fn create_value(field_config: &FieldConfig, raw: &str) -> Value {
-    let sl = SingleLineValue::new(None, Some(raw.to_owned()))
-        .unwrap_or_else(|_| SingleLineValue::new(None, Some(String::new())).expect("empty string is always valid"));
+    let sl = SingleLineValue::new(None, Some(raw.to_owned())).unwrap_or_else(|_| {
+        SingleLineValue::new(None, Some(String::new())).expect("empty string is always valid")
+    });
     sl.convert_to(field_config).unwrap_or(Value::SingleLine(sl))
 }
 
@@ -122,7 +123,7 @@ pub fn Cell(
             }
         };
         view! {
-            <div class="border-b-2 border-r-2 border-black min-h-[32px] flex items-center px-1">
+            <div class="border-r-[2px] border-black min-h-[32px] flex items-center px-1">
                 <input
                     type="text"
                     class="w-full bg-transparent outline-none text-sm text-black px-1"
@@ -178,7 +179,7 @@ pub fn Cell(
             }
         };
         view! {
-            <div class="relative border-b-2 border-r-2 border-black min-h-[32px] flex items-center px-1">
+            <div class="relative border-r-[2px] border-black min-h-[32px] flex items-center px-1">
                 <input
                     type="text"
                     class="w-full bg-transparent outline-none text-sm text-black px-1"
@@ -194,6 +195,7 @@ pub fn Cell(
                     style="background-color: #ef4444"
                 ></div>
             </div>
-        }.into_any()
+        }
+        .into_any()
     }
 }

@@ -57,7 +57,7 @@ pub fn Field(
 
     view! {
         <div
-            class="min-w-[100px] pl-2 h-full flex items-center border-r-[2px] border-black select-none"
+            class="min-w-[100px] pl-2 h-full flex items-center border-r-[2px] border-black select-none bg-slate-50"
             style:width=move || format!("{}px", local_width.get())
         >
             <Icon
@@ -65,7 +65,7 @@ pub fn Field(
                 class="w-[16px] h-auto fill-black mr-2 shrink-0"
                 fill="#000000"
             />
-            <p>{field.name}</p>
+            <p class="truncate utility">{field.name}</p>
             <div
                 node_ref=handle_ref
                 class="ml-auto w-[3px] h-full cursor-col-resize bg-white hover:bg-black shrink-0 touch-none self-stretch"

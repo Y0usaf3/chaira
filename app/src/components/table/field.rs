@@ -33,13 +33,14 @@ pub fn Field(
 
     let on_pointermove = move |ev: leptos::ev::PointerEvent| {
         if is_resizing.get_untracked() {
-            let dx = ev.client_x() as f64 - start_x.get();
+            let dx = (ev.client_x() as f64).round()
+                - ((ev.client_x() as f64).round() % 2.0)
+                - start_x.get();
             let current = local_width.get_untracked();
-            let new_w = (current + dx).max(60.0);
-            let stepped = ((new_w / 2.0).round() * 2.0) as f64;
-            local_width.set(stepped);
+            let new_w = current + dx;
+            local_width.set(new_w);
             if let Some(ref cb) = on_resize {
-                cb.run(stepped);
+                cb.run(new_w);
             }
             start_x.set(ev.client_x() as f64);
         }
@@ -67,7 +68,7 @@ pub fn Field(
             <p>{field.name}</p>
             <div
                 node_ref=handle_ref
-                class="ml-auto w-[4px] h-full cursor-col-resize bg-black hover:bg-neutral-600 shrink-0 touch-none self-stretch"
+                class="ml-auto w-[3px] h-full cursor-col-resize bg-white hover:bg-black shrink-0 touch-none self-stretch"
                 on:pointerdown=on_pointerdown
                 on:pointermove=on_pointermove
                 on:pointerup=on_pointerup

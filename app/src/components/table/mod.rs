@@ -220,17 +220,20 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                                     .collect();
 
                                 view! {
-                                    <div class="flex flex-col">
-                                        <div class="flex flex-row items-center h-14 w-fit border-black border-b-[2px] overflow-x-auto">
-                                            {headers.into_view()}
-                                            <button
-                                                on:click=handle_open_field_popup
-                                                class="flex items-center justify-center h-full px-[7px] pt-[7px] border-black border-r-[2px] transition-colors shrink-0"
-                                            >
-                                                <PlusIcon class="w-[16px] h-[16px] pixelated text-black mb-auto mx-auto" />
-                                            </button>
+                                    <div class="flex">
+                                        <div class="flex flex-col">
+                                            <div class="flex flex-row items-center h-10 w-fit border-black border-b-[2px] overflow-x-auto">
+                                                {headers.into_view()}
+
+                                            </div>
+                                            {cell_rows.into_view()}
                                         </div>
-                                        {cell_rows.into_view()}
+                                        <button
+                                            on:click=handle_open_field_popup
+                                            class="flex items-center justify-center h-full px-[7px] pt-[7px] border-black border-r-[2px] transition-colors shrink-0"
+                                        >
+                                            <PlusIcon class="w-[16px] h-[16px] pixelated text-black mb-auto mx-auto" />
+                                        </button>
                                     </div>
                                 }
                                     .into_any()

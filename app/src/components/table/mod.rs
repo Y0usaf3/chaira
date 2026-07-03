@@ -4,18 +4,22 @@ use leptos::prelude::*;
 use leptos::reactive::spawn_local;
 use leptos_router::{NavigateOptions, hooks::use_navigate};
 
+mod cell;
 mod column;
 mod field;
 mod field_popup;
 mod server;
-mod cell;
 
 use server::get_table_data;
 
-use crate::components::PlusIcon;
-use crate::components::table::{field::Field, field_popup::CreateFieldPopup, server::{update_cell_value, create_table_record}};
-use self::column::Column;
 use self::cell::Cell;
+use self::column::Column;
+use crate::components::PlusIcon;
+use crate::components::table::{
+    field::Field,
+    field_popup::CreateFieldPopup,
+    server::{create_table_record, update_cell_value},
+};
 use models::{FieldConfig, FieldId, SingleLineValue, Value};
 
 #[component]
@@ -24,7 +28,6 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
     let (show_field_popup, set_show_field_popup) = signal(false);
     let handle_open_field_popup = move |_| set_show_field_popup.set(true);
     let handle_field_created = Callback::new(move |_| set_refresh.update(|v| *v += 1));
-
 
     let navigate = use_navigate();
     let navigate_to_dashboard = move || {
@@ -72,8 +75,7 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
         },
     );
 
-    
-       let handle_create_record = {
+    let handle_create_record = {
         move |_| {
             let bk = base_id.clone();
             let tk = table_id.clone();

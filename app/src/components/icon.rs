@@ -18,6 +18,7 @@ pub enum IconType {
 pub fn Icon(
     icon_type: IconType,
     #[prop(into)] class: &'static str,
+    #[prop(into, optional)] extern_class: Signal<&'static str>,
     fill: &'static str,
 ) -> impl IntoView {
     let raw = match icon_type {
@@ -73,9 +74,9 @@ pub fn Icon(
             r##"fill="#1F1F1F""##,
             format!(r##"fill="{fill}""##).as_str(),
         )
-        .replace(r##" width="16" height="16""##, &class_attr);
+        .replace(r##"width="16" height="16""##, &class_attr);
 
-    view! { <span inner_html=svg style="display: contents;"></span> }
+    view! { <span inner_html=svg style="display: inline-block;" class=extern_class></span> }
 }
 
 pub fn field_icon(config: &FieldConfig) -> IconType {

@@ -58,11 +58,7 @@ pub fn Select(
         "pixel-corners--wrapper !w-full !h-[49px] p-4 inline-flex items-center justify-between text-sm {}",
         class
     );
-    let icon_class = if is_open.get() {
-        "text-muted-foreground w-[20px] h-auto pointer-events-none rotate-180"
-    } else {
-        "text-muted-foreground w-[20px] h-auto pointer-events-none"
-    };
+    let rotate_class = move || if is_open.get() {"rotate-180"} else {""};
 
     view! {
         <div class="relative w-full">
@@ -70,7 +66,12 @@ pub fn Select(
                 <span class="text-sm truncate flex items-center gap-2 pointer-events-none">
                     {label}
                 </span>
-                <Icon icon_type=IconType::ChevronDown class=icon_class fill="#000000" />
+                <Icon
+                    icon_type=IconType::ChevronDown
+                    class="text-muted-foreground w-[20px] h-auto pointer-events-none"
+                    extern_class=rotate_class
+                    fill="#000000"
+                />
             </button>
 
             <Portal>

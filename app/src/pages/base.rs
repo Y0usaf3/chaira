@@ -192,7 +192,8 @@ pub fn BasePage() -> impl IntoView {
                 <div class="bg-white w-full h-full">
                     <Table base_key=base_key table_key=t_key />
                 </div>
-            }.into_any()
+            }
+            .into_any()
         } else {
             view! {
                 <div class="flex flex-col justify-end items-center w-full h-full gap-4">

@@ -14,7 +14,7 @@ pub fn Popup(
                 on:click=move |_| set_show.set(false)
             >
                 <div
-                    class="pixel-corners--wrapper p-7 w-[400px] bg-white shadow-sm overflow-visible"
+                    class="pixel-corners--wrapper p-7 !w-[340px] bg-white shadow-sm overflow-visible"
                     on:click=|ev| ev.stop_propagation()
                 >
                     {children()}

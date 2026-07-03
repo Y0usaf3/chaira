@@ -1,7 +1,7 @@
 use leptos::logging::log;
-use std::collections::HashMap;
 use leptos::prelude::*;
 use models::{BaseId, Field, FieldConfig, FieldId, Record, RecordId, TableId, Value};
+use std::collections::HashMap;
 
 // NOTE: better use Json enc/dec when using wrapper types or complex types
 use leptos::server_fn::codec::Json;
@@ -56,7 +56,6 @@ pub async fn create_table_field(
         .await
         .map_err(|e| ServerFnError::new(format!("Failed to create field: {e:?}")))
 }
-
 
 #[server]
 pub async fn update_cell_value(

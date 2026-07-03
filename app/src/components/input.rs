@@ -23,7 +23,7 @@ pub fn FilteredInput(
     view! {
         <div class="flex flex-col gap-1">
             <label class="text-sm font-semibold text-slate-700">{label}</label>
-            <div class="pixel-input--wrapper p-4">
+            <div class="pixel-input--wrapper p-4 !w-full">
                 <input
                     type="text"
                     node_ref=input_ref

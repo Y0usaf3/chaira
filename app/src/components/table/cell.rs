@@ -1,7 +1,9 @@
 use leptos::prelude::*;
-use models::Value;
-use models::ValueType;
-use models::{FieldConfig, FieldId, NumberConfig, RecordId, SingleLineValue, TextConfig};
+use models::{
+    DatetimeConfig, DecimalValue, Email, FieldConfig, FieldId, LongTextValue, NumberConfig,
+    NumberValue, PercentValue, PhoneValue, RatingValue, RecordId, SingleLineValue, TextConfig,
+    UrlValue, Value, ValueError, ValueType,
+};
 
 fn value_to_string(value: &Value) -> String {
     match value {
@@ -17,24 +19,6 @@ fn value_to_string(value: &Value) -> String {
         Value::Rating(v) => v.value().to_string(),
         Value::Date(v) => v.value().to_string(),
         _ => String::new(),
-    }
-}
-
-fn validate_string(field_config: &FieldConfig, val: &str) -> bool {
-    if val.is_empty() {
-        return true;
-    }
-    match field_config {
-        FieldConfig::Text(tc) => match tc {
-            TextConfig::Email => val.contains('@') && val.contains('.'),
-            TextConfig::URL => val.starts_with("http://") || val.starts_with("https://"),
-            TextConfig::Phone => val
-                .chars()
-                .all(|c| c.is_ascii_digit() || "+- ()".contains(c)),
-            _ => true,
-        },
-        FieldConfig::Number(_) => val.parse::<f64>().is_ok(),
-        _ => true,
     }
 }
 
@@ -60,11 +44,84 @@ fn filter_string(field_config: &FieldConfig, val: &str) -> String {
     }
 }
 
-fn create_value(field_config: &FieldConfig, raw: &str) -> Value {
-    let sl = SingleLineValue::new(None, Some(raw.to_owned())).unwrap_or_else(|_| {
-        SingleLineValue::new(None, Some(String::new())).expect("empty string is always valid")
-    });
-    sl.convert_to(field_config).unwrap_or(Value::SingleLine(sl))
+fn create_value(field_config: &FieldConfig, raw: &str) -> Result<Value, ValueError> {
+    match field_config {
+        FieldConfig::Text(tc) => match tc {
+            TextConfig::SingleLine { .. } => {
+                let v = SingleLineValue::new(None, Some(raw.to_owned()))?;
+                v.verify(field_config.clone())?;
+                Ok(Value::SingleLine(v))
+            }
+            TextConfig::LongText { rich_text } => {
+                let v = LongTextValue::new(raw.to_owned(), *rich_text)?;
+                v.verify(field_config.clone())?;
+                Ok(Value::LongText(Box::new(v)))
+            }
+            TextConfig::Email => {
+                let v = Email::new(raw.to_owned())?;
+                v.verify(field_config.clone())?;
+                Ok(Value::Email(v))
+            }
+            TextConfig::URL => {
+                let v = UrlValue::new(raw.to_owned())?;
+                v.verify(field_config.clone())?;
+                Ok(Value::URL(v))
+            }
+            TextConfig::Phone => {
+                let v = PhoneValue::new(raw.to_owned(), None)?;
+                v.verify(field_config.clone())?;
+                Ok(Value::Phone(v))
+            }
+        },
+        FieldConfig::Number(nc) => match nc {
+            NumberConfig::Number { .. } => {
+                let parsed = raw
+                    .trim()
+                    .parse::<isize>()
+                    .map_err(|_| ValueError::CantConvertTo("Number".to_string()))?;
+                let v = NumberValue::new(Some(parsed), None)?;
+                v.verify(field_config.clone())?;
+                Ok(Value::Number(v))
+            }
+            NumberConfig::Decimal { .. } => {
+                let parsed = raw
+                    .trim()
+                    .parse::<f64>()
+                    .map_err(|_| ValueError::CantConvertTo("Decimal".to_string()))?;
+                let v = DecimalValue::new(Some(parsed), None)?;
+                v.verify(field_config.clone())?;
+                Ok(Value::Decimal(v))
+            }
+            NumberConfig::Currency { .. } => {
+                let sl = SingleLineValue::new(None, Some(raw.to_owned()))?;
+                sl.convert_to(field_config)
+            }
+            NumberConfig::Percent { .. } => {
+                let cleaned = raw.replace('%', " ");
+                let parsed = cleaned
+                    .trim()
+                    .parse::<i32>()
+                    .map_err(|_| ValueError::CantConvertTo("Percent".to_string()))?;
+                let v = PercentValue::new(parsed);
+                v.verify(field_config.clone())?;
+                Ok(Value::Percent(v))
+            }
+            NumberConfig::Rating { max, .. } => {
+                let parsed = raw
+                    .trim()
+                    .parse::<u8>()
+                    .map_err(|_| ValueError::CantConvertTo("Rating".to_string()))?;
+                let v = RatingValue::new(Some(parsed), *max as u8)?;
+                v.verify(field_config.clone())?;
+                Ok(Value::Rating(v))
+            }
+        },
+        FieldConfig::Datetime(DatetimeConfig::Date { .. }) => {
+            let sl = SingleLineValue::new(None, Some(raw.to_owned()))?;
+            sl.convert_to(field_config)
+        }
+        _ => Err(ValueError::WrongType("unsupported field type".to_string())),
+    }
 }
 
 fn needs_filtered(field_config: &FieldConfig) -> bool {
@@ -94,10 +151,12 @@ pub fn Cell(
         let input_cb = {
             let fg = field_config.clone();
             let sv = set_val.clone();
+            let he = set_has_error.clone();
             move |ev: leptos::ev::Event| {
                 let raw = event_target_value(&ev);
                 let filtered = filter_string(&fg, &raw);
                 sv.set(filtered);
+                he.set(false);
             }
         };
         let keydown_cb = {
@@ -105,10 +164,17 @@ pub fn Cell(
             let fnm = field_name.clone();
             let oc = on_change.clone();
             let fg = field_config.clone();
+            let he = set_has_error.clone();
             move |ev: leptos::ev::KeyboardEvent| {
                 if ev.key() == "Enter" {
                     let v = val.get_untracked();
-                    oc.run((rc.clone(), fnm.clone(), create_value(&fg, &v)));
+                    match create_value(&fg, &v) {
+                        Ok(value) => {
+                            he.set(false);
+                            oc.run((rc.clone(), fnm.clone(), value));
+                        }
+                        Err(_) => he.set(true),
+                    }
                 }
             }
         };
@@ -117,13 +183,22 @@ pub fn Cell(
             let fnm = field_name.clone();
             let oc = on_change.clone();
             let fg = field_config.clone();
+            let he = set_has_error.clone();
             move |_| {
                 let v = val.get_untracked();
-                oc.run((rc.clone(), fnm.clone(), create_value(&fg, &v)));
+                if !v.is_empty() {
+                    match create_value(&fg, &v) {
+                        Ok(value) => {
+                            he.set(false);
+                            oc.run((rc.clone(), fnm.clone(), value));
+                        }
+                        Err(_) => he.set(true),
+                    }
+                }
             }
         };
         view! {
-            <div class="border-r-[2px] border-black min-h-[32px] flex items-center px-1">
+            <div class="relative border-r-[2px] border-black min-h-[32px] flex items-center px-1">
                 <input
                     type="text"
                     class="w-full bg-transparent outline-none text-sm text-black px-1"
@@ -132,6 +207,12 @@ pub fn Cell(
                     on:keydown=keydown_cb
                     on:blur=blur_cb
                 />
+                <div
+                    class="absolute bottom-0 right-0 w-1.5 h-1.5 transition-opacity"
+                    class:opacity-100=move || has_error.get()
+                    class:opacity-0=move || !has_error.get()
+                    style="background-color: #ef4444"
+                ></div>
             </div>
         }
         .into_any()
@@ -153,10 +234,12 @@ pub fn Cell(
             move |ev: leptos::ev::KeyboardEvent| {
                 if ev.key() == "Enter" {
                     let v = val.get_untracked();
-                    let valid = validate_string(&fg, &v);
-                    he.set(!valid);
-                    if valid {
-                        oc.run((rc.clone(), fnm.clone(), create_value(&fg, &v)));
+                    match create_value(&fg, &v) {
+                        Ok(value) => {
+                            he.set(false);
+                            oc.run((rc.clone(), fnm.clone(), value));
+                        }
+                        Err(_) => he.set(true),
                     }
                 }
             }
@@ -170,10 +253,12 @@ pub fn Cell(
             move |_| {
                 let v = val.get_untracked();
                 if !v.is_empty() {
-                    let valid = validate_string(&fg, &v);
-                    he.set(!valid);
-                    if valid {
-                        oc.run((rc.clone(), fnm.clone(), create_value(&fg, &v)));
+                    match create_value(&fg, &v) {
+                        Ok(value) => {
+                            he.set(false);
+                            oc.run((rc.clone(), fnm.clone(), value));
+                        }
+                        Err(_) => he.set(true),
                     }
                 }
             }

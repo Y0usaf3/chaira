@@ -153,8 +153,8 @@ pub fn CreateFieldPopup(
                 {move || match active_field_type.get() {
                     FieldType::SingleLine { .. } => {
                         view! {
-                            <div class="flex flex-col gap-3 p-3 bg-slate-50 border border-slate-200 rounded">
-                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            <div class="flex flex-col gap-3 p-3 bg-slate-50 border-[2px] border-black">
+                                <h4 class="text-xs font-bold tex-black uppercase tracking-wider">
                                     "Single Line Configuration"
                                 </h4>
                                 <div class="flex flex-col gap-1">
@@ -186,7 +186,7 @@ pub fn CreateFieldPopup(
                     FieldType::LongText { .. } => {
 
                         view! {
-                            <div class="flex items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded">
+                            <div class="flex flex-col gap-3 p-3 bg-slate-50 border-[2px] border-black">
                                 <input
                                     type="checkbox"
                                     id="rich_text"
@@ -205,7 +205,7 @@ pub fn CreateFieldPopup(
                     FieldType::Number { .. } => {
 
                         view! {
-                            <div class="flex flex-col gap-1 p-3 bg-slate-50 border border-slate-200 rounded">
+                            <div class="flex items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded">
                                 <label class="text-xs text-slate-600">
                                     "Default Numeric Value"
                                 </label>

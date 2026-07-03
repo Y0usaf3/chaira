@@ -1,5 +1,8 @@
 use std::str::FromStr;
 
+use crate::cell::FieldConfig;
+use crate::kinds::TextConfig;
+use crate::prelude::*;
 use crate::CurrencyValue;
 use crate::DateValue;
 use crate::NumberValue;
@@ -8,9 +11,6 @@ use crate::RatingValue;
 use crate::Value;
 use crate::ValueError;
 use crate::ValueType;
-use crate::cell::FieldConfig;
-use crate::kinds::TextConfig;
-use crate::prelude::*;
 use chrono::NaiveTime;
 use iso_currency::Currency;
 use ordered_float::OrderedFloat;

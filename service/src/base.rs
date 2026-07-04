@@ -198,8 +198,6 @@ COMMIT TRANSACTION;
             .bind(("cells", cells))
             .await?;
 
-        dbg!(&res);
-
         let table = res.take::<Vec<Table>>(5)?;
         if table.is_empty() {
             return Err(Irror::Table(TableError::CreateFailed));

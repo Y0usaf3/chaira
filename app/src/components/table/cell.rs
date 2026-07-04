@@ -198,7 +198,7 @@ pub fn Cell(
             }
         };
         view! {
-            <div class="relative border-r-[2px] border-black min-h-[32px] flex items-center px-1">
+            <div class="relative min-h-[32px] flex items-center px-1">
                 <input
                     type="text"
                     class="w-full bg-transparent outline-none text-sm text-black px-1"
@@ -264,7 +264,7 @@ pub fn Cell(
             }
         };
         view! {
-            <div class="relative border-r-[2px] border-black min-h-[32px] flex items-center px-1">
+            <div class="relative min-h-[32px] flex items-center px-1">
                 <input
                     type="text"
                     class="w-full bg-transparent outline-none text-sm text-black px-1"

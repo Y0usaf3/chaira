@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 use models::Field;
 
-use crate::components::{Icon, icon::field_icon};
+use crate::components::{icon::field_icon, Icon};
 
 #[component]
 pub fn Field(
@@ -57,7 +57,7 @@ pub fn Field(
 
     view! {
         <div
-            class="min-w-[100px] pl-2 h-full flex items-center border-r-[2px] border-black select-none bg-slate-50"
+            class="min-w-[100px] pl-2 h-full flex items-center border-black select-none bg-slate-50"
             style:width=move || format!("{}px", local_width.get())
         >
             <Icon

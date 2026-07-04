@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use leptos::prelude::*;
 use leptos::reactive::spawn_local;
 use leptos_router::{NavigateOptions, hooks::use_navigate};
-use leptos::logging::log;
+/* use leptos::logging::log; */
 
 mod cell;
 mod column;
@@ -140,28 +140,31 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                                     .iter()
                                     .map(|f| f.config.clone())
                                     .collect();
-                                let cell_rows: Vec<_> = records
-                                    .into_iter()
+                                let columns: Vec<_> = field_keys
+                                    .iter()
+                                    .enumerate()
                                     .map({
-                                        let field_keys = field_keys.clone();
+                                        let records = records.clone();
                                         let field_ids = field_ids.clone();
                                         let field_configs = field_configs.clone();
-                                        move |record| {
-                                            let rid = record.id;
-                                            let rec_cells = record.cells;
-                                            let cells: Vec<_> = field_keys
+                                        move |(i, key)| {
+                                            let k_for_w = key.clone();
+                                            let w = Signal::derive({
+                                                move || {
+                                                    col_widths.get().get(&k_for_w).copied().unwrap_or(200.0)
+                                                }
+                                            });
+                                            let cells: Vec<_> = records
                                                 .iter()
-                                                .enumerate()
                                                 .filter_map({
-                                                    let rid = rid.clone();
-                                                    let rec_cells = rec_cells.clone();
-                                                    let fids = field_ids.clone();
-                                                    let fconfigs = field_configs.clone();
-                                                    move |(i, key)| {
-                                                        let rid = rid.clone()?;
-                                                        let fid = fids[i].clone()?;
-                                                        let val = rec_cells
-                                                            .get(&fids[i].as_ref()?.id_str())
+                                                    let field_ids = field_ids.clone();
+                                                    let field_configs = field_configs.clone();
+                                                    move |record| {
+                                                        let rid = record.id.clone()?;
+                                                        let fid = field_ids[i].clone()?;
+                                                        let val = record
+                                                            .cells
+                                                            .get(&field_ids[i].as_ref()?.id_str())
                                                             .cloned()
                                                             .unwrap_or_else(|| {
                                                                 Value::SingleLine(
@@ -169,51 +172,40 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                                                                         .expect("empty string is always valid"),
                                                                 )
                                                             });
-                                                        let cfg = fconfigs[i].clone();
-                                                        let k_for_w = key.clone();
-                                                        let w = Signal::derive({
-                                                            move || {
-                                                                col_widths.get().get(&k_for_w).copied().unwrap_or(200.0)
-                                                            }
-                                                        });
+                                                        let cfg = field_configs[i].clone();
                                                         Some(
 
                                                             view! {
-                                                                <Column width=w>
-                                                                    <Cell
-                                                                        field_config=cfg
-                                                                        field_name=fid
-                                                                        value=val
-                                                                        on_change=on_cell_change
-                                                                        record_id=rid
-                                                                    />
-                                                                </Column>
+                                                                <Cell
+                                                                    field_config=cfg
+                                                                    field_name=fid
+                                                                    value=val
+                                                                    on_change=on_cell_change
+                                                                    record_id=rid
+                                                                />
                                                             },
                                                         )
                                                     }
                                                 })
                                                 .collect();
-                                            view! {
-                                                <div class="flex flex-row items-center w-fit border-black border-b-[2px]">
-                                                    {cells.into_view()}
-                                                </div>
-                                            }
+
+                                            view! { <Column width=w>{cells.into_view()}</Column> }
                                         }
                                     })
                                     .collect();
-
                                 view! {
                                     <div class="flex">
-                                        <div class="flex flex-col">
-                                            <div class="flex flex-row items-center h-10 w-fit border-black border-b-[2px] overflow-none">
+                                        <div class="flex flex-col overflow-hidden">
+                                            <div class="flex flex-row items-center h-10 w-fit border-black border-b-[2px] divide-x-[2px] divide-black sticky top-0 bg-white z-10">
                                                 {headers.into_view()}
-
                                             </div>
-                                            {cell_rows.into_view()}
+                                            <div class="flex flex-row flex-1 w-fit divide-x-[2px] divide-black overflow-auto">
+                                                {columns.into_view()}
+                                            </div>
                                         </div>
                                         <button
                                             on:click=handle_open_field_popup
-                                            class="flex items-center justify-center h-full px-[7px] pt-[7px] border-black border-r-[2px] transition-colors shrink-0"
+                                            class="sticky right-0 bg-white flex items-center justify-center h-full px-[7px] pt-[7px] border-black border-r-[2px] border-l-[2px] transition-colors shrink-0 z-50"
                                         >
                                             <PlusIcon class="w-[16px] h-[16px] pixelated text-black mb-auto mx-auto" />
                                         </button>
@@ -222,12 +214,13 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                                     .into_any()
                             }}
                             <button
-                                class="pl-[7px] py-[7px] border-black border-b-[2px] border-r-[2px]"
+                                class="sticky bottom-0 pl-[7px] py-[7px] border-black border-b-[2px] border-r-[2px] border-t-[2px] bg-white"
+                                style="position: sticky; bottom: 0; z-index: 50;"
                                 on:click=move |_| {
                                     let bk = base_id.clone();
                                     let tk = table_id.clone();
                                     spawn_local(async move {
-                                        if let Ok(_) = create_table_record(bk, tk).await {
+                                        if create_table_record(bk, tk).await.is_ok() {
                                             set_refresh.update(|v| *v += 1);
                                         }
                                     });

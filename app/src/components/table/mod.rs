@@ -61,7 +61,7 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
         ids
     } else {
         navigate_to_dashboard();
-        return view! {}.into_any();
+        return ().into_any();
     };
 
     let (bi, ti) = (base_id.clone(), table_id.clone());
@@ -100,7 +100,6 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                                     Some(Ok(v)) => v,
                                     _ => (vec![], vec![]),
                                 };
-                                log!("records: {records:?}");
                                 let field_keys: Vec<String> = fields
                                     .iter()
                                     .filter_map(|f| f.id.as_ref().map(|id| id.id_str()))
@@ -112,14 +111,14 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                                         let key = field_keys.get(i)?.clone();
                                         let k_for_w = key.clone();
                                         let w = Signal::derive({
-                                            let cw = col_widths.clone();
-                                            move || cw.get().get(&k_for_w).copied().unwrap_or(200.0)
+                                            move || {
+                                                col_widths.get().get(&k_for_w).copied().unwrap_or(200.0)
+                                            }
                                         });
                                         let or = {
-                                            let set_cw = set_col_widths.clone();
                                             let k = key.clone();
                                             Callback::new(move |new_w: f64| {
-                                                set_cw
+                                                set_col_widths
                                                     .update(|map| {
                                                         map.insert(k.clone(), new_w);
                                                     });
@@ -150,7 +149,6 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                                         move |record| {
                                             let rid = record.id;
                                             let rec_cells = record.cells;
-                                            log!("rec_cells: {rec_cells:?}");
                                             let cells: Vec<_> = field_keys
                                                 .iter()
                                                 .enumerate()

@@ -126,22 +126,67 @@ COMMIT TRANSACTION;
     #[requires(BasePermission, ManageTables)]
     pub async fn create_table(&mut self, name: String) -> Result<Table, Irror> {
         approved(&name)?;
+
+        use std::collections::HashMap;
+
+        let field = Field::from_insert(InsertField {
+            name: "Meow_colon_three".to_string(),
+            description: None,
+            is_primary: false,
+            is_nullable: false,
+            is_unique: false,
+            order: 0,
+            config: FieldConfig::Text(TextConfig::SingleLine {
+                default: None,
+                max_length: 500,
+            }),
+        });
+
+        let mut cells = HashMap::new();
+        cells.insert(
+            "Name".to_string(),
+            Value::SingleLine(SingleLineValue::new(
+                None,
+                Some("Miniwi :3".into()),
+            ).unwrap()),
+        );
+
         let mut res = DB
             .query(
                 "
             BEGIN TRANSACTION;
 
-            -- Create the table linked to this base
-            LET $table = (CREATE table SET 
+            LET $tablee = (CREATE table SET 
                 name = $name, 
                 base = $base, 
                 is_deleted = false
             );
 
-            -- Automatically grant creator 'Full Access' (1|2|4 = 7) to this specific table
-            RELATE $user->can_access_table->$table SET perms = 7;
+            RELATE $user->can_access_table->$tablee SET perms = 7;
 
-            RETURN $table;
+            LET $field = (CREATE field SET 
+                name = $field_data.name,
+                table = $tablee[0].id,
+                is_primary = $field_data.is_primary,
+                is_nullable = $field_data.is_nullable,
+                is_unique = $field_data.is_unique,
+                order = $field_data.order,
+                description = $field_data.description,
+                config = $field_data.config,
+                created_at = time::now(),
+                updated_at = time::now()
+            );
+
+            CREATE record SET 
+                table = $tablee[0].id,
+                cells = $cells,
+                cell_metadata = {},
+                version = 1,
+                is_deleted = false,
+                created_at = time::now(),
+                updated_at = time::now();
+
+            RETURN $tablee;
 
             COMMIT TRANSACTION;
         ",
@@ -149,9 +194,13 @@ COMMIT TRANSACTION;
             .bind(("user", self.user.clone()))
             .bind(("base", self.base_record_id.clone()))
             .bind(("name", name))
+            .bind(("field_data", field))
+            .bind(("cells", cells))
             .await?;
 
-        let table = res.take::<Vec<Table>>(3)?;
+        dbg!(&res);
+
+        let table = res.take::<Vec<Table>>(5)?;
         if table.is_empty() {
             return Err(Irror::Table(TableError::CreateFailed));
         };

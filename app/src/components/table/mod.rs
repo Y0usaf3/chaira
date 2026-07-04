@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use leptos::prelude::*;
 use leptos::reactive::spawn_local;
 use leptos_router::{NavigateOptions, hooks::use_navigate};
+use leptos::logging::log;
 
 mod cell;
 mod column;
@@ -75,18 +76,6 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
         },
     );
 
-    let handle_create_record = {
-        move |_| {
-            let bk = base_id.clone();
-            let tk = table_id.clone();
-            spawn_local(async move {
-                if let Ok(_) = create_table_record(bk, tk).await {
-                    set_refresh.update(|v| *v += 1);
-                }
-            });
-        }
-    };
-
     let (col_widths, set_col_widths) = signal::<HashMap<String, f64>>(HashMap::new());
 
     view! {
@@ -100,16 +89,18 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                 let tid = table_id.clone();
 
                 view! {
-                    <div class="flex flex-col w-fit h-full overflow-visible">
-                        <Suspense fallback=move || {
-                            view! { <p>"Loading..."</p> }
-                        }>
+                    <Suspense fallback=move || {
+                        view! { <p>"Loading..."</p> }
+                    }>
+                        <div class="flex flex-col w-fit h-full overflow-visible">
+
                             {move || {
                                 let data = data.get();
                                 let (fields, records) = match data {
                                     Some(Ok(v)) => v,
                                     _ => (vec![], vec![]),
                                 };
+                                log!("records: {records:?}");
                                 let field_keys: Vec<String> = fields
                                     .iter()
                                     .filter_map(|f| f.id.as_ref().map(|id| id.id_str()))
@@ -142,10 +133,6 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                                         )
                                     })
                                     .collect();
-                                let field_names = fields
-                                    .iter()
-                                    .map(|f| f.name.clone())
-                                    .collect::<Vec<_>>();
                                 let field_ids: Vec<Option<FieldId>> = fields
                                     .iter()
                                     .map(|f| f.id.clone())
@@ -158,30 +145,25 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                                     .into_iter()
                                     .map({
                                         let field_keys = field_keys.clone();
-                                        let field_names = field_names.clone();
                                         let field_ids = field_ids.clone();
                                         let field_configs = field_configs.clone();
                                         move |record| {
                                             let rid = record.id;
                                             let rec_cells = record.cells;
-                                            let cw = col_widths.clone();
-                                            let occ = on_cell_change.clone();
+                                            log!("rec_cells: {rec_cells:?}");
                                             let cells: Vec<_> = field_keys
                                                 .iter()
                                                 .enumerate()
                                                 .filter_map({
                                                     let rid = rid.clone();
                                                     let rec_cells = rec_cells.clone();
-                                                    let cw = cw.clone();
-                                                    let occ = occ.clone();
                                                     let fids = field_ids.clone();
-                                                    let fnames = field_names.clone();
                                                     let fconfigs = field_configs.clone();
                                                     move |(i, key)| {
                                                         let rid = rid.clone()?;
                                                         let fid = fids[i].clone()?;
                                                         let val = rec_cells
-                                                            .get(&fnames[i])
+                                                            .get(&fids[i].as_ref()?.id_str())
                                                             .cloned()
                                                             .unwrap_or_else(|| {
                                                                 Value::SingleLine(
@@ -192,8 +174,9 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                                                         let cfg = fconfigs[i].clone();
                                                         let k_for_w = key.clone();
                                                         let w = Signal::derive({
-                                                            let cw2 = cw.clone();
-                                                            move || cw2.get().get(&k_for_w).copied().unwrap_or(200.0)
+                                                            move || {
+                                                                col_widths.get().get(&k_for_w).copied().unwrap_or(200.0)
+                                                            }
                                                         });
                                                         Some(
 
@@ -203,7 +186,7 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                                                                         field_config=cfg
                                                                         field_name=fid
                                                                         value=val
-                                                                        on_change=occ
+                                                                        on_change=on_cell_change
                                                                         record_id=rid
                                                                     />
                                                                 </Column>
@@ -240,21 +223,30 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                                 }
                                     .into_any()
                             }}
-                        </Suspense>
-                        <button
-                            class="pl-[7px] py-[7px] border-black border-b-[2px] border-r-[2px]"
-                            on:click=handle_create_record.clone()
-                        >
-                            <PlusIcon class="w-[16px] h-[16px] pixelated fill-black my-auto mr-auto" />
-                        </button>
-                        <CreateFieldPopup
-                            base_id=bid
-                            table_id=tid
-                            show=show_field_popup
-                            set_show=set_show_field_popup
-                            on_created=handle_field_created
-                        />
-                    </div>
+                            <button
+                                class="pl-[7px] py-[7px] border-black border-b-[2px] border-r-[2px]"
+                                on:click=move |_| {
+                                    let bk = base_id.clone();
+                                    let tk = table_id.clone();
+                                    spawn_local(async move {
+                                        if let Ok(_) = create_table_record(bk, tk).await {
+                                            set_refresh.update(|v| *v += 1);
+                                        }
+                                    });
+                                }
+                            >
+
+                                <PlusIcon class="w-[16px] h-[16px] pixelated fill-black my-auto mr-auto" />
+                            </button>
+                            <CreateFieldPopup
+                                base_id=bid
+                                table_id=tid
+                                show=show_field_popup
+                                set_show=set_show_field_popup
+                                on_created=handle_field_created
+                            />
+                        </div>
+                    </Suspense>
                 }
                     .into_any()
             }

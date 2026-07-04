@@ -421,8 +421,8 @@ impl TableService {
         let fields: Vec<Field> = res.take(0)?;
         let records: Vec<Record> = res.take(1)?;
 
-        let visible_names: std::collections::HashSet<&str> =
-            fields.iter().map(|f| f.name.as_str()).collect();
+        let visible_ids: std::collections::HashSet<String> =
+            fields.iter().map(|f| if let Some(field_id) = &f.id {field_id.id_str()} else {"something_went_wrong".to_string()}).collect();
 
         let records: Vec<Record> = if state.is_owner {
             records
@@ -430,7 +430,7 @@ impl TableService {
             records
                 .into_iter()
                 .map(|mut r| {
-                    r.cells.retain(|k, _| visible_names.contains(k.as_str()));
+                    r.cells.retain(|k, _| visible_ids.contains(k.as_str()));
                     r
                 })
                 .collect()

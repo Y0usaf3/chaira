@@ -73,12 +73,8 @@ pub async fn update_cell_value(
     let mut ts = service::table::TableService::new(table_id.clone(), base_id, uid)
         .await
         .map_err(|e| ServerFnError::new(format!("Failed to create table service: {e:?}")))?;
-    let field_cfg = ts
-        .get_field_config(field_id)
-        .await
-        .map_err(|e| ServerFnError::new(format!("Failed to get field config: {e:?}")))?;
 
-    let patch = models::RecordPatch::new(Some(vec![(field_cfg.name, value)]));
+    let patch = models::RecordPatch::new(Some(vec![(field_id.id_str(), value)]));
     let result = ts
         .update_record(record_id, patch)
         .await

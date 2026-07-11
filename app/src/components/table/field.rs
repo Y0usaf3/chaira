@@ -1,4 +1,5 @@
 use leptos::prelude::*;
+use leptos::wasm_bindgen::JsCast;
 use models::Field;
 
 use crate::components::{Icon, IconType, icon::field_icon};
@@ -55,17 +56,33 @@ pub fn Field(
         }
     };
 
+    let field_ref = NodeRef::<leptos::html::Div>::new();
+
     let (show, set_show) = signal(false);
 
-    window_event_listener(leptos::ev::contextmenu, move |ev| {
-        ev.prevent_default();
-        set_show.set(true);
+    let _ = window_event_listener(leptos::ev::click, move |ev| {
+        if show.get_untracked() {
+            if let Some(el) = field_ref.get() {
+                if let Some(target) = ev.target() {
+                    if let Some(node) = target.dyn_ref::<web_sys::Node>() {
+                        if !el.contains(Some(node)) {
+                            set_show.set(false);
+                        }
+                    }
+                }
+            }
+        }
     });
 
     view! {
         <div
-            class="min-w-[100px] pl-2 h-full flex items-center border-black select-none bg-slate-50"
+            node_ref=field_ref
+            class="min-w-[100px] pl-2 h-full flex items-center border-black select-none bg-slate-50 relative"
             style:width=move || format!("{}px", local_width.get())
+            on:contextmenu=move |ev| {
+                ev.prevent_default();
+                set_show.set(true);
+            }
         >
             <Icon
                 icon_type=icon_type
@@ -84,7 +101,9 @@ pub fn Field(
             <Show when=move || show.get()>
                 <ol
                     class="bg-white border-black border-[2px] z-[9999] overflow-visible"
-                    style:position="fixed"
+                    style:position="absolute"
+                    style:top="40px"
+                    style:left="2px"
                 >
                     <li class="p-2 text-sm">"Rename"</li>
                     <li class="p-2 text-sm flex flex-row text-[#ef4444] items-end">

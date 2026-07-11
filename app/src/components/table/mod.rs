@@ -196,7 +196,7 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                                 view! {
                                     <div class="flex">
                                         <div class="flex flex-col overflow-hidden">
-                                            <div class="flex flex-row items-center h-10 w-fit border-black border-b-[2px] divide-x-[2px] divide-black sticky top-0 bg-white z-10">
+                                            <div class="flex flex-row items-center h-[38] w-fit border-black border-b-[2px] divide-x-[2px] divide-black sticky top-0 bg-white z-10">
                                                 {headers.into_view()}
                                             </div>
                                             <div class="flex flex-row flex-1 w-fit divide-x-[2px] divide-black overflow-auto">

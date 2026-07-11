@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 use models::Field;
 
-use crate::components::{icon::field_icon, Icon};
+use crate::components::{Icon, IconType, icon::field_icon};
 
 #[component]
 pub fn Field(
@@ -55,6 +55,13 @@ pub fn Field(
         }
     };
 
+    let (show, set_show) = signal(false);
+
+    window_event_listener(leptos::ev::contextmenu, move |ev| {
+        ev.prevent_default();
+        set_show.set(true);
+    });
+
     view! {
         <div
             class="min-w-[100px] pl-2 h-full flex items-center border-black select-none bg-slate-50"
@@ -64,6 +71,7 @@ pub fn Field(
                 icon_type=icon_type
                 class="w-[16px] h-auto fill-black mr-2 shrink-0"
                 fill="#000000"
+                extern_class="mr-[5px]"
             />
             <p class="truncate utility">{field.name}</p>
             <div
@@ -73,6 +81,23 @@ pub fn Field(
                 on:pointermove=on_pointermove
                 on:pointerup=on_pointerup
             ></div>
+            <Show when=move || show.get()>
+                <ol
+                    class="bg-white border-black border-[2px] z-[9999] overflow-visible"
+                    style:position="fixed"
+                >
+                    <li class="p-2 text-sm">"Rename"</li>
+                    <li class="p-2 text-sm flex flex-row text-[#ef4444] items-end">
+                        <Icon
+                            icon_type=IconType::Trash
+                            fill="#ef4444"
+                            class="!w-[18px] h-auto"
+                            extern_class="mr-[4px]"
+                        />
+                        <p class="leading-none">"Delete"</p>
+                    </li>
+                </ol>
+            </Show>
         </div>
     }
 }

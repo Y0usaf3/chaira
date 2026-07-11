@@ -12,12 +12,13 @@ pub enum IconType {
     Unknown,
     ChevronDown,
     Check,
+    Trash,
 }
 
 #[component]
 pub fn Icon(
     icon_type: IconType,
-    #[prop(into)] class: &'static str,
+    #[prop(into, optional)] class: &'static str,
     #[prop(into, optional)] extern_class: Signal<&'static str>,
     fill: &'static str,
 ) -> impl IntoView {
@@ -54,13 +55,17 @@ pub fn Icon(
             env!("CARGO_MANIFEST_DIR"),
             "/../public/svg/check.svg"
         )),
+        IconType::Trash => include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../public/svg/trash.svg"
+        )),
         _ => include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/../public/svg/unknown.svg"
         )),
     };
 
-    let class_attr = format!(r#"class="{}" viewBox="0 0 16 16""#, class);
+    let class_attr = format!(r#"class="{}" viewBox="0 0 32 32""#, class);
     let svg = raw
         .lines()
         .skip(1)
@@ -74,7 +79,7 @@ pub fn Icon(
             r##"fill="#1F1F1F""##,
             format!(r##"fill="{fill}""##).as_str(),
         )
-        .replace(r##"width="16" height="16""##, &class_attr);
+        .replace(r##"width="32" height="32""##, &class_attr);
 
     view! { <span inner_html=svg style="display: inline-block;" class=extern_class></span> }
 }

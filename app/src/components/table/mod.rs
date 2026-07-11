@@ -19,7 +19,7 @@ use crate::components::PlusIcon;
 use crate::components::table::{
     field::Field,
     field_popup::CreateFieldPopup,
-    server::{create_table_record, update_cell_value},
+    server::{create_table_record, delete_field, update_cell_value},
 };
 use models::{FieldConfig, FieldId, SingleLineValue, Value};
 
@@ -65,6 +65,7 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
     };
 
     let (bi, ti) = (base_id.clone(), table_id.clone());
+    let (bii, tii) = (base_id.clone(), table_id.clone());
 
     let on_cell_change = Callback::new(
         move |(record_id, field_id, value): (models::RecordId, models::FieldId, models::Value)| {
@@ -75,6 +76,14 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
             });
         },
     );
+
+    let delete_field = Callback::new(move |field_id: models::FieldId| {
+        let bk = bii.clone();
+        let tk = tii.clone();
+        spawn_local(async move {
+            let _ = delete_field(bk, tk, field_id).await;
+        })
+    });
 
     let (col_widths, set_col_widths) = signal::<HashMap<String, f64>>(HashMap::new());
 

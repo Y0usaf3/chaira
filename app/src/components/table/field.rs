@@ -9,6 +9,7 @@ pub fn Field(
     field: Field,
     #[prop(optional)] width: Signal<f64>,
     on_resize: Option<Callback<f64>>,
+    delete_field_thingy: Callback<models::FieldId>,
 ) -> impl IntoView {
     let icon_type = field_icon(&field.config);
 
@@ -22,6 +23,9 @@ pub fn Field(
             local_width.set(width.get());
         }
     });
+
+    let field_id = field.id.unwrap();
+    let field_id = field_id.clone();
 
     let on_pointerdown = move |ev: leptos::ev::PointerEvent| {
         ev.prevent_default();
@@ -106,7 +110,10 @@ pub fn Field(
                     style:left="2px"
                 >
                     <li class="p-2 text-sm">"Rename"</li>
-                    <li class="p-2 text-sm flex flex-row text-[#ef4444] items-end">
+                    <li
+                        class="p-2 text-sm flex flex-row text-[#ef4444] items-end"
+                        on:click=move |ev| delete_field_thingy.run(field_id.clone())
+                    >
                         <Icon
                             icon_type=IconType::Trash
                             fill="#ef4444"

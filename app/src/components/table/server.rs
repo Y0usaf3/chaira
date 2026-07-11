@@ -14,11 +14,19 @@ pub async fn get_table_data(
 ) -> Result<(Vec<Field>, Vec<Record>), ServerFnError> {
     let start = Instant::now();
     log!("get_table_data: base={base_id:?}, table={table_id:?}");
-    let service = crate::get_authenticated_service().await?;
-    let uid = service.id().clone();
-    let mut ts = service::table::TableService::new(table_id, base_id, uid)
+    let mut service = crate::get_authenticated_service().await?;
+    service
+        .open_base(base_id)
         .await
-        .map_err(|e| ServerFnError::new(format!("Failed to create table service: {e:?}")))?;
+        .map_err(|e| ServerFnError::new(format!("Failed to open base: {e:?}")))?;
+    let bs = service
+        .current_base
+        .ok_or(ServerFnError::new(format!("No base is open")))?;
+    let mut ts = bs
+        .open_table(table_id.clone())
+        .await
+        .map_err(|e| ServerFnError::new(format!("Failed to open table: {e:?}")))?;
+
     let result = ts
         .get_full_data(None)
         .await
@@ -31,7 +39,10 @@ pub async fn get_table_data(
             start.elapsed().as_millis()
         );
     } else {
-        log!("get_table_data: failed after {}ms", start.elapsed().as_millis());
+        log!(
+            "get_table_data: failed after {}ms",
+            start.elapsed().as_millis()
+        );
     }
     result
 }
@@ -44,11 +55,20 @@ pub async fn create_table_field(
     config: FieldConfig,
 ) -> Result<Field, ServerFnError> {
     let start = Instant::now();
-    let service = crate::get_authenticated_service().await?;
-    let uid = service.id().clone();
-    let mut ts = service::table::TableService::new(table_id.clone(), base_id, uid)
+
+    let mut service = crate::get_authenticated_service().await?;
+    service
+        .open_base(base_id)
         .await
-        .map_err(|e| ServerFnError::new(format!("Failed to create table service: {e:?}")))?;
+        .map_err(|e| ServerFnError::new(format!("Failed to open base: {e:?}")))?;
+    let bs = service
+        .current_base
+        .ok_or(ServerFnError::new(format!("No base is open")))?;
+    let mut ts = bs
+        .open_table(table_id.clone())
+        .await
+        .map_err(|e| ServerFnError::new(format!("Failed to open table: {e:?}")))?;
+
     let insert = models::InsertField {
         name: name.clone(),
         description: None,
@@ -62,11 +82,18 @@ pub async fn create_table_field(
         .create_field(insert)
         .await
         .map_err(|e| ServerFnError::new(format!("Failed to create field: {e:?}")));
-    
+
     if result.is_ok() {
-        log!("create_table_field: '{}' created successfully (took {}ms)", name, start.elapsed().as_millis());
+        log!(
+            "create_table_field: '{}' created successfully (took {}ms)",
+            name,
+            start.elapsed().as_millis()
+        );
     } else {
-        log!("create_table_field: failed after {}ms", start.elapsed().as_millis());
+        log!(
+            "create_table_field: failed after {}ms",
+            start.elapsed().as_millis()
+        );
     }
     result
 }
@@ -83,21 +110,34 @@ pub async fn update_cell_value(
     log!(
         "update_cell_value: base={base_id:?}, table={table_id:?}, record={record_id:?}, field={field_id:?}, value={value:?}"
     );
-    let service = crate::get_authenticated_service().await?;
-    let uid = service.id().clone();
-    let mut ts = service::table::TableService::new(table_id.clone(), base_id, uid)
+    let mut service = crate::get_authenticated_service().await?;
+    service
+        .open_base(base_id)
         .await
-        .map_err(|e| ServerFnError::new(format!("Failed to create table service: {e:?}")))?;
-
+        .map_err(|e| ServerFnError::new(format!("Failed to open base: {e:?}")))?;
+    let bs = service
+        .current_base
+        .ok_or(ServerFnError::new(format!("No base is open")))?;
+    let mut ts = bs
+        .open_table(table_id.clone())
+        .await
+        .map_err(|e| ServerFnError::new(format!("Failed to open table: {e:?}")))?;
     let patch = models::RecordPatch::new(Some(vec![(field_id.id_str(), value)]));
     let result = ts
         .update_record(record_id, patch)
         .await
         .map_err(|e| ServerFnError::new(format!("Failed to update record: {e:?}")));
     if let Ok(ref rec) = result {
-        log!("update_cell_value: updated record {:?} (took {}ms)", rec.id, start.elapsed().as_millis());
+        log!(
+            "update_cell_value: updated record {:?} (took {}ms)",
+            rec.id,
+            start.elapsed().as_millis()
+        );
     } else {
-        log!("update_cell_value: failed after {}ms", start.elapsed().as_millis());
+        log!(
+            "update_cell_value: failed after {}ms",
+            start.elapsed().as_millis()
+        );
     }
     result
 }
@@ -109,21 +149,57 @@ pub async fn create_table_record(
 ) -> Result<Record, ServerFnError> {
     let start = Instant::now();
     log!("create_table_record: base={base_id:?}, table={table_id:?}");
-    let service = crate::get_authenticated_service().await?;
-    let uid = service.id().clone();
-    let mut ts = service::table::TableService::new(table_id.clone(), base_id, uid)
+    let mut service = crate::get_authenticated_service().await?;
+    service
+        .open_base(base_id)
         .await
-        .map_err(|e| ServerFnError::new(format!("Failed to create table service: {e:?}")))?;
+        .map_err(|e| ServerFnError::new(format!("Failed to open base: {e:?}")))?;
+    let bs = service
+        .current_base
+        .ok_or(ServerFnError::new(format!("No base is open")))?;
+    let mut ts = bs
+        .open_table(table_id.clone())
+        .await
+        .map_err(|e| ServerFnError::new(format!("Failed to open table: {e:?}")))?;
     let insert = models::InsertRecord::new(table_id, HashMap::new());
     let result = ts
         .create_record(insert)
         .await
         .map_err(|e| ServerFnError::new(format!("Failed to create record: {e:?}")));
     if let Ok(ref rec) = result {
-        log!("create_table_record: created record {:?} (took {}ms)", rec.id, start.elapsed().as_millis());
+        log!(
+            "create_table_record: created record {:?} (took {}ms)",
+            rec.id,
+            start.elapsed().as_millis()
+        );
     } else {
-        log!("create_table_record: failed after {}ms", start.elapsed().as_millis());
+        log!(
+            "create_table_record: failed after {}ms",
+            start.elapsed().as_millis()
+        );
     }
     result
 }
 
+#[server]
+pub async fn delete_field(
+    base_id: BaseId,
+    table_id: TableId,
+    field_id: FieldId,
+) -> Result<Field, ServerFnError> {
+    let mut service = crate::get_authenticated_service().await?;
+    service
+        .open_base(base_id)
+        .await
+        .map_err(|e| ServerFnError::new(format!("Failed to open base: {e:?}")))?;
+    let bs = service
+        .current_base
+        .ok_or(ServerFnError::new(format!("No base is open")))?;
+    let mut ts = bs
+        .open_table(table_id.clone())
+        .await
+        .map_err(|e| ServerFnError::new(format!("Failed to open table: {e:?}")))?;
+    ts.delete_field(field_id)
+        .await
+        .map_err(|e| ServerFnError::new(format!("Failed to delete field: {e:?}")))
+}

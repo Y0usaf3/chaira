@@ -103,14 +103,14 @@ pub fn Field(
             ></div>
             <Show when=move || show.get()>
                 <ol
-                    class="bg-white border-black border-[2px] overflow-visible"
+                    class="bg-white border-black border-[2px] overflow-visible w-[94px]"
                     style:position="absolute"
-                    style:top="40px"
+                    style:top="41px"
                     style:left="2px"
                 >
                     <li class="p-2 text-sm">"Rename"</li>
                     <li
-                        class="p-2 text-sm flex flex-row text-[#ef4444] items-end"
+                        class="p-2 text-sm flex bg-white flex-row text-[#ef4444] items-end hover:bg-[#ef4444]/10"
                         on:click={
                             let field_id = field_id.clone();
                             move |_| delete_field_thingy.run(field_id.clone())

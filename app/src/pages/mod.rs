@@ -2,6 +2,7 @@ mod about;
 mod base;
 mod dashboard;
 mod home;
+mod user;
 
 pub use about::AboutPage;
 pub use base::BasePage;

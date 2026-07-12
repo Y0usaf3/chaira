@@ -63,7 +63,7 @@ pub fn Field(
 
     let (show, set_show) = signal(false);
 
-    let _ = window_event_listener(leptos::ev::click, move |ev| {
+    let close_on_outside_click = move |ev: web_sys::Event| {
         if show.get_untracked() {
             if let Some(el) = field_ref.get() {
                 if let Some(target) = ev.target() {
@@ -73,6 +73,18 @@ pub fn Field(
                         }
                     }
                 }
+            }
+        }
+    };
+
+    let _ = window_event_listener(leptos::ev::click, {
+        move |ev| close_on_outside_click(ev.into())
+    });
+
+    let _ = window_event_listener(leptos::ev::contextmenu, {
+        move |ev| {
+            if show.get_untracked() {
+                close_on_outside_click(ev.into());
             }
         }
     });

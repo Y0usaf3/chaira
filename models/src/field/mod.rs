@@ -78,4 +78,29 @@ impl Field {
             description: insert.description,
         }
     }
+    pub fn apply_patch(&mut self, patch: FieldPatch) {
+        if let Some(name) = patch.name {
+            self.name = name;
+        }
+        if let Some(description) = patch.description {
+            self.description = Some(description);
+        }
+        if let Some(is_primary) = patch.is_primary {
+            self.is_primary = is_primary;
+        }
+        if let Some(is_nullable) = patch.is_nullable {
+            self.is_nullable = is_nullable;
+        }
+        if let Some(is_unique) = patch.is_unique {
+            self.is_unique = is_unique;
+        }
+        if let Some(order) = patch.order {
+            self.order = order;
+        }
+        if let Some(config) = patch.config {
+            self.config = config;
+        }
+
+        self.updated_at = Some(Datetime::now());
+    }
 }

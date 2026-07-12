@@ -271,29 +271,31 @@ impl TableService {
     pub async fn update_field(
         &mut self,
         field_id: FieldId,
-        field: InsertField,
+        field: FieldPatch,
     ) -> Result<Result<Field, MigrationStrategy>, Irror> {
-        let field = Field::from_insert(field);
         let mut res = DB
             .query("SELECT * FROM $field WHERE table = $table_id")
             .bind(("field", field_id.clone()))
             .bind(("table_id", self.table_record_id.clone()))
             .await?;
 
-        let current_field: Field = res
+        let mut current_field: Field = res
             .take::<Option<Field>>(0)?
             .ok_or(Irror::Table(TableError::NotFound))?;
 
-        let strategy = current_field.config.get_migration_strategy(&field.config);
+        if let Some(config) = &field.config {
+            let strategy = &current_field.config.get_migration_strategy(&config);
 
-        if strategy == MigrationStrategy::Risky || strategy == MigrationStrategy::Destructive {
-            return Ok(Err(strategy));
-        }
+            if *strategy == MigrationStrategy::Risky || *strategy == MigrationStrategy::Destructive
+            {
+                return Ok(Err(strategy.clone()));
+            }
+        };
 
         let mut update_res = DB
             .query("UPDATE $field CONTENT $field_config")
             .bind(("field", field_id))
-            .bind(("field_config", field))
+            .bind(("field_config", current_field.apply_patch(field)))
             .await?;
 
         let updated: Field = update_res
@@ -421,8 +423,16 @@ impl TableService {
         let fields: Vec<Field> = res.take(0)?;
         let records: Vec<Record> = res.take(1)?;
 
-        let visible_ids: std::collections::HashSet<String> =
-            fields.iter().map(|f| if let Some(field_id) = &f.id {field_id.id_str()} else {"something_went_wrong".to_string()}).collect();
+        let visible_ids: std::collections::HashSet<String> = fields
+            .iter()
+            .map(|f| {
+                if let Some(field_id) = &f.id {
+                    field_id.id_str()
+                } else {
+                    "something_went_wrong".to_string()
+                }
+            })
+            .collect();
 
         let records: Vec<Record> = if state.is_owner {
             records

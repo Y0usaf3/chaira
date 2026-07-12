@@ -1,6 +1,6 @@
 use leptos::logging::log;
 use leptos::prelude::*;
-use models::{BaseId, Field, FieldConfig, FieldId, Record, RecordId, TableId, Value};
+use models::{BaseId, Field, FieldConfig, FieldId, FieldPatch, Record, RecordId, TableId, Value};
 use std::collections::HashMap;
 use std::time::Instant;
 
@@ -202,4 +202,41 @@ pub async fn delete_field(
     ts.delete_field(field_id)
         .await
         .map_err(|e| ServerFnError::new(format!("Failed to delete field: {e:?}")))
+}
+
+#[server]
+pub async fn rename_field(
+    base_id: BaseId,
+    table_id: TableId,
+    field_id: FieldId,
+    new_name: String,
+) -> Result<Field, ServerFnError> {
+    let mut service = crate::get_authenticated_service().await?;
+    service
+        .open_base(base_id)
+        .await
+        .map_err(|e| ServerFnError::new(format!("Failed to open base: {e:?}")))?;
+    let bs = service
+        .current_base
+        .ok_or(ServerFnError::new("No base is open"))?;
+    let mut ts = bs
+        .open_table(table_id.clone())
+        .await
+        .map_err(|e| ServerFnError::new(format!("Failed to open table: {e:?}")))?;
+    ts.update_field(
+        field_id,
+        FieldPatch {
+            name: Some(new_name),
+            config: None,
+            description: None,
+            is_nullable: None,
+            is_primary: None,
+            is_unique: None,
+            order: None,
+        },
+    )
+    .await
+    .ok()
+    .ok_or(ServerFnError::new("Failed to rename table"))?
+    .map_err(|e| ServerFnError::new(format!("Failed to rename table: {e:?}")))
 }

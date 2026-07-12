@@ -108,7 +108,6 @@ pub fn BasePage() -> impl IntoView {
 
     let show_table_selector = {
         let naviguate = naviguate.clone();
-        let set_show = set_show_create_popup.clone();
         move || {
             let base_id = id();
             let naviguate = naviguate.clone();
@@ -121,7 +120,6 @@ pub fn BasePage() -> impl IntoView {
                     {move || {
                         let base_id = base_id.clone();
                         let naviguate = naviguate.clone();
-                        let base_data = base_data.clone();
                         let current_table_id = table_id();
                         Suspend::new(async move {
                             match base_data.get() {
@@ -149,7 +147,7 @@ pub fn BasePage() -> impl IntoView {
                                                 .collect_view()}
                                             <button
                                                 class="size-[28px] bg-black flex items-center justify-center shrink-0 pixel-corners-pfp ml-4"
-                                                on:click=move |_| set_show.set(true)
+                                                on:click=move |_| set_show_create_popup.set(true)
                                             >
                                                 <PlusIcon class="size-[14px] pixelated margin-auto text-white" />
                                             </button>
@@ -251,7 +249,7 @@ pub fn BasePage() -> impl IntoView {
 
                         <button
                             type="submit"
-                            class="pixel-corners--wrapper mt-2 ml-auto p-3 bg-black text-white font-bold cursor-pointer w-full"
+                            class="pixel-corners--wrapper mt-2 ml-auto p-4 bg-black text-white font-bold cursor-pointer w-full leading-none"
                             on:click={
                                 let handle = handle_create_table;
                                 move |ev| handle(ev)

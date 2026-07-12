@@ -212,7 +212,10 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                                 view! {
                                     <div class="flex">
                                         <div class="flex flex-col">
-                                            <div class="flex flex-row items-center h-[38px] w-fit border-black border-b-[2px] divide-x-[2px] divide-black sticky top-0 bg-white z-11">
+                                            <div
+                                                class="flex flex-row items-center h-[38px] w-fit border-black border-b-[2px] divide-x-[2px] divide-black sticky top-0 bg-white"
+                                                style:z-index="11"
+                                            >
                                                 {headers.into_view()}
                                             </div>
                                             <div class="flex flex-row flex-1 w-fit divide-x-[2px] divide-black overflow-auto">
@@ -221,7 +224,7 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                                         </div>
                                         <button
                                             on:click=handle_open_field_popup
-                                            class="sticky right-0 bg-white flex items-center justify-center h-full px-[7px] pt-[7px] border-black border-r-[2px] border-l-[2px] transition-colors shrink-0"
+                                            class="sticky right-0 bg-white flex items-center justify-center h-full px-[7px] pt-[7px] border-black border-r-[2px] border-l-[2px] transition-colors shrink-0 z-14"
                                         >
                                             <PlusIcon class="w-[16px] h-[16px] pixelated text-black mb-auto mx-auto" />
                                         </button>

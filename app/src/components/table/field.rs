@@ -105,7 +105,7 @@ pub fn Field(
                 fill="#000000"
                 extern_class="mr-[5px]"
             />
-            <p class="truncate utility">{field.name}</p>
+            <p class="truncate utility leading-none">{field.name}</p>
             <div
                 node_ref=handle_ref
                 class="ml-auto w-[3px] h-full cursor-col-resize bg-white hover:bg-black shrink-0 touch-none self-stretch"

@@ -186,7 +186,7 @@ pub fn CreateFieldPopup(
                     FieldType::LongText { .. } => {
 
                         view! {
-                            <div class="flex flex-col gap-3 p-3 bg-slate-50 border-[2px] border-black">
+                            <div class="flex flex-row gap-3 p-3 bg-slate-50 border-[2px] border-black">
                                 <input
                                     type="checkbox"
                                     id="rich_text"
@@ -195,8 +195,8 @@ pub fn CreateFieldPopup(
                                         set_lt_rich_text.set(event_target_checked(&e))
                                     }
                                 />
-                                <label for="rich_text" class="text-sm text-slate-700">
-                                    "Enable Rich Text Rendering"
+                                <label for="rich_text" class="text-xs text-slate-700">
+                                    "Rich Text"
                                 </label>
                             </div>
                         }
@@ -219,12 +219,12 @@ pub fn CreateFieldPopup(
                         }
                             .into_any()
                     }
-                    _ => view! {}.into_any(),
+                    _ => ().into_any(),
                 }}
 
                 <button
                     type="submit"
-                    class="pixel-corners--wrapper mt-2 p-3 ml-auto bg-black text-white font-bold cursor-pointer w-full text-sm"
+                    class="pixel-corners--wrapper mt-2 p-4 ml-auto bg-black text-white font-bold cursor-pointer w-full text-sm leading-none"
                     on:click=handle_create_field.clone()
                 >
                     "Create field"

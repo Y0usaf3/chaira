@@ -10,6 +10,7 @@ pub fn Field(
     #[prop(optional)] width: Signal<f64>,
     on_resize: Option<Callback<f64>>,
     delete_field_thingy: Callback<models::FieldId>,
+    on_rename: Callback<models::FieldId>,
 ) -> impl IntoView {
     let icon_type = field_icon(&field.config);
 
@@ -120,7 +121,13 @@ pub fn Field(
                     style:top="41px"
                     style:left="2px"
                 >
-                    <li class="p-2 text-sm flex bg-white flex-row items-end hover:bg-[#000000]/4">
+                    <li
+                        class="p-2 text-sm flex bg-white flex-row items-end hover:bg-[#000000]/4"
+                        on:click={
+                            let field_id = field_id.clone();
+                            move |_| on_rename.run(field_id.clone())
+                        }
+                    >
                         <Icon
                             icon_type=IconType::Pen
                             fill="#000000"

@@ -292,10 +292,12 @@ impl TableService {
             }
         };
 
+        current_field.apply_patch(field);
+
         let mut update_res = DB
-            .query("UPDATE $field CONTENT $field_config")
+            .query("UPDATE $field MERGE $field_config")
             .bind(("field", field_id))
-            .bind(("field_config", current_field.apply_patch(field)))
+            .bind(("field_config", current_field))
             .await?;
 
         let updated: Field = update_res

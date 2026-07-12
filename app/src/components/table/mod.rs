@@ -15,11 +15,11 @@ use server::get_table_data;
 
 use self::cell::Cell;
 use self::column::Column;
-use crate::components::PlusIcon;
+use crate::components::{FilteredInput, PlusIcon, Popup};
 use crate::components::table::{
     field::Field,
     field_popup::CreateFieldPopup,
-    server::{create_table_record, delete_field, update_cell_value},
+    server::{create_table_record, delete_field, rename_field, update_cell_value},
 };
 use models::{FieldConfig, FieldId, SingleLineValue, Value};
 
@@ -87,6 +87,37 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
         })
     });
 
+    let (show_rename_popup, set_show_rename_popup) = signal(false);
+    let (rename_field_id, set_rename_field_id) = signal::<Option<models::FieldId>>(None);
+    let (rename_name, set_rename_name) = signal(String::new());
+
+    let (biii, tiii) = (base_id.clone(), table_id.clone());
+
+    let on_rename = Callback::new(move |field_id: models::FieldId| {
+        set_rename_field_id.set(Some(field_id));
+        set_rename_name.set(String::new());
+        set_show_rename_popup.set(true);
+    });
+
+    let on_rename_submit = Callback::new(move |_: ()| {
+        let field_id = rename_field_id.get_untracked();
+        let new_name = rename_name.get_untracked();
+        if let (Some(fid), name) = (field_id, new_name) {
+            if !name.is_empty() {
+                let bk = biii.clone();
+                let tk = tiii.clone();
+                spawn_local(async move {
+                    if rename_field(bk, tk, fid, name).await.is_ok() {
+                        set_refresh.update(|v| *v += 1);
+                    };
+                });
+                set_show_rename_popup.set(false);
+                set_rename_field_id.set(None);
+                set_rename_name.set(String::new());
+            }
+        }
+    });
+
     let (col_widths, set_col_widths) = signal::<HashMap<String, f64>>(HashMap::new());
 
     view! {
@@ -143,6 +174,7 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                                                     width=w
                                                     on_resize=Some(or)
                                                     delete_field_thingy=delete_field
+                                                    on_rename=on_rename
                                                 />
                                             },
                                         )
@@ -255,6 +287,35 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                                 set_show=set_show_field_popup
                                 on_created=handle_field_created
                             />
+                            <Show when=move || show_rename_popup.get()>
+                                <Popup show=show_rename_popup.into() set_show=set_show_rename_popup>
+                                    <div class="mb-4 border-b-2 border-slate-200 pb-2 border-dashed">
+                                        <h2 class="text-xl font-bold text-slate-800">"Rename Field"</h2>
+                                        <p class="text-sm text-slate-500">"Change the name of this column."</p>
+                                    </div>
+                                    <div class="flex flex-col gap-5">
+                                        <FilteredInput
+                                            label="Field Name"
+                                            placeholder="e.g. Name"
+                                            value=rename_name
+                                            set_value=set_rename_name
+                                            filter=Callback::new(|val: String| {
+                                                val.chars()
+                                                    .filter(|c| c.is_ascii_alphanumeric() || *c == '_' || *c == '-')
+                                                    .collect()
+                                            })
+                                            autofocus=true
+                                        />
+                                        <button
+                                            type="submit"
+                                            class="pixel-corners--wrapper mt-2 p-4 ml-auto bg-black text-white font-bold cursor-pointer w-full text-sm leading-none"
+                                            on:click=move |_| on_rename_submit.run(())
+                                        >
+                                            "Rename field"
+                                        </button>
+                                    </div>
+                                </Popup>
+                            </Show>
                         </div>
                     </Suspense>
                 }

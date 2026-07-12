@@ -7,8 +7,11 @@ pub use self::kinds::*;
 #[derive(SurrealValue, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[surreal(crate = "::surrealdb_types")]
 pub struct Field {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<FieldId>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub created_at: Option<Datetime>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<Datetime>,
     pub is_deleted: bool,
     pub config: FieldConfig,
@@ -17,6 +20,7 @@ pub struct Field {
     pub is_unique: bool,
     pub name: String,
     pub order: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
 

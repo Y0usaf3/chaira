@@ -81,7 +81,9 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
         let bk = bii.clone();
         let tk = tii.clone();
         spawn_local(async move {
-            let _ = delete_field(bk, tk, field_id).await;
+            if delete_field(bk, tk, field_id).await.is_ok() {
+                set_refresh.update(|v| *v += 1);
+            };
         })
     });
 
@@ -136,7 +138,12 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                                         Some(
 
                                             view! {
-                                                <Field field=field.clone() width=w on_resize=Some(or) />
+                                                <Field
+                                                    field=field.clone()
+                                                    width=w
+                                                    on_resize=Some(or)
+                                                    delete_field_thingy=delete_field
+                                                />
                                             },
                                         )
                                     })
@@ -204,8 +211,8 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                                     .collect();
                                 view! {
                                     <div class="flex">
-                                        <div class="flex flex-col overflow-hidden">
-                                            <div class="flex flex-row items-center h-[38] w-fit border-black border-b-[2px] divide-x-[2px] divide-black sticky top-0 bg-white z-10">
+                                        <div class="flex flex-col">
+                                            <div class="flex flex-row items-center h-[38px] w-fit border-black border-b-[2px] divide-x-[2px] divide-black sticky top-0 bg-white z-11">
                                                 {headers.into_view()}
                                             </div>
                                             <div class="flex flex-row flex-1 w-fit divide-x-[2px] divide-black overflow-auto">
@@ -214,7 +221,7 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                                         </div>
                                         <button
                                             on:click=handle_open_field_popup
-                                            class="sticky right-0 bg-white flex items-center justify-center h-full px-[7px] pt-[7px] border-black border-r-[2px] border-l-[2px] transition-colors shrink-0 z-50"
+                                            class="sticky right-0 bg-white flex items-center justify-center h-full px-[7px] pt-[7px] border-black border-r-[2px] border-l-[2px] transition-colors shrink-0"
                                         >
                                             <PlusIcon class="w-[16px] h-[16px] pixelated text-black mb-auto mx-auto" />
                                         </button>
@@ -224,7 +231,7 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                             }}
                             <button
                                 class="sticky bottom-0 pl-[7px] py-[7px] border-black border-b-[2px] border-r-[2px] border-t-[2px] bg-white"
-                                style="position: sticky; bottom: 0; z-index: 50;"
+                                style="position: sticky; bottom: 0; z-index: 10;"
                                 on:click=move |_| {
                                     let bk = base_id.clone();
                                     let tk = table_id.clone();

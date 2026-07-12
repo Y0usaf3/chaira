@@ -25,7 +25,6 @@ pub fn Field(
     });
 
     let field_id = field.id.unwrap();
-    let field_id = field_id.clone();
 
     let on_pointerdown = move |ev: leptos::ev::PointerEvent| {
         ev.prevent_default();
@@ -104,7 +103,7 @@ pub fn Field(
             ></div>
             <Show when=move || show.get()>
                 <ol
-                    class="bg-white border-black border-[2px] z-[9999] overflow-visible"
+                    class="bg-white border-black border-[2px] overflow-visible"
                     style:position="absolute"
                     style:top="40px"
                     style:left="2px"
@@ -112,7 +111,10 @@ pub fn Field(
                     <li class="p-2 text-sm">"Rename"</li>
                     <li
                         class="p-2 text-sm flex flex-row text-[#ef4444] items-end"
-                        on:click=move |ev| delete_field_thingy.run(field_id.clone())
+                        on:click={
+                            let field_id = field_id.clone();
+                            move |_| delete_field_thingy.run(field_id.clone())
+                        }
                     >
                         <Icon
                             icon_type=IconType::Trash

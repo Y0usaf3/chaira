@@ -71,20 +71,8 @@ pub fn BasePage() -> impl IntoView {
     let params = use_params_map();
     let naviguate = use_navigate();
 
-    let id = move || {
-        params
-            .read()
-            .get("id")
-            .map(|s| s.clone())
-            .unwrap_or_else(|| "404".to_string())
-    };
-    let table_id = move || {
-        params
-            .read()
-            .get("table_id")
-            .map(|s| s.clone())
-            .unwrap_or_default()
-    };
+    let id = move || params.read().get("id").unwrap_or_else(|| "404".to_string());
+    let table_id = move || params.read().get("table_id").unwrap_or_default();
 
     let (show_create_popup, set_show_create_popup) = signal(false);
     let (table_name, set_table_name) = signal(String::new());
@@ -102,23 +90,17 @@ pub fn BasePage() -> impl IntoView {
     });
 
     let handle_create_table = {
-        let set_show = set_show_create_popup.clone();
-        let set_table_name = set_table_name.clone();
-        let set_refresh = set_refresh_tables.clone();
         move |_: leptos::ev::MouseEvent| {
             let name = table_name.get_untracked();
             let base_key = id();
             if name.is_empty() {
                 return;
             }
-            let show = set_show.clone();
-            let set_table_name = set_table_name.clone();
-            let set_refresh = set_refresh.clone();
             spawn_local(async move {
-                if let Ok(_) = create_table(base_key.clone(), name).await {
-                    show.set(false);
+                if create_table(base_key.clone(), name).await.is_ok() {
+                    set_show_create_popup.set(false);
                     set_table_name.set(String::new());
-                    set_refresh.update(|v| *v += 1);
+                    set_refresh_tables.update(|v| *v += 1);
                 }
             });
         }
@@ -175,7 +157,7 @@ pub fn BasePage() -> impl IntoView {
                                     }
                                         .into_any()
                                 }
-                                _ => view! {}.into_any(),
+                                _ => ().into_any(),
                             }
                         })
                     }}

@@ -92,7 +92,7 @@ pub fn Field(
     view! {
         <div
             node_ref=field_ref
-            class="min-w-[100px] pl-2 h-full flex items-center border-black select-none bg-slate-50 relative"
+            class="min-w-[119px] pl-2 h-full flex items-center border-black select-none bg-slate-50 relative"
             style:width=move || format!("{}px", local_width.get())
             on:contextmenu=move |ev| {
                 ev.prevent_default();
@@ -115,7 +115,7 @@ pub fn Field(
             ></div>
             <Show when=move || show.get()>
                 <ol
-                    class="bg-white border-black border-[2px] overflow-visible"
+                    class="bg-white border-black border-[2px] overflow-visible !w-[113px]"
                     style:position="absolute"
                     style:top="41px"
                     style:left="2px"

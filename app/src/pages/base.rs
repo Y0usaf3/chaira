@@ -202,12 +202,12 @@ pub fn BasePage() -> impl IntoView {
                         alt="Chaira"
                     />
                 </button>
-                <div class="w-full flex justify-center mt-auto py-[4.5]">
+                <button class="w-full flex justify-center mt-auto py-[4.5]" on:click=move |_| naviguate("/user", NavigateOptions::default())>
                     <img
                         src="https://i.pinimg.com/736x/7c/41/86/7c41866499a79bca61ecf049973f5d76.jpg"
                         class="h-[40px] w-[40px] object-cover pixelated my-auto pixel-corners-pfp grayscale-75"
                     />
-                </div>
+                </button>
             </div>
 
             <div class="flex flex-1 flex-col overflow-hidden">

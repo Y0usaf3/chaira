@@ -1,3 +1,5 @@
+#![recursion_limit = "512"]
+
 use leptos::prelude::*;
 use leptos_meta::{MetaTags, Stylesheet, Title, provide_meta_context};
 use leptos_router::{
@@ -78,6 +80,7 @@ pub fn App() -> impl IntoView {
                         redirect_path=|| "/"
                     >
                         <Route path=path!("/dashboard") view=DashboardPage />
+                        <Route path=path!("/user") view=UserPage />
                         <Route path=path!("/base/:id") view=BasePage />
                         <Route path=path!("/base/:id/:table_id") view=BasePage />
                     </ProtectedParentRoute>

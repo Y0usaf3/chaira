@@ -8,6 +8,7 @@ pub use about::AboutPage;
 pub use base::BasePage;
 pub use dashboard::DashboardPage;
 pub use home::HomePage;
+pub use user::UserPage;
 
 use std::hash::{DefaultHasher, Hash, Hasher};
 

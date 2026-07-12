@@ -115,14 +115,22 @@ pub fn Field(
             ></div>
             <Show when=move || show.get()>
                 <ol
-                    class="bg-white border-black border-[2px] overflow-visible w-[94px]"
+                    class="bg-white border-black border-[2px] overflow-visible"
                     style:position="absolute"
                     style:top="41px"
                     style:left="2px"
                 >
-                    <li class="p-2 text-sm">"Rename"</li>
+                    <li class="p-2 text-sm flex bg-white flex-row items-end hover:bg-[#000000]/4">
+                        <Icon
+                            icon_type=IconType::Pen
+                            fill="#000000"
+                            class="!w-[18px] h-auto"
+                            extern_class="mr-[4px]"
+                        />
+                        <p class="leading-none">"Rename"</p>
+                    </li>
                     <li
-                        class="p-2 text-sm flex bg-white flex-row text-[#ef4444] items-end hover:bg-[#ef4444]/10"
+                        class="p-2 text-sm flex bg-white flex-row text-[#ef4444] items-end hover:bg-[#ef4444]/6"
                         on:click={
                             let field_id = field_id.clone();
                             move |_| delete_field_thingy.run(field_id.clone())

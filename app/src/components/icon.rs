@@ -13,6 +13,7 @@ pub enum IconType {
     ChevronDown,
     Check,
     Trash,
+    Pen,
 }
 
 #[component]
@@ -58,6 +59,10 @@ pub fn Icon(
         IconType::Trash => include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/../public/svg/trash.svg"
+        )),
+        IconType::Pen => include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../public/svg/pen.svg"
         )),
         _ => include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),

@@ -59,4 +59,17 @@ impl User {
             _ => UserRole::User,
         }
     }
+
+    pub fn apply_patch(&mut self, patch: UserPatch) {
+        if let Some(is_deleted) = patch.is_deleted {
+            self.is_deleted = is_deleted
+        };
+        if let Some(first_name) = patch.first_name {
+            self.first_name = first_name
+        };
+        if let Some(last_name) = patch.last_name {
+            self.last_name = last_name
+        };
+        self.updated_at = Some(Datetime::now());
+    }
 }

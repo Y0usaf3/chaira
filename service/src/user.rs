@@ -183,20 +183,23 @@ impl UserService {
     }
 
     pub async fn update_self_user(&mut self, patch: UserPatch) -> Result<User, Irror> {
-        let current = self.user().await?;
-        let user: Option<User> = DB
-            .update(&self.user_record_id.0)
-            .patch(PatchOp::replace(
-                "/first_name",
-                patch.first_name.unwrap_or(current.first_name),
-            ))
-            .patch(PatchOp::replace(
-                "/last_name",
-                patch.last_name.unwrap_or(current.last_name),
-            ))
+        let mut current = self.user().await?;
+        current.apply_patch(patch);
+        let mut res = DB
+            .query(
+                "
+            UPDATE user CONTENT $user_content WHERE id = $user_id;
+            SELECT * FROM user WHERE id = $user_id;
+        ",
+            )
+            .bind(("user_id", self.user_record_id.clone()))
+            .bind(("user_content", current))
             .await?;
-
+        dbg!(&res);
+        let user: Option<User> = res.take(1)?;
         self.user_cache = None;
+
+        dbg!(&user);
 
         user.ok_or(UserError::UpdateFailed(format!("{}:{}", file!(), line!())).into())
     }
@@ -215,11 +218,11 @@ impl UserService {
                 LET $caller = (SELECT role FROM user WHERE id = $self_id AND is_deleted = false)[0];
                 IF $caller.role != 'admin' THEN THROW 'Unauthorized: Admin privileges required' END;
                 IF $self_id == $user_id THEN THROW 'Cannot delete self' END;
-                UPDATE $user_id SET is_deleted = true RETURN AFTER;
+                UPDATE user SET is_deleted = true WHERE id = $user_id RETURN AFTER;
                 COMMIT TRANSACTION;",
             )
             .bind(("self_id", self.user_record_id.clone()))
-            .bind(("user_id", user_id.0.clone()))
+            .bind(("user_id", user_id.clone()))
             .await?
             .take(4)?;
 

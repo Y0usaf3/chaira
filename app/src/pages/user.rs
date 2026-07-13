@@ -1,8 +1,8 @@
-use crate::components::{FilteredInput, PlusIcon};
+use crate::components::{FilteredInput, Icon, IconType, PlusIcon};
 use leptos::ev::MouseEvent;
 use leptos::prelude::*;
 use leptos::reactive::spawn_local;
-use models::{User, UserPatch};
+use models::{User, UserPatch, UserRole};
 
 #[server]
 pub async fn get_user_info() -> Result<User, ServerFnError> {
@@ -148,7 +148,7 @@ pub fn UserPage() -> impl IntoView {
                                                                 <input
                                                                     type="text"
                                                                     class="placeholder:text-slate-400 focus:outline-none bg-transparent w-full text-slate-500"
-                                                                    value=user.email
+                                                                    value=user.email.clone()
                                                                     disabled=true
                                                                 />
                                                             </div>
@@ -159,7 +159,31 @@ pub fn UserPage() -> impl IntoView {
                                                                 "Role"
                                                             </label>
                                                             <p class="text-slate-600 capitalize px-1">
-                                                                {user.role.clone()}
+                                                                {match user.role() {
+                                                                    UserRole::Admin => {
+                                                                        view! {
+                                                                            <Icon
+                                                                                icon_type=IconType::NotNormalUser
+                                                                                fill="#000000"
+                                                                                class="!w-[25px] h-auto"
+                                                                                extern_class="mr-[4px]"
+                                                                            />
+                                                                        }
+                                                                            .into_any()
+                                                                    }
+                                                                    _ => {
+
+                                                                        view! {
+                                                                            <Icon
+                                                                                icon_type=IconType::NormalUser
+                                                                                fill="#000000"
+                                                                                class="!w-[25px] h-auto"
+                                                                                extern_class="mr-[4px]"
+                                                                            />
+                                                                        }
+                                                                            .into_any()
+                                                                    }
+                                                                }} {user.role}
                                                             </p>
                                                         </div>
 
@@ -195,6 +219,7 @@ pub fn UserPage() -> impl IntoView {
                                                 .into_any()
                                         }
                                         Some(Err(_)) => {
+
                                             view! {
                                                 <div class="flex items-center justify-center w-full h-full">
                                                     <p class="text-red-500">"Failed to load user info"</p>

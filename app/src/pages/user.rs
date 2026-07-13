@@ -1,7 +1,6 @@
 use crate::components::{FilteredInput, Icon, IconType, PlusIcon};
 use leptos::ev::MouseEvent;
 use leptos::prelude::*;
-use leptos::reactive::spawn_local;
 use models::{User, UserPatch, UserRole};
 
 #[server]
@@ -20,66 +19,56 @@ pub async fn update_user_info(
     last_name: String,
 ) -> Result<User, ServerFnError> {
     let mut service = crate::get_authenticated_service().await?;
-    dbg!(&service);
     let patch = UserPatch {
         is_deleted: None,
         first_name: Some(first_name),
         last_name: Some(last_name),
     };
-    service
+    let user = service
         .update_self_user(patch)
         .await
         .map_err(|e| ServerFnError::new(format!("Failed to update user: {e:?}")))?;
-    let user = service
-        .user()
-        .await
-        .map_err(|e| ServerFnError::new(format!("Failed to fetch user: {e:?}")))?;
-
     Ok(user)
 }
 
 #[component]
 pub fn UserPage() -> impl IntoView {
-    let (refresh_count, set_refresh_count) = signal(0);
-    let (save_status, set_save_status) = signal::<Option<Result<(), String>>>(None);
-    let (first_name, set_first_name) = signal(String::new());
-    let (last_name, set_last_name) = signal(String::new());
-    let initialized = RwSignal::new(false);
+    // 1. Define the Action for updating user info.
+    let update_action = Action::new(|(fname, lname): &(String, String)| {
+        let first_name = fname.clone();
+        let last_name = lname.clone();
+        async move { update_user_info(first_name, last_name).await }
+    });
 
-    let user_resource = Resource::new(
-        move || refresh_count.get(),
+    let user_data = Resource::new(
+        move || update_action.version().get(),
         |_| async move { get_user_info().await },
     );
 
+    let (first_name, set_first_name) = signal(String::new());
+    let (last_name, set_last_name) = signal(String::new());
+    let (validation_err, set_validation_err) = signal::<Option<String>>(None);
+
     Effect::new(move |_| {
-        if let Some(Ok(ref user)) = user_resource.get() {
-            if !initialized.get() {
-                set_first_name.set(user.first_name.clone());
-                set_last_name.set(user.last_name.clone());
-                initialized.set(true);
-            }
+        if let Some(Ok(user)) = user_data.get() {
+            set_first_name.set(user.first_name.clone());
+            set_last_name.set(user.last_name.clone());
+            set_validation_err.set(None);
         }
     });
 
-    let handle_save = move |_: MouseEvent| {
-        let fname = first_name.get_untracked();
-        let lname = last_name.get_untracked();
+    let handle_save = move |ev: MouseEvent| {
+        ev.prevent_default();
+        let fname = first_name.get();
+        let lname = last_name.get();
+
         if fname.is_empty() || lname.is_empty() {
-            set_save_status.set(Some(Err("Name fields cannot be empty".to_string())));
+            set_validation_err.set(Some("Name fields cannot be empty".to_string()));
             return;
         }
-        spawn_local(async move {
-            match update_user_info(fname, lname).await {
-                Ok(_) => {
-                    initialized.set(false);
-                    set_save_status.set(Some(Ok(())));
-                    set_refresh_count.update(|v| *v += 1);
-                }
-                Err(e) => {
-                    set_save_status.set(Some(Err(e.to_string())));
-                }
-            }
-        });
+
+        set_validation_err.set(None);
+        update_action.dispatch((fname, lname));
     };
 
     view! {
@@ -113,136 +102,131 @@ pub fn UserPage() -> impl IntoView {
                     <div class="overflow-none w-full h-full flex flex-row">
                         <div class="border-black border-r-[3px] w-[64px] h-full hover:w-[128px] ease-linear transition-all duration-80"></div>
                         <Suspense fallback=|| {
-                            view! { <p>"Loading..."</p> }
+                            view! { <div class="p-6 text-slate-500">"Loading..."</div> }
                         }>
-                            {move || {
-                                Suspend::new(async move {
-                                    match user_resource.get() {
-                                        Some(Ok(user)) => {
-                                            view! {
-                                                <div class="bg-white p-6 w-full">
-                                                    <h2 class="text-2xl font-bold text-slate-800 mb-6">
-                                                        "Account Settings"
-                                                    </h2>
-                                                    <form
-                                                        class="flex flex-col gap-4"
-                                                        on:submit=|ev| ev.prevent_default()
-                                                    >
-                                                        <FilteredInput
-                                                            label="First Name"
-                                                            placeholder="First name"
-                                                            value=first_name
-                                                            set_value=set_first_name
-                                                            filter=Callback::new(|val: String| val)
-                                                            autofocus=false
-                                                        />
-
-                                                        <FilteredInput
-                                                            label="Last Name"
-                                                            placeholder="Last name"
-                                                            value=last_name
-                                                            set_value=set_last_name
-                                                            filter=Callback::new(|val: String| val)
-                                                            autofocus=false
-                                                        />
-
-                                                        <div class="flex flex-col gap-1">
-                                                            <label class="text-sm font-semibold text-slate-700">
-                                                                "Email"
-                                                            </label>
-                                                            <div class="pixel-input--wrapper p-4 !w-full">
-                                                                <input
-                                                                    type="text"
-                                                                    class="placeholder:text-slate-400 focus:outline-none bg-transparent w-full text-slate-500"
-                                                                    value=user.email.clone()
-                                                                    disabled=true
-                                                                />
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="flex flex-col gap-1">
-                                                            <label class="text-sm font-semibold text-slate-700">
-                                                                "Role"
-                                                            </label>
-                                                            <p class="text-slate-600 capitalize px-1">
-                                                                {match user.role() {
-                                                                    UserRole::Admin => {
-                                                                        view! {
-                                                                            <Icon
-                                                                                icon_type=IconType::NotNormalUser
-                                                                                fill="#000000"
-                                                                                class="!w-[25px] h-auto"
-                                                                                extern_class="mr-[4px]"
-                                                                            />
-                                                                        }
-                                                                            .into_any()
-                                                                    }
-                                                                    _ => {
-
-                                                                        view! {
-                                                                            <Icon
-                                                                                icon_type=IconType::NormalUser
-                                                                                fill="#000000"
-                                                                                class="!w-[25px] h-auto"
-                                                                                extern_class="mr-[4px]"
-                                                                            />
-                                                                        }
-                                                                            .into_any()
-                                                                    }
-                                                                }} {user.role}
-                                                            </p>
-                                                        </div>
-
-                                                        <button
-                                                            type="submit"
-                                                            class="pixel-corners--wrapper mt-2 p-3 bg-black text-white font-bold transition-colors cursor-pointer w-full"
-                                                            on:click=handle_save
-                                                        >
-                                                            "Save Changes"
-                                                        </button>
-                                                    </form>
-
-                                                    {move || {
-                                                        save_status
-                                                            .get()
-                                                            .map(|status| match status {
-                                                                Ok(()) => {
-                                                                    view! {
-                                                                        <p class="text-green-600 mt-2 text-center">
-                                                                            "Saved successfully!"
-                                                                        </p>
-                                                                    }
-                                                                        .into_any()
-                                                                }
-                                                                Err(msg) => {
-                                                                    view! { <p class="text-red-600 mt-2 text-center">{msg}</p> }
-                                                                        .into_any()
-                                                                }
-                                                            })
-                                                    }}
-                                                </div>
-                                            }
-                                                .into_any()
-                                        }
-                                        Some(Err(_)) => {
-
-                                            view! {
-                                                <div class="flex items-center justify-center w-full h-full">
-                                                    <p class="text-red-500">"Failed to load user info"</p>
-                                                </div>
-                                            }
-                                                .into_any()
-                                        }
-                                        _ => {
-                                            view! {
-                                                <div class="flex items-center justify-center w-full h-full">
-                                                    <p class="text-slate-500">"Loading..."</p>
-                                                </div>
-                                            }
-                                                .into_any()
-                                        }
+                            {move || match user_data.get() {
+                                None => view! { <div></div> }.into_any(),
+                                Some(Err(_)) => {
+                                    view! {
+                                        <div class="flex items-center justify-center w-full h-full">
+                                            <p class="text-red-500">"Failed to load user info"</p>
+                                        </div>
                                     }
-                                })
+                                        .into_any()
+                                }
+                                Some(Ok(user)) => {
+                                    view! {
+                                        <div class="bg-white p-6 w-full h-full overflow-y-auto">
+                                            <h2 class="text-2xl font-bold text-slate-800 mb-6">
+                                                "Account Settings"
+                                            </h2>
+                                            <form
+                                                class="flex flex-col gap-4"
+                                                on:submit=move |ev| ev.prevent_default()
+                                            >
+                                                <FilteredInput
+                                                    label="First Name"
+                                                    placeholder="First name"
+                                                    value=first_name
+                                                    set_value=set_first_name
+                                                    filter=Callback::new(|val: String| val)
+                                                    autofocus=false
+                                                />
+
+                                                <FilteredInput
+                                                    label="Last Name"
+                                                    placeholder="Last name"
+                                                    value=last_name
+                                                    set_value=set_last_name
+                                                    filter=Callback::new(|val: String| val)
+                                                    autofocus=false
+                                                />
+
+                                                <div class="flex flex-col gap-1">
+                                                    <label class="text-sm font-semibold text-slate-700">
+                                                        "Email"
+                                                    </label>
+                                                    <div class="pixel-input--wrapper p-4 !w-full">
+                                                        <input
+                                                            type="text"
+                                                            class="placeholder:text-slate-400 focus:outline-none bg-transparent w-full text-slate-500"
+                                                            value=user.email.clone()
+                                                            disabled=true
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div class="flex flex-col gap-1">
+                                                    <label class="text-sm font-semibold text-slate-700">
+                                                        "Role"
+                                                    </label>
+                                                    <p class="text-slate-600 capitalize px-1 flex items-center">
+                                                        {match user.role() {
+                                                            UserRole::Admin => {
+                                                                view! {
+                                                                    <Icon
+                                                                        icon_type=IconType::NotNormalUser
+                                                                        fill="#000000"
+                                                                        class="!w-[25px] h-auto"
+                                                                        extern_class="mr-[4px]"
+                                                                    />
+                                                                }
+                                                                    .into_any()
+                                                            }
+                                                            _ => {
+                                                                view! {
+                                                                    <Icon
+                                                                        icon_type=IconType::NormalUser
+                                                                        fill="#000000"
+                                                                        class="!w-[25px] h-auto"
+                                                                        extern_class="mr-[4px]"
+                                                                    />
+                                                                }
+                                                                    .into_any()
+                                                            }
+                                                        }} {user.role}
+                                                    </p>
+                                                </div>
+
+                                                <button
+                                                    type="submit"
+                                                    disabled=move || update_action.pending().get()
+                                                    class="pixel-corners--wrapper mt-2 p-3 bg-black text-white font-bold transition-colors cursor-pointer w-full disabled:bg-gray-500 disabled:cursor-not-allowed"
+                                                    on:click=handle_save
+                                                >
+                                                    {move || {
+                                                        if update_action.pending().get() {
+                                                            "Saving..."
+                                                        } else {
+                                                            "Save Changes"
+                                                        }
+                                                    }}
+                                                </button>
+                                            </form>
+
+                                            <div class="mt-4 text-center">
+                                                <Show when=move || validation_err.get().is_some()>
+                                                    <p class="text-red-600">{move || validation_err.get()}</p>
+                                                </Show>
+
+                                                {move || match update_action.value().get() {
+                                                    Some(Ok(_)) => {
+                                                        view! {
+                                                            <p class="text-green-600">"Saved successfully!"</p>
+                                                        }
+                                                            .into_any()
+                                                    }
+                                                    Some(Err(e)) => {
+                                                        view! { <p class="text-red-600">{e.to_string()}</p> }
+                                                            .into_any()
+                                                    }
+                                                    None => view! { <span></span> }.into_any(),
+                                                }}
+                                            </div>
+                                        </div>
+                                    }
+                                        .into_any()
+                                }
                             }}
                         </Suspense>
                     </div>

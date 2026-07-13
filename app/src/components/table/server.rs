@@ -223,21 +223,19 @@ pub async fn rename_field(
         .open_table(table_id.clone())
         .await
         .map_err(|e| ServerFnError::new(format!("Failed to open table: {e:?}")))?;
-    dbg!(
-        ts.update_field(
-            field_id,
-            FieldPatch {
-                name: Some(new_name),
-                config: None,
-                description: None,
-                is_nullable: None,
-                is_primary: None,
-                is_unique: None,
-                order: None,
-            },
-        )
-        .await
+    ts.update_field(
+        field_id,
+        FieldPatch {
+            name: Some(new_name),
+            config: None,
+            description: None,
+            is_nullable: None,
+            is_primary: None,
+            is_unique: None,
+            order: None,
+        },
     )
+    .await
     .ok()
     .ok_or(ServerFnError::new("Failed to rename table"))?
     .map_err(|e| ServerFnError::new(format!("Failed to rename table: {e:?}")))

@@ -20,15 +20,21 @@ pub async fn update_user_info(
     last_name: String,
 ) -> Result<User, ServerFnError> {
     let mut service = crate::get_authenticated_service().await?;
+    dbg!(&service);
     let patch = UserPatch {
         is_deleted: None,
         first_name: Some(first_name),
         last_name: Some(last_name),
     };
-    let user = service
+    service
         .update_self_user(patch)
         .await
         .map_err(|e| ServerFnError::new(format!("Failed to update user: {e:?}")))?;
+    let user = service
+        .user()
+        .await
+        .map_err(|e| ServerFnError::new(format!("Failed to fetch user: {e:?}")))?;
+
     Ok(user)
 }
 

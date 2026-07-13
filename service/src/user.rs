@@ -66,11 +66,12 @@ impl UserService {
             return Ok(user.clone());
         }
 
-        let user: Option<User> = DB
-            .query("SELECT * FROM user WHERE id = $id AND is_deleted = false")
-            .bind(("id", self.user_record_id.clone()))
-            .await?
-            .take(0)?;
+        let user: Option<User> = dbg!(
+            DB.query("SELECT * FROM user WHERE id = $id AND is_deleted = false")
+                .bind(("id", self.user_record_id.0.clone()))
+                .await
+        )?
+        .take(0)?;
         let user = user.ok_or(UserError::Deleted)?;
         self.user_cache = Some((Instant::now(), user.clone()));
         Ok(user)
@@ -122,10 +123,8 @@ impl UserService {
                     LET $existing = (SELECT user FROM identity WHERE external_id = $ext_id AND is_deleted = false LIMIT 1);
                     
                     IF $existing[0] != NONE {
-                        // User exists -> Return their profile data
                         RETURN SELECT * FROM ONLY $existing[0].user;
                     } ELSE {
-                        // User doesn't exist -> Register them on the fly!
                         LET $u = (CREATE user CONTENT {
                             first_name: $first_name,
                             last_name: $last_name,
@@ -182,26 +181,23 @@ impl UserService {
         })
     }
 
-    pub async fn update_self_user(&mut self, patch: UserPatch) -> Result<User, Irror> {
-        let mut current = self.user().await?;
-        current.apply_patch(patch);
-        let mut res = DB
-            .query(
-                "
-            UPDATE user CONTENT $user_content WHERE id = $user_id;
-            SELECT * FROM user WHERE id = $user_id;
-        ",
-            )
-            .bind(("user_id", self.user_record_id.clone()))
-            .bind(("user_content", current))
-            .await?;
-        dbg!(&res);
-        let user: Option<User> = res.take(1)?;
+    pub async fn update_self_user(&mut self, patch: UserPatch) -> Result<(), Irror> {
+        let current = self.user().await?;
+        let user: Option<User> = dbg!(
+            DB.update(self.user_record_id.0.clone())
+                .patch(PatchOp::replace(
+                    "/first_name",
+                    patch.first_name.unwrap_or(current.first_name),
+                ))
+                .patch(PatchOp::replace(
+                    "/last_name",
+                    patch.last_name.unwrap_or(current.last_name),
+                ))
+                .await
+        )?;
+
         self.user_cache = None;
-
-        dbg!(&user);
-
-        user.ok_or(UserError::UpdateFailed(format!("{}:{}", file!(), line!())).into())
+        Ok(())
     }
 
     pub async fn delete_user(&mut self, user_id: &UserId) -> Result<User, Irror> {

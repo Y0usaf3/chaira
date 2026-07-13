@@ -20,7 +20,7 @@ struct CachedSession {
     inserted_at: Instant,
 }
 
-const SESSION_CACHE_TTL: Duration = Duration::from_secs(5);
+const SESSION_CACHE_TTL: Duration = Duration::from_secs(1);
 const SESSION_CACHE_MAX_SIZE: usize = 10_000;
 
 static SESSION_CACHE: LazyLock<Mutex<HashMap<String, CachedSession>>> =

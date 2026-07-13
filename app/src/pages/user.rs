@@ -15,7 +15,10 @@ pub async fn get_user_info() -> Result<User, ServerFnError> {
 }
 
 #[server]
-pub async fn update_user_info(first_name: String, last_name: String) -> Result<User, ServerFnError> {
+pub async fn update_user_info(
+    first_name: String,
+    last_name: String,
+) -> Result<User, ServerFnError> {
     let mut service = crate::get_authenticated_service().await?;
     let patch = UserPatch {
         is_deleted: None,
@@ -56,8 +59,7 @@ pub fn UserPage() -> impl IntoView {
         let fname = first_name.get_untracked();
         let lname = last_name.get_untracked();
         if fname.is_empty() || lname.is_empty() {
-            set_save_status
-                .set(Some(Err("Name fields cannot be empty".to_string())));
+            set_save_status.set(Some(Err("Name fields cannot be empty".to_string())));
             return;
         }
         spawn_local(async move {
@@ -102,78 +104,78 @@ pub fn UserPage() -> impl IntoView {
                     </div>
                 </div>
                 <main class="pixel-corners-wrapper flex-1 overflow-hidden mb-[-3px] mr-[-3px] bg-slate-50">
-                    <div class="overflow-y-auto w-full h-full p-6">
-                        <Suspense fallback=|| view! { <p>"Loading..."</p> }>
+                    <div class="overflow-none w-full h-full flex flex-row">
+                        <div class="border-black border-r-[3px] w-[64px] h-full hover:w-[128px] ease-linear transition-all duration-80"></div>
+                        <Suspense fallback=|| {
+                            view! { <p>"Loading..."</p> }
+                        }>
                             {move || {
                                 Suspend::new(async move {
                                     match user_resource.get() {
                                         Some(Ok(user)) => {
                                             view! {
-                                                <div class="max-w-md mx-auto mt-8">
-                                                    <div class="bg-white pixel-corners--wrapper p-6">
-                                                        <h2 class="text-2xl font-bold text-slate-800 mb-6">
-                                                            "Account Settings"
-                                                        </h2>
-                                                        <form
-                                                            class="flex flex-col gap-4"
-                                                            on:submit=|ev| ev.prevent_default()
+                                                <div class="bg-white p-6 w-full">
+                                                    <h2 class="text-2xl font-bold text-slate-800 mb-6">
+                                                        "Account Settings"
+                                                    </h2>
+                                                    <form
+                                                        class="flex flex-col gap-4"
+                                                        on:submit=|ev| ev.prevent_default()
+                                                    >
+                                                        <FilteredInput
+                                                            label="First Name"
+                                                            placeholder="First name"
+                                                            value=first_name
+                                                            set_value=set_first_name
+                                                            filter=Callback::new(|val: String| val)
+                                                            autofocus=false
+                                                        />
+
+                                                        <FilteredInput
+                                                            label="Last Name"
+                                                            placeholder="Last name"
+                                                            value=last_name
+                                                            set_value=set_last_name
+                                                            filter=Callback::new(|val: String| val)
+                                                            autofocus=false
+                                                        />
+
+                                                        <div class="flex flex-col gap-1">
+                                                            <label class="text-sm font-semibold text-slate-700">
+                                                                "Email"
+                                                            </label>
+                                                            <div class="pixel-input--wrapper p-4 !w-full">
+                                                                <input
+                                                                    type="text"
+                                                                    class="placeholder:text-slate-400 focus:outline-none bg-transparent w-full text-slate-500"
+                                                                    value=user.email
+                                                                    disabled=true
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="flex flex-col gap-1">
+                                                            <label class="text-sm font-semibold text-slate-700">
+                                                                "Role"
+                                                            </label>
+                                                            <p class="text-slate-600 capitalize px-1">
+                                                                {user.role.clone()}
+                                                            </p>
+                                                        </div>
+
+                                                        <button
+                                                            type="submit"
+                                                            class="pixel-corners--wrapper mt-2 p-3 bg-black text-white font-bold transition-colors cursor-pointer w-full"
+                                                            on:click=handle_save
                                                         >
-                                                            <FilteredInput
-                                                                label="First Name"
-                                                                placeholder="First name"
-                                                                value=first_name
-                                                                set_value=set_first_name
-                                                                filter=Callback::new(
-                                                                    |val: String| val,
-                                                                )
-                                                                autofocus=false
-                                                            />
+                                                            "Save Changes"
+                                                        </button>
+                                                    </form>
 
-                                                            <FilteredInput
-                                                                label="Last Name"
-                                                                placeholder="Last name"
-                                                                value=last_name
-                                                                set_value=set_last_name
-                                                                filter=Callback::new(
-                                                                    |val: String| val,
-                                                                )
-                                                                autofocus=false
-                                                            />
-
-                                                            <div class="flex flex-col gap-1">
-                                                                <label class="text-sm font-semibold text-slate-700">
-                                                                    "Email"
-                                                                </label>
-                                                                <div class="pixel-input--wrapper p-4 !w-full">
-                                                                    <input
-                                                                        type="text"
-                                                                        class="placeholder:text-slate-400 focus:outline-none bg-transparent w-full text-slate-500"
-                                                                        value=user.email
-                                                                        disabled=true
-                                                                    />
-                                                                </div>
-                                                            </div>
-
-                                                            <div class="flex flex-col gap-1">
-                                                                <label class="text-sm font-semibold text-slate-700">
-                                                                    "Role"
-                                                                </label>
-                                                                <p class="text-slate-600 capitalize px-1">
-                                                                    {user.role.clone()}
-                                                                </p>
-                                                            </div>
-
-                                                            <button
-                                                                type="submit"
-                                                                class="pixel-corners--wrapper mt-2 p-3 bg-black text-white font-bold transition-colors cursor-pointer w-full"
-                                                                on:click=handle_save
-                                                            >
-                                                                "Save Changes"
-                                                            </button>
-                                                        </form>
-
-                                                        {move || {
-                                                            save_status.get().map(|status| match status {
+                                                    {move || {
+                                                        save_status
+                                                            .get()
+                                                            .map(|status| match status {
                                                                 Ok(()) => {
                                                                     view! {
                                                                         <p class="text-green-600 mt-2 text-center">
@@ -183,16 +185,11 @@ pub fn UserPage() -> impl IntoView {
                                                                         .into_any()
                                                                 }
                                                                 Err(msg) => {
-                                                                    view! {
-                                                                        <p class="text-red-600 mt-2 text-center">
-                                                                            {msg}
-                                                                        </p>
-                                                                    }
+                                                                    view! { <p class="text-red-600 mt-2 text-center">{msg}</p> }
                                                                         .into_any()
                                                                 }
                                                             })
-                                                        }}
-                                                    </div>
+                                                    }}
                                                 </div>
                                             }
                                                 .into_any()

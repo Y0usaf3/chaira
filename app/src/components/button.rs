@@ -9,7 +9,7 @@ variants! {
                 Default: "bg-black text-white leading-none",
             },
             size: {
-                Default: "h-12 px-6 py-3 pb-2",
+                Default: "h-12 px-6 py-4",
             }
         },
         component: {

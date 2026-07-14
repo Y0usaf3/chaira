@@ -15,12 +15,12 @@ use server::get_table_data;
 
 use self::cell::Cell;
 use self::column::Column;
-use crate::components::{FilteredInput, PlusIcon, Popup};
 use crate::components::table::{
     field::Field,
     field_popup::CreateFieldPopup,
     server::{create_table_record, delete_field, rename_field, update_cell_value},
 };
+use crate::components::{FilteredInput, PlusIcon, Popup};
 use models::{FieldConfig, FieldId, SingleLineValue, Value};
 
 #[component]
@@ -93,9 +93,9 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
 
     let (biii, tiii) = (base_id.clone(), table_id.clone());
 
-    let on_rename = Callback::new(move |field_id: models::FieldId| {
+    let on_rename = Callback::new(move |(field_id, field_name): (models::FieldId, String)| {
         set_rename_field_id.set(Some(field_id));
-        set_rename_name.set(String::new());
+        set_rename_name.set(field_name);
         set_show_rename_popup.set(true);
     });
 
@@ -129,9 +129,8 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
             Some((base_id, table_id)) => {
                 let bid = base_id.clone();
                 let tid = table_id.clone();
-
                 view! {
-                    <Suspense fallback=move || {
+                    <Transition fallback=move || {
                         view! { <p>"Loading..."</p> }
                     }>
                         <div class="flex flex-col w-fit h-full overflow-visible">
@@ -286,12 +285,15 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                                 show=show_field_popup
                                 set_show=set_show_field_popup
                                 on_created=handle_field_created
-                            />
-                            <Show when=move || show_rename_popup.get()>
+                            /> <Show when=move || show_rename_popup.get()>
                                 <Popup show=show_rename_popup.into() set_show=set_show_rename_popup>
                                     <div class="mb-4 border-b-2 border-slate-200 pb-2 border-dashed">
-                                        <h2 class="text-xl font-bold text-slate-800">"Rename Field"</h2>
-                                        <p class="text-sm text-slate-500">"Change the name of this column."</p>
+                                        <h2 class="text-xl font-bold text-slate-800">
+                                            "Rename Field"
+                                        </h2>
+                                        <p class="text-sm text-slate-500">
+                                            "Change the name of this column."
+                                        </p>
                                     </div>
                                     <div class="flex flex-col gap-5">
                                         <FilteredInput
@@ -301,7 +303,9 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                                             set_value=set_rename_name
                                             filter=Callback::new(|val: String| {
                                                 val.chars()
-                                                    .filter(|c| c.is_ascii_alphanumeric() || *c == '_' || *c == '-')
+                                                    .filter(|c| {
+                                                        c.is_ascii_alphanumeric() || *c == '_' || *c == '-'
+                                                    })
                                                     .collect()
                                             })
                                             autofocus=true
@@ -317,7 +321,7 @@ pub fn Table(base_key: String, table_key: String) -> impl IntoView {
                                 </Popup>
                             </Show>
                         </div>
-                    </Suspense>
+                    </Transition>
                 }
                     .into_any()
             }

@@ -3,7 +3,7 @@ use leptos::prelude::*;
 use leptos::reactive::spawn_local;
 use leptos_router::NavigateOptions;
 use leptos_router::hooks::{use_navigate, use_params_map};
-use models::{Table, ToSql};
+use models::{Base, Table, ToSql};
 
 #[server]
 pub async fn get_base_tables(base_key: String) -> Result<Vec<Table>, ServerFnError> {
@@ -44,6 +44,18 @@ pub async fn create_table(base_key: String, name: String) -> Result<Table, Serve
     Ok(table)
 }
 
+#[server]
+pub async fn get_base_info(base_key: String) -> Result<Base, ServerFnError> {
+    let mut service = crate::get_authenticated_service().await?;
+    let base_id = crate::parse_base_id(&base_key)?;
+    dbg!(
+        service
+            .open_base(base_id)
+            .await
+            .map_err(|e| ServerFnError::new(format!("Failed to open base: {e:?}")))
+    )
+}
+
 #[component]
 fn TableButton<F>(table: Table, base_id: String, naviguate: F, is_selected: bool) -> impl IntoView
 where
@@ -81,6 +93,11 @@ pub fn BasePage() -> impl IntoView {
     let base_data = Resource::new(
         move || (id(), refresh_tables.get()),
         |(id, _)| async move { get_base_tables(id).await },
+    );
+
+    let base = Resource::new(
+        move || (id(), refresh_tables.get()),
+        |(id, _)| async move { get_base_info(id).await },
     );
 
     Effect::new(move || {
@@ -202,7 +219,10 @@ pub fn BasePage() -> impl IntoView {
                         alt="Chaira"
                     />
                 </button>
-                <button class="w-full flex justify-center mt-auto py-[4.5]" on:click=move |_| naviguate("/user", NavigateOptions::default())>
+                <button
+                    class="w-full flex justify-center mt-auto py-[4.5]"
+                    on:click=move |_| naviguate("/user", NavigateOptions::default())
+                >
                     <img
                         src="https://i.pinimg.com/736x/7c/41/86/7c41866499a79bca61ecf049973f5d76.jpg"
                         class="h-[40px] w-[40px] object-cover pixelated my-auto pixel-corners-pfp grayscale-75"
@@ -212,12 +232,19 @@ pub fn BasePage() -> impl IntoView {
 
             <div class="flex flex-1 flex-col overflow-hidden">
                 <div class="h-14 flex-shrink-0 border-b-[3px] border-black flex items-stretch">
-                    <h1 class="text-[0.9rem] font-bold self-center ml-4">{id}</h1>
+                    <Suspense>
+                        <h1 class="text-[1.2rem] font-bold self-center ml-4">
+                            {move || match base.get() {
+                                Some(Ok(base)) => base.name,
+                                _ => id(),
+                            }}
+                        </h1>
+                    </Suspense>
                     <div class="ml-auto flex items-stretch self-center py-4">
-                        <button class="h-full py-4 uppercase border-black border-l-[3px] px-2">
+                        <button class="h-full py-4 uppercase border-black border-l-[3px] px-2 bg-black text-white">
                             "data"
                         </button>
-                        <button class="h-full py-4 uppercase border-black border-l-[3px] px-2">
+                        <button class="h-full py-4 uppercase border-black border-l-[3px] px-2 bg-slate-200 text-slate-400">
                             "automations"
                         </button>
                     </div>

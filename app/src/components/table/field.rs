@@ -10,7 +10,7 @@ pub fn Field(
     #[prop(optional)] width: Signal<f64>,
     on_resize: Option<Callback<f64>>,
     delete_field_thingy: Callback<models::FieldId>,
-    on_rename: Callback<models::FieldId>,
+    on_rename: Callback<(models::FieldId, String)>,
 ) -> impl IntoView {
     let icon_type = field_icon(&field.config);
 
@@ -106,7 +106,7 @@ pub fn Field(
                 fill="#000000"
                 extern_class="mr-[5px]"
             />
-            <p class="truncate utility leading-none">{field.name}</p>
+            <p class="truncate utility leading-none">{field.name.clone()}</p>
             <div
                 node_ref=handle_ref
                 class="ml-auto w-[3px] h-full cursor-col-resize bg-white hover:bg-black shrink-0 touch-none self-stretch"
@@ -125,7 +125,8 @@ pub fn Field(
                         class="p-2 text-sm flex bg-white flex-row items-end hover:bg-[#000000]/4"
                         on:click={
                             let field_id = field_id.clone();
-                            move |_| on_rename.run(field_id.clone())
+                            let field_name = field.name.clone();
+                            move |_| on_rename.run((field_id.clone(), field_name.clone()))
                         }
                     >
                         <Icon

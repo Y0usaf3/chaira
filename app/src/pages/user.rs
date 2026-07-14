@@ -115,7 +115,7 @@ pub fn UserPage() -> impl IntoView {
                                 <p class="leading-none">"Account"</p>
                             </div>
                         </div>
-                        <Suspense fallback=|| {
+                        <Transition fallback=|| {
                             view! { <div class="p-6 text-slate-500">"Loading..."</div> }
                         }>
                             {move || match user_data.get() {
@@ -130,89 +130,77 @@ pub fn UserPage() -> impl IntoView {
                                 }
                                 Some(Ok(user)) => {
                                     view! {
-                                        <div class="bg-white p-6 w-full h-full overflow-y-auto">
-                                            <h2 class="text-2xl font-bold text-slate-800 mb-6">
+                                        <div class="relative flex-1 bg-white py-6 w-full h-full">
+                                            <h2 class="text-2xl font-bold text-slate-800 mb-6 px-[100px]">
                                                 "Account Settings"
                                             </h2>
                                             <form
-                                                class="flex flex-col gap-4"
+                                                class="flex flex-col gap-4 h-full"
                                                 on:submit=move |ev| ev.prevent_default()
                                             >
-                                                <FilteredInput
-                                                    label="First Name"
-                                                    placeholder="First name"
-                                                    value=first_name
-                                                    set_value=set_first_name
-                                                    filter=Callback::new(|val: String| val)
-                                                    autofocus=false
-                                                />
+                                                <div class="px-[100px]">
+                                                    <FilteredInput
+                                                        label="First Name"
+                                                        placeholder="First name"
+                                                        value=first_name
+                                                        set_value=set_first_name
+                                                        filter=Callback::new(|val: String| val)
+                                                        autofocus=false
+                                                    />
 
-                                                <FilteredInput
-                                                    label="Last Name"
-                                                    placeholder="Last name"
-                                                    value=last_name
-                                                    set_value=set_last_name
-                                                    filter=Callback::new(|val: String| val)
-                                                    autofocus=false
-                                                />
+                                                    <FilteredInput
+                                                        label="Last Name"
+                                                        placeholder="Last name"
+                                                        value=last_name
+                                                        set_value=set_last_name
+                                                        filter=Callback::new(|val: String| val)
+                                                        autofocus=false
+                                                    />
 
-                                                <div class="flex flex-col gap-1">
-                                                    <label class="text-sm font-semibold text-slate-700">
-                                                        "Email"
-                                                    </label>
-                                                    <div class="pixel-input--wrapper p-4 !w-full">
-                                                        <input
-                                                            type="text"
-                                                            class="placeholder:text-slate-400 focus:outline-none bg-transparent w-full text-slate-500"
-                                                            value=user.email.clone()
-                                                            disabled=true
-                                                        />
+                                                    <div class="flex flex-col gap-1">
+                                                        <label class="text-sm font-semibold text-slate-700">
+                                                            "Email"
+                                                        </label>
+                                                        <div class="pixel-input--wrapper p-4 !w-full">
+                                                            <input
+                                                                type="text"
+                                                                class="placeholder:text-slate-400 focus:outline-none bg-transparent w-full text-slate-500"
+                                                                value=user.email.clone()
+                                                                disabled=true
+                                                            />
+                                                        </div>
                                                     </div>
-                                                </div>
 
-                                                <div class="flex flex-col gap-1">
-                                                    <label class="text-sm font-semibold text-slate-700">
-                                                        "Role"
-                                                    </label>
-                                                    <p class="text-slate-600 capitalize px-1 flex items-center">
-                                                        {match user.role() {
-                                                            UserRole::Admin => {
-                                                                view! {
-                                                                    <Icon
-                                                                        icon_type=IconType::NotNormalUser
-                                                                        fill="#000000"
-                                                                        class="!w-[25px] h-auto"
-                                                                        extern_class="mr-[4px]"
-                                                                    />
+                                                    <div class="flex flex-col gap-1">
+                                                        <label class="text-sm font-semibold text-slate-700">
+                                                            "Role"
+                                                        </label>
+                                                        <p class="text-slate-600 capitalize flex items-center leading-none pixel-input--wrapper p-4 !w-full">
+                                                            <Icon
+                                                                icon_type=match user.role() {
+                                                                    UserRole::Admin => IconType::NotNormalUser,
+                                                                    _ => IconType::NormalUser,
                                                                 }
-                                                                    .into_any()
-                                                            }
-                                                            _ => {
-                                                                view! {
-                                                                    <Icon
-                                                                        icon_type=IconType::NormalUser
-                                                                        fill="#000000"
-                                                                        class="!w-[25px] h-auto"
-                                                                        extern_class="mr-[4px]"
-                                                                    />
-                                                                }
-                                                                    .into_any()
-                                                            }
-                                                        }} {user.role}
-                                                    </p>
+                                                                fill="#41566C"
+                                                                class="!w-[25px] h-auto"
+                                                                extern_class="mr-[6px]"
+                                                            />
+                                                            {user.role}
+                                                        </p>
+                                                    </div>
                                                 </div>
 
                                                 <button
                                                     type="submit"
                                                     disabled=move || update_action.pending().get()
-                                                    class="pixel-corners--wrapper mt-2 p-3 bg-black text-white font-bold transition-colors cursor-pointer w-full disabled:bg-gray-500 disabled:cursor-not-allowed"
+                                                    class="mt-auto mb-[38px] ml-auto self-end z-50 pixel-corners--wrapper p-3 bg-black text-white font-bold cursor-pointer w-auto px-8 disabled:bg-gray-500 disabled:cursor-not-allowed"
                                                     on:click=handle_save
                                                 >
                                                     {move || {
                                                         if update_action.pending().get() {
                                                             "Saving..."
                                                         } else {
-                                                            "Save Changes"
+                                                            "Save"
                                                         }
                                                     }}
                                                 </button>
@@ -242,7 +230,7 @@ pub fn UserPage() -> impl IntoView {
                                         .into_any()
                                 }
                             }}
-                        </Suspense>
+                        </Transition>
                     </div>
                 </main>
             </div>

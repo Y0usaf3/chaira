@@ -135,10 +135,10 @@ pub fn UserPage() -> impl IntoView {
                                                 "Account Settings"
                                             </h2>
                                             <form
-                                                class="flex flex-col gap-4 h-full"
+                                                class="flex flex-col h-full"
                                                 on:submit=move |ev| ev.prevent_default()
                                             >
-                                                <div class="px-[100px]">
+                                                <div class="px-[100px] gap-4">
                                                     <FilteredInput
                                                         label="First Name"
                                                         placeholder="First name"
@@ -193,7 +193,7 @@ pub fn UserPage() -> impl IntoView {
                                                 <button
                                                     type="submit"
                                                     disabled=move || update_action.pending().get()
-                                                    class="mt-auto mb-[38px] ml-auto self-end z-50 pixel-corners--wrapper p-3 bg-black text-white font-bold cursor-pointer w-auto px-8 disabled:bg-gray-500 disabled:cursor-not-allowed"
+                                                    class="mt-auto mr-[6px] mb-[38px] ml-auto self-end z-50 pixel-corners--wrapper p-3 bg-black text-white font-bold cursor-pointer w-auto px-8 disabled:bg-gray-500 disabled:cursor-not-allowed"
                                                     on:click=handle_save
                                                 >
                                                     {move || {

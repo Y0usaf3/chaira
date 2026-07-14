@@ -206,6 +206,24 @@ COMMIT TRANSACTION;
     }
 
     #[requires(BasePermission, ManageTables)]
+    pub async fn rename_table(&mut self, table_id: TableId, name: String) -> Result<Table, Irror> {
+        approved(&name)?;
+
+        let mut res = DB
+            .query(
+                "
+            UPDATE $table_id SET name = $name, updated_at = time::now();
+        ",
+            )
+            .bind(("table_id", table_id))
+            .bind(("name", name))
+            .await?;
+
+        let table: Option<Table> = res.take(0)?;
+        table.ok_or(Irror::Table(TableError::UpdateFailed))
+    }
+
+    #[requires(BasePermission, ManageTables)]
     pub async fn delete_table(&mut self, table_id: TableId) -> Result<(), Irror> {
         let res = DB
             .query(

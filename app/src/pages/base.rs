@@ -1,6 +1,7 @@
-use crate::components::{FilteredInput, PlusIcon, Popup, Table};
+use crate::components::{FilteredInput, Icon, IconType, PlusIcon, Popup, Table};
 use leptos::prelude::*;
 use leptos::reactive::spawn_local;
+use leptos::wasm_bindgen::JsCast;
 use leptos_router::NavigateOptions;
 use leptos_router::hooks::{use_navigate, use_params_map};
 use models::{Base, Table, ToSql};
@@ -45,19 +46,64 @@ pub async fn create_table(base_key: String, name: String) -> Result<Table, Serve
 }
 
 #[server]
+pub async fn rename_table(
+    base_key: String,
+    table_key: String,
+    name: String,
+) -> Result<Table, ServerFnError> {
+    let mut service = crate::get_authenticated_service().await?;
+    let base_id = crate::parse_base_id(&base_key)?;
+    let table_id = crate::parse_table_id(&table_key)?;
+    service
+        .open_base(base_id)
+        .await
+        .map_err(|e| ServerFnError::new(format!("Failed to open base: {e:?}")))?;
+    service
+        .current_base
+        .as_mut()
+        .ok_or_else(|| ServerFnError::new("No base service available"))?
+        .rename_table(table_id, name)
+        .await
+        .map_err(|e| ServerFnError::new(format!("Failed to rename table: {e:?}")))
+}
+
+#[server]
+pub async fn delete_table(base_key: String, table_key: String) -> Result<(), ServerFnError> {
+    let mut service = crate::get_authenticated_service().await?;
+    let base_id = crate::parse_base_id(&base_key)?;
+    let table_id = crate::parse_table_id(&table_key)?;
+    service
+        .open_base(base_id)
+        .await
+        .map_err(|e| ServerFnError::new(format!("Failed to open base: {e:?}")))?;
+    service
+        .current_base
+        .as_mut()
+        .ok_or_else(|| ServerFnError::new("No base service available"))?
+        .delete_table(table_id)
+        .await
+        .map_err(|e| ServerFnError::new(format!("Failed to delete table: {e:?}")))
+}
+
+#[server]
 pub async fn get_base_info(base_key: String) -> Result<Base, ServerFnError> {
     let mut service = crate::get_authenticated_service().await?;
     let base_id = crate::parse_base_id(&base_key)?;
-    dbg!(
-        service
-            .open_base(base_id)
-            .await
-            .map_err(|e| ServerFnError::new(format!("Failed to open base: {e:?}")))
-    )
+    service
+        .open_base(base_id)
+        .await
+        .map_err(|e| ServerFnError::new(format!("Failed to open base: {e:?}")))
 }
 
 #[component]
-fn TableButton<F>(table: Table, base_id: String, naviguate: F, is_selected: bool) -> impl IntoView
+fn TableButton<F>(
+    table: Table,
+    base_id: String,
+    naviguate: F,
+    is_selected: bool,
+    on_rename: Callback<(String, String)>,
+    on_delete: Callback<String>,
+) -> impl IntoView
 where
     F: Fn(&str, NavigateOptions) + Clone + 'static,
 {
@@ -66,15 +112,105 @@ where
     let path = format!("/base/{}/{}", base_id, key);
 
     let classes = if is_selected {
-        "px-4 py-4 bg-black text-white border-r-3 border-black font-medium shrink-0"
+        "px-4 py-4 bg-black text-white border-r-3 border-black font-medium shrink-0 overflow-visible"
     } else {
-        "px-4 py-4 bg-slate-20 border-r-3 border-black font-medium shrink-0"
+        "px-4 py-4 bg-slate-20 border-r-3 border-black font-medium shrink-0 overflow-visible"
     };
 
+    let field_ref = NodeRef::<leptos::html::Div>::new();
+    let menu_ref = NodeRef::<leptos::html::Ol>::new();
+    let (show, set_show) = signal(false);
+    let (menu_pos, set_menu_pos) = signal((0.0, 0.0));
+
+    let close_on_outside_click = move |ev: web_sys::Event| {
+        if show.get_untracked() {
+            if let (Some(btn), Some(menu)) = (field_ref.get(), menu_ref.get()) {
+                if let Some(target) = ev.target() {
+                    if let Some(node) = target.dyn_ref::<web_sys::Node>() {
+                        if !btn.contains(Some(node)) && !menu.contains(Some(node)) {
+                            set_show.set(false);
+                        }
+                    }
+                }
+            }
+        }
+    };
+    let _ = window_event_listener(leptos::ev::click, {
+        move |ev| close_on_outside_click(ev.into())
+    });
+
+    let _ = window_event_listener(leptos::ev::contextmenu, {
+        move |ev| {
+            if show.get_untracked() {
+                close_on_outside_click(ev.into());
+            }
+        }
+    });
+
     view! {
-        <button class=classes on:click=move |_| { naviguate(&path, NavigateOptions::default()) }>
-            {name}
-        </button>
+        <div node_ref=field_ref style:position="relative" style:display="inline-block">
+            <button
+                class=classes
+                on:click=move |_| { naviguate(&path, NavigateOptions::default()) }
+                on:contextmenu=move |ev| {
+                    ev.prevent_default();
+                    if let Some(el) = field_ref.get() {
+                        let rect = el.get_bounding_client_rect();
+                        set_menu_pos.set((rect.left(), rect.bottom()));
+                    }
+                    set_show.set(true);
+                }
+            >
+                {name.clone()}
+            </button>
+            <Show when=move || show.get()>
+                <ol
+                    node_ref=menu_ref
+                    class="bg-white border-black border-[2px] !w-[113px] z-[40]"
+                    style:position="fixed"
+                    style:top=move || format!("{}px", menu_pos.get().1 + 2.0)
+                    style:left=move || format!("{}px", menu_pos.get().0 + 2.0)
+                >
+                    <li
+                        class="p-2 text-sm flex bg-white flex-row items-end hover:bg-[#000000]/4"
+                        on:click={
+                            let key = key.clone();
+                            let name = name.clone();
+                            move |_| {
+                                set_show.set(false);
+                                on_rename.run((key.clone(), name.clone()));
+                            }
+                        }
+                    >
+                        <Icon
+                            icon_type=IconType::Pen
+                            fill="#000000"
+                            class="!w-[18px] h-auto"
+                            extern_class="mr-[4px]"
+                        />
+                        <p class="leading-none">"Rename"</p>
+                    </li>
+                    <li
+                        class="p-2 text-sm flex bg-white flex-row text-[#ef4444] items-end hover:bg-[#ef4444]/6"
+                        on:click={
+                            let key = key.clone();
+                            move |_| {
+                                set_show.set(false);
+                                on_delete.run(key.clone());
+                            }
+                        }
+                    >
+                        <Icon
+                            icon_type=IconType::Trash
+                            fill="#ef4444"
+                            class="!w-[18px] h-auto"
+                            extern_class="mr-[4px]"
+                        />
+                        <p class="leading-none">"Delete"</p>
+                    </li>
+                </ol>
+            </Show>
+        </div>
     }
 }
 
@@ -123,6 +259,47 @@ pub fn BasePage() -> impl IntoView {
         }
     };
 
+    let (show_rename_popup, set_show_rename_popup) = signal(false);
+    let (rename_table_key, set_rename_table_key) = signal(String::new());
+    let (rename_table_name, set_rename_table_name) = signal(String::new());
+
+    let nav_for_delete = naviguate.clone();
+    let handle_delete_table = Callback::new(move |table_key: String| {
+        let base_key = id();
+        let current_table_id = table_id();
+        let naviguate = nav_for_delete.clone();
+        spawn_local(async move {
+            if delete_table(base_key.clone(), table_key.clone())
+                .await
+                .is_ok()
+            {
+                if current_table_id == table_key {
+                    naviguate(&format!("/base/{}", base_key), NavigateOptions::default());
+                }
+                set_refresh_tables.update(|v| *v += 1);
+            }
+        });
+    });
+
+    let handle_rename_submit = Callback::new(move |_: ()| {
+        let table_key = rename_table_key.get_untracked();
+        let new_name = rename_table_name.get_untracked();
+        let base_key = id();
+        if !new_name.is_empty() && !table_key.is_empty() {
+            spawn_local(async move {
+                if rename_table(base_key.clone(), table_key, new_name)
+                    .await
+                    .is_ok()
+                {
+                    set_refresh_tables.update(|v| *v += 1);
+                }
+            });
+        }
+        set_show_rename_popup.set(false);
+        set_rename_table_key.set(String::new());
+        set_rename_table_name.set(String::new());
+    });
+
     let show_table_selector = {
         let naviguate = naviguate.clone();
         move || {
@@ -138,43 +315,49 @@ pub fn BasePage() -> impl IntoView {
                         let base_id = base_id.clone();
                         let naviguate = naviguate.clone();
                         let current_table_id = table_id();
-                        Suspend::new(async move {
-                            match base_data.get() {
-                                Some(Ok(tables)) => {
-                                    view! {
-                                        <div class="h-14 flex-shrink-0 border-b-[3px] border-black flex items-center overflow-x-auto overflow-y-hidden">
-                                            {tables
-                                                .into_iter()
-                                                .map(move |table| {
-                                                    let key = table
-                                                        .id
-                                                        .as_ref()
-                                                        .map(|id| id.0.key.to_sql())
-                                                        .unwrap_or_default();
-                                                    let is_selected = key == current_table_id;
-                                                    view! {
-                                                        <TableButton
-                                                            table=table
-                                                            base_id=base_id.clone()
-                                                            naviguate=naviguate.clone()
-                                                            is_selected=is_selected
-                                                        />
-                                                    }
-                                                })
-                                                .collect_view()}
-                                            <button
-                                                class="size-[28px] bg-black flex items-center justify-center shrink-0 pixel-corners-pfp ml-4"
-                                                on:click=move |_| set_show_create_popup.set(true)
-                                            >
-                                                <PlusIcon class="size-[14px] pixelated margin-auto text-white" />
-                                            </button>
-                                        </div>
-                                    }
-                                        .into_any()
+                        match base_data.get() {
+                            Some(Ok(tables)) => {
+                                view! {
+                                    <div class="h-14 flex-shrink-0 border-b-[3px] border-black flex items-center flex-wrap">
+                                        {tables
+                                            .into_iter()
+                                            .map(move |table| {
+                                                let key = table
+                                                    .id
+                                                    .as_ref()
+                                                    .map(|id| id.0.key.to_sql())
+                                                    .unwrap_or_default();
+                                                let is_selected = key == current_table_id;
+                                                view! {
+                                                    <TableButton
+                                                        table=table
+                                                        base_id=base_id.clone()
+                                                        naviguate=naviguate.clone()
+                                                        is_selected=is_selected
+                                                        on_rename=Callback::new({
+                                                            move |(key, name): (String, String)| {
+                                                                set_rename_table_key.set(key);
+                                                                set_rename_table_name.set(name);
+                                                                set_show_rename_popup.set(true);
+                                                            }
+                                                        })
+                                                        on_delete=handle_delete_table
+                                                    />
+                                                }
+                                            })
+                                            .collect_view()}
+                                        <button
+                                            class="size-[28px] bg-black flex items-center justify-center shrink-0 pixel-corners-pfp ml-4"
+                                            on:click=move |_| set_show_create_popup.set(true)
+                                        >
+                                            <PlusIcon class="size-[14px] pixelated margin-auto text-white" />
+                                        </button>
+                                    </div>
                                 }
-                                _ => ().into_any(),
+                                    .into_any()
                             }
-                        })
+                            _ => ().into_any(),
+                        }
                     }}
                 </Suspense>
             }
@@ -285,6 +468,34 @@ pub fn BasePage() -> impl IntoView {
                             "Create Table"
                         </button>
                     </form>
+                </Popup>
+
+                <Popup show=show_rename_popup.into() set_show=set_show_rename_popup>
+                    <div class="mb-4 border-b-2 border-slate-200 pb-2 border-dashed">
+                        <h2 class="text-xl font-bold text-slate-800">"Rename Table"</h2>
+                        <p class="text-sm text-slate-500">"Change the name of this table."</p>
+                    </div>
+                    <div class="flex flex-col gap-5">
+                        <FilteredInput
+                            label="Table Name"
+                            placeholder="e.g. Tasks"
+                            value=rename_table_name
+                            set_value=set_rename_table_name
+                            filter=Callback::new(|val: String| {
+                                val.chars()
+                                    .filter(|c| c.is_ascii_alphanumeric() || *c == '_' || *c == '-')
+                                    .collect()
+                            })
+                            autofocus=true
+                        />
+                        <button
+                            type="submit"
+                            class="pixel-corners--wrapper mt-2 p-4 ml-auto bg-black text-white font-bold cursor-pointer w-full text-sm leading-none"
+                            on:click=move |_| handle_rename_submit.run(())
+                        >
+                            "Rename table"
+                        </button>
+                    </div>
                 </Popup>
             </div>
         </div>

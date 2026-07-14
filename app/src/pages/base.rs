@@ -423,11 +423,11 @@ pub fn BasePage() -> impl IntoView {
                             }}
                         </h1>
                     </Suspense>
-                    <div class="ml-auto flex items-stretch self-center py-4">
-                        <button class="h-full py-4 uppercase border-black border-l-[3px] px-2 bg-black text-white">
+                    <div class="ml-auto flex items-stretch self-center divide-black divide-x-[3px]">
+                        <button class="h-full py-4 uppercase px-2 bg-black text-white">
                             "data"
                         </button>
-                        <button class="h-full py-4 uppercase border-black border-l-[3px] px-2 bg-slate-200 text-slate-400">
+                        <button class="h-full py-4 uppercase px-2 text-slate-300">
                             "automations"
                         </button>
                     </div>

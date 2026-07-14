@@ -146,7 +146,7 @@
             sleep 0.3
 
             log_info "Starting SurrealDB..."
-            surreal start --allow-scripting --allow-experimental files,surrealism --user test --pass test memory > .dev-logs/surreal.log 2>&1 &
+            surreal start --allow-scripting --allow-experimental files,surrealism --user test --pass test memory --log full > .dev-logs/surreal.log 2>&1 &
             SURREAL_PID=$!
             sleep 0.5
 

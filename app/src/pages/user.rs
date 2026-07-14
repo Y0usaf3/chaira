@@ -100,7 +100,17 @@ pub fn UserPage() -> impl IntoView {
                 </div>
                 <main class="pixel-corners-wrapper flex-1 overflow-hidden mb-[-3px] mr-[-3px] bg-slate-50">
                     <div class="overflow-none w-full h-full flex flex-row">
-                        <div class="border-black border-r-[3px] w-[64px] h-full hover:w-[128px] ease-linear transition-all duration-80"></div>
+                        <div class="border-black border-r-[3px] h-full flex flex-col">
+                            <div class="w-full h-auto flex flex-row items-center justify-center px-[16px] pb-[12px] pt-[18px] bg-black text-white">
+                                <Icon
+                                    icon_type=IconType::NormalUser
+                                    fill="#ffffff"
+                                    class="!w-[25px] h-auto"
+                                    extern_class="mr-[6px]"
+                                />
+                                <p class="leading-none">"Account"</p>
+                            </div>
+                        </div>
                         <Suspense fallback=|| {
                             view! { <div class="p-6 text-slate-500">"Loading..."</div> }
                         }>

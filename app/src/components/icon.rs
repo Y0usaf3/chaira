@@ -81,6 +81,8 @@ pub fn Icon(
     };
 
     let class_attr = format!(r#"class="{}" viewBox="0 0 32 32""#, class);
+
+    // TODO: use regex for that
     let svg = raw
         .lines()
         .skip(1)
@@ -92,6 +94,10 @@ pub fn Icon(
         )
         .replace(
             r##"fill="#1F1F1F""##,
+            format!(r##"fill="{fill}""##).as_str(),
+        )
+        .replace(
+            r##"fill="#000000""##,
             format!(r##"fill="{fill}""##).as_str(),
         )
         .replace(r##"width="32" height="32""##, &class_attr);

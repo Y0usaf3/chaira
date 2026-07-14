@@ -1,6 +1,8 @@
 use crate::components::{FilteredInput, Icon, IconType, PlusIcon};
 use leptos::ev::MouseEvent;
 use leptos::prelude::*;
+use leptos_router::NavigateOptions;
+use leptos_router::hooks::use_navigate;
 use models::{User, UserPatch, UserRole};
 
 #[server]
@@ -33,7 +35,6 @@ pub async fn update_user_info(
 
 #[component]
 pub fn UserPage() -> impl IntoView {
-    // 1. Define the Action for updating user info.
     let update_action = Action::new(|(fname, lname): &(String, String)| {
         let first_name = fname.clone();
         let last_name = lname.clone();
@@ -71,6 +72,8 @@ pub fn UserPage() -> impl IntoView {
         update_action.dispatch((fname, lname));
     };
 
+    let naviguate = use_navigate();
+
     view! {
         <div class="flex h-screen w-full overflow-hidden bg-slate-100">
             <div class="order-first w-14 flex-shrink-0 flex flex-col h-full">
@@ -79,6 +82,7 @@ pub fn UserPage() -> impl IntoView {
                         src="/image/small_chaira.png"
                         class="h-auto w-[40px] object-contain pixelated ml-auto mt-auto"
                         alt="Chaira"
+                        on:click=move |_| { naviguate("/dashboard", NavigateOptions::default()) }
                     />
                 </div>
 

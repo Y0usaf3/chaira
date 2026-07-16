@@ -138,7 +138,7 @@ pub fn UserPage() -> impl IntoView {
                                                 class="flex flex-col h-full"
                                                 on:submit=move |ev| ev.prevent_default()
                                             >
-                                                <div class="px-[100px] gap-4">
+                                                <div class="px-[100px] !gap-4">
                                                     <FilteredInput
                                                         label="First Name"
                                                         placeholder="First name"

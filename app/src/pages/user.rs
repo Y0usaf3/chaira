@@ -131,14 +131,14 @@ pub fn UserPage() -> impl IntoView {
                                 Some(Ok(user)) => {
                                     view! {
                                         <div class="relative flex-1 bg-white py-6 w-full h-full">
-                                            <h2 class="text-2xl font-bold text-slate-800 mb-6 px-[100px]">
+                                            <h2 class="text-2xl font-bold text-slate-800 mb-6 px-[200px]">
                                                 "Account Settings"
                                             </h2>
                                             <form
                                                 class="flex flex-col h-full"
                                                 on:submit=move |ev| ev.prevent_default()
                                             >
-                                                <div class="px-[100px] !gap-4">
+                                                <div class="px-[200px] flex flex-col gap-4 ">
                                                     <FilteredInput
                                                         label="First Name"
                                                         placeholder="First name"
